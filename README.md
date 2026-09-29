@@ -1,7 +1,7 @@
-<h1 align="center">museai</h1>
+<h1 align="center">Muse AI</h1>
 
 <p align="center">
-  <b>High-performance, async OpenAI-compatible API gateway and bridge for <a href="https://muse.ai">muse.ai</a> personal AI agents.</b>
+  <b>OpenAI-compatible API gateway for <a href="https://muse.ai">muse.ai</a> personal workspaces, featuring native 9Router integration.</b>
 </p>
 
 <p align="center">
@@ -14,30 +14,43 @@
 
 ---
 
-## Overview
+## Architecture
 
-`museai` transforms your [muse.ai](https://muse.ai) browser session and tokens into standard, production-ready **OpenAI API endpoints** (`/v1/chat/completions`, `/v1/images/generations`, `/v1/videos`, `/v1/models`).
-
-Connect your muse.ai account balance (including high-token tier accounts) directly to:
-- **9Router Multi-Model Gateway** (call `muse/muse-chat`, `muse/gpt-4o`, `muse/gpt-5`)
-- Chat clients: NextChat, LobeChat, Cherry Studio, LibreChat
-- Developer tools: Cursor, Claude Code, Codex, Hermes Agent, LangChain, OpenAI Python/TS SDKs
+```text
+OpenAI SDK / 9Router / Web Client
+              │
+              ▼ HTTP (Bearer Token)
+       ┌──────────────┐
+       │   Muse AI    │ FastAPI Proxy (Port 18610)
+       └──────┬───────┘
+              │ Chrome DevTools Protocol (CDP over WebSocket)
+              ▼
+       ┌──────────────┐
+       │   Chromium   │ Headless Browser (Isolated Context per Account)
+       └──────┬───────┘
+              │ HTTPS / WSS (hatch_sess + hatch_gw + datr)
+              ▼
+          muse.ai
+```
 
 ---
 
-## Key Features
+## Technical Highlights
 
-- **Standard OpenAI Endpoints**: Streaming SSE (`stream: true`), non-streaming completions, image generation, and video generation.
-- **9Router Integration**: Includes one-click script (`scripts/connect_9router.py`) to register the provider directly into your local 9Router cluster.
-- **Resilient Headless Driver**: Automated Chrome DevTools Protocol (CDP) driver with automatic URL-decoding, dual-domain cookie scoping (`.muse.ai` and `muse.ai`), and locale-agnostic DOM detection.
-- **Account Pooling & Failover**: Automatic multi-account scheduling (`lru`, `round_robin`, `affinity`), concurrency throttling, failure cooldown, and instant retry.
-- **AI Agent Friendly**: Ships with a machine-readable `AGENTS.md` specification file for autonomous AI coding agents.
+- **OpenAI Wire Compatibility**: Direct drop-in for OpenAI SDKs, LangChain, LobeChat, NextChat, Cherry Studio, and autonomous coding agents.
+- **Native 9Router Provider**: Ships with `scripts/connect_9router.py` to auto-register model routes directly into 9Router's SQLite database (`~/.9router/db/data.sqlite`).
+- **Resilient Cookie Injection**: Automatically URL-decodes percent-encoded cookie tokens (`%3A` -> `:`) and registers sessions across dual-domain scopes (`.muse.ai` and `muse.ai`) via CDP.
+- **Meta Edge Proxy Compliance**: Supports `datr` cookie passing to prevent device-integrity redirects on Meta infrastructure.
+- **Account Pooling & Failover**: Multi-account scheduling (`affinity`, `lru`, `round_robin`), concurrency limits, automatic error cooldown, and transparent retries.
+- **Deterministic Offline Testing**: 100% offline test suite powered by `MockDriver` (23 passed in < 0.5s).
 
 ---
 
-## Quick Start
+## Quickstart
 
 ### 1. Installation
+
+Requires Python 3.10+ and a local Chromium or Google Chrome binary.
 
 ```bash
 git clone https://github.com/d4ncboz/museai.git
@@ -50,13 +63,14 @@ pip install -e '.[dev]'
 
 ### 2. Configuration
 
-Create your `.env` configuration file:
+Copy the example environment configuration:
 
 ```bash
 cp .env.example .env
 ```
 
-Example configuration (`.env`):
+Default settings in `.env`:
+
 ```ini
 MUSEAI_DRIVER=browser
 MUSEAI_HOST=127.0.0.1
@@ -67,34 +81,36 @@ MUSEAI_POOL_STRATEGY=affinity
 MUSEAI_KEEPALIVE_ENABLED=true
 ```
 
-### 3. Start the Server
+*(Note: Chrome executable is auto-detected on macOS `/Applications/Google Chrome.app` and Linux `/usr/bin/chromium`. Set `MUSEAI_CHROMIUM_PATH` if using a custom path).*
+
+### 3. Run the Service
 
 ```bash
 python -m museai
 ```
 
-The gateway listens at `http://127.0.0.1:18610`.
+The server binds to `http://127.0.0.1:18610`.
 
 ---
 
-## Importing Accounts & Session Cookies
+## Authentication & Account Import
 
-To connect your muse.ai account, export your session cookies from Chrome DevTools (`F12` ──> `Application` ──> `Cookies` ──> `https://muse.ai`):
+Export your session cookies from an active [muse.ai](https://muse.ai) browser session (DevTools `F12` ──> `Application` ──> `Cookies` ──> `https://muse.ai`):
 
-- `hatch_sess` (Session token)
-- `hatch_gw` (Gateway cluster token)
-- `hatch_native_auth_device` (Device UUID)
-- `hatch_vml` (Workspace lease token)
-- `datr` (Meta device integrity cookie)
+- `hatch_sess`: Session authentication token
+- `hatch_gw`: Gateway routing cookie
+- `hatch_native_auth_device`: Registered device UUID
+- `hatch_vml`: Workspace lease token *(optional/dynamic)*
+- `datr`: Meta device verification cookie *(recommended)*
 
-Register the account via the Admin API:
+### Import via Admin API
 
 ```bash
 curl -X POST http://127.0.0.1:18610/admin/accounts \
   -H "Authorization: Bearer sk-museai-admin-key" \
   -H "Content-Type: application/json" \
   -d '{
-    "label": "my-muse-account",
+    "label": "primary-account",
     "cookies": {
       "hatch_sess": "...",
       "hatch_gw": "...",
@@ -105,78 +121,114 @@ curl -X POST http://127.0.0.1:18610/admin/accounts \
   }'
 ```
 
+Alternatively, use the helper script to convert raw Netscape / DevTools JSON exports:
+
+```bash
+python scripts/extract_cookies.py exported_cookies.txt --label primary-account --out account.json
+curl -X POST http://127.0.0.1:18610/admin/accounts \
+  -H "Authorization: Bearer sk-museai-admin-key" \
+  -H "Content-Type: application/json" \
+  -d @account.json
+```
+
 ---
 
-## Connecting to 9Router
+## 9Router Multi-Model Gateway Hook
 
-Connect your `museai` instance to [9Router](https://github.com/9router/9router) with a single command:
+To register `museai` into a local [9Router](https://github.com/9router/9router) instance:
 
 ```bash
 python scripts/connect_9router.py --port 18610 --api-key sk-museai-local-key --prefix muse
 ```
 
-Test inference directly through 9Router:
+Call the model through 9Router immediately:
 
 ```bash
 curl -s -X POST http://127.0.0.1:20128/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "muse/muse-chat",
-    "messages": [{"role": "user", "content": "Hello via 9Router!"}]
+    "messages": [{"role": "user", "content": "ping"}]
   }'
 ```
 
+Available model IDs routed by 9Router:
+- `muse/muse-chat`: Primary personal agent conversational model
+- `muse/gpt-4o`: OpenAI tooling alias
+- `muse/gpt-5`: High-reasoning alias
+- `muse/claude-sonnet-4`: Sonnet alias
+- `muse/muse-video`: Text / first-frame image-to-video
+
 ---
 
-## API Examples
+## API Usage
 
-### Chat Completion (Streaming)
+### Streaming Chat Completion (`curl`)
 
 ```bash
-curl -N http://127.0.0.1:18610/v1/chat/completions \
+curl -N -X POST http://127.0.0.1:18610/v1/chat/completions \
   -H "Authorization: Bearer sk-museai-local-key" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "muse-chat",
-    "messages": [{"role": "user", "content": "Tell me a haiku about code"}],
+    "messages": [
+      {"role": "system", "content": "You are a concise engineering assistant."},
+      {"role": "user", "content": "Explain raft consensus in two sentences."}
+    ],
     "stream": true
   }'
 ```
 
-### Python OpenAI SDK
+### Python SDK (`openai`)
 
 ```python
 from openai import OpenAI
 
-client = OpenAI(base_url="http://127.0.0.1:18610/v1", api_key="sk-museai-local-key")
+client = OpenAI(
+    base_url="http://127.0.0.1:18610/v1",
+    api_key="sk-museai-local-key"
+)
 
 response = client.chat.completions.create(
     model="muse-chat",
-    messages=[{"role": "user", "content": "Write a Python one-liner"}],
+    messages=[{"role": "user", "content": "Write a thread-safe singleton in Python"}],
+    stream=False
 )
+
 print(response.choices[0].message.content)
 ```
 
 ---
 
-## Supported Endpoints
+## Endpoints
 
-| Method | Endpoint | Description |
+| Method | Route | Description |
 |---|---|---|
-| `GET` | `/healthz` · `/readyz` | Liveness & readiness probes |
-| `GET` | `/v1/models` | List of models and aliases (`gpt-4o`, `gpt-5`, etc.) |
-| `POST` | `/v1/chat/completions` | Chat completions (streaming SSE & non-streaming) |
-| `POST` | `/v1/images/generations` | Text-to-image generation |
-| `POST` | `/v1/videos` | Async video generation task creation |
-| `GET` | `/v1/videos/{id}` | Poll background video task progress |
-| `GET/POST` | `/admin/accounts` | Account management & cookie renewal |
-| `GET` | `/admin/status` | Account pool statistics & driver health |
+| `GET` | `/healthz` · `/readyz` | Service liveness and driver readiness checks |
+| `GET` | `/v1/models` | OpenAI-compliant model catalog and alias mapping |
+| `POST` | `/v1/chat/completions` | Multi-turn chat (streaming SSE & buffered JSON) |
+| `POST` | `/v1/images/generations` | Text-to-image synthesis |
+| `POST` | `/v1/videos` | Asynchronous video generation task dispatch |
+| `GET` | `/v1/videos/{id}` | Task status polling |
+| `GET/POST` | `/admin/accounts` | Account pool CRUD and session renewal |
+| `GET` | `/admin/status` | Real-time driver stats, tabs, and pool health |
 
 ---
 
-## Architecture & Contributions
+## Development & Testing
 
-See [AGENTS.md](AGENTS.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed technical specifications and code conventions.
+```bash
+# Run unit tests (MockDriver, zero external network calls)
+pytest
+
+# Code style & linting
+ruff check .
+ruff format .
+```
+
+See [AGENTS.md](AGENTS.md) for machine-readable architecture contracts, protocol framing, and contribution guidelines.
+
+---
 
 ## License
 
