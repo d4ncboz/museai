@@ -93,7 +93,14 @@ The server binds to `http://127.0.0.1:18610`.
 
 ---
 
-## Authentication & Account Import
+## Authentication & Account Setup
+
+### 1. Account Registration
+
+An active [muse.ai](https://muse.ai) account is required. If you do not have an account yet, follow the step-by-step registration guide here:
+- **Registration Guide**: [Telegram @bozdrop/8447](https://t.me/bozdrop/8447)
+
+### 2. Export Session Cookies
 
 Export your session cookies from an active [muse.ai](https://muse.ai) browser session (DevTools `F12` ──> `Application` ──> `Cookies` ──> `https://muse.ai`):
 
