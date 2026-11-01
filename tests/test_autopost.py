@@ -116,7 +116,8 @@ def test_all_platforms_posted_trashes_through_done_flow(client, admin, settings,
     drop(settings, CHINESE, {"tiktok": "a", "youtube": "a", "facebook": "a", "instagram": "a"})
     for p in ("x", "threads"):  # posted by hand
         client.post(f"/dashboard/posts/{CHINESE}", headers=admin, json={"platform": p})
-    run(svc, due(plan_of(client, admin, CHINESE)))
+    for at in sorted({datetime.fromisoformat(j["time"]) for j in plan_of(client, admin, CHINESE)["jobs"]}):
+        run(svc, at + timedelta(minutes=1))  # the publisher ticks all day: each platform at its own time
     assert not (settings.post_dir / CHINESE).exists()
     state = json.loads(settings.posts_file.read_text())
     assert state[CHINESE]["done"]  # the slot stays booked, like a manual post

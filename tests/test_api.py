@@ -355,12 +355,16 @@ def test_posting_slots(tmp_path):
 
     from museai.api.routes import posting
 
-    # Thursday 2026-10-29 12:00 GMT+7: today's midday slot (11:30) has passed.
+    # Thursday 2026-10-29 12:00 GMT+7: today's midday slot (12:00) has passed.
     now = datetime(2026, 10, 29, 12, 0, tzinfo=posting.TZ)
-    times = posting._slot_times("2026-10-31/2")  # Saturday evening
-    assert times["youtube"].isoformat() == "2026-10-31T17:30:00+07:00"
-    assert times["x"].isoformat() == "2026-10-31T19:30:00+07:00"
-    assert posting._slot_times("2026-11-01/1")["tiktok"].isoformat() == "2026-11-01T11:00:00+07:00"
+    times = posting._slot_times("2026-10-31/2")  # Saturday evening, each platform at its own peak
+    assert times["youtube"].isoformat() == "2026-10-31T19:00:00+07:00"
+    assert times["x"].isoformat() == "2026-10-31T13:00:00+07:00"
+    assert posting._slot_times("2026-11-01/1")["tiktok"].isoformat() == "2026-11-01T09:00:00+07:00"
+    # Travel speaks to English viewers: Monday's London evening, then Monday's New York evening,
+    # both on Tuesday in GMT+7.
+    assert posting._slot_times("2026-11-03/1", "travel")["youtube"].isoformat() == "2026-11-03T03:00:00+07:00"
+    assert posting._slot_times("2026-11-03/2", "travel")["tiktok"].isoformat() == "2026-11-03T08:00:00+07:00"
 
     videos = []
     for i, name in enumerate(("a.mp4", "b.mp4", "c.mp4")):
@@ -375,13 +379,14 @@ def test_posting_slots(tmp_path):
     cal = posting._calendar(state, {n: n for n in ("a.mp4", "b.mp4", "c.mp4")}, now)["chinese"]
     assert len(cal) == 7 and cal[0]["slots"][1]["video"] == "a.mp4" and cal[0]["slots"][0]["video"] is None
 
-    # Travel posts from other accounts: its videos book their own slots, the same ones Chinese uses.
+    # Travel posts from other accounts on its own clock: today's 03:00 and 08:00 slots have passed, so
+    # it books tomorrow's first one, even though Chinese has that slot taken.
     (p := tmp_path / "zoom-madeira.mp4").write_bytes(b"v")
     os.utime(p, (2000, 2000))
     assert posting._assign_slots(state, [*videos, p], now)
-    assert state["zoom-madeira.mp4"]["slot"] == "2026-10-29/2"
+    assert state["zoom-madeira.mp4"]["slot"] == "2026-10-30/1"
     cal = posting._calendar(state, {n: n for n in state}, now)
-    assert cal["travel"][0]["slots"][1]["video"] == "zoom-madeira.mp4"
+    assert cal["travel"][1]["slots"][0]["video"] == "zoom-madeira.mp4"
     assert cal["chinese"][0]["slots"][1]["video"] == "a.mp4"
 
     # A new Chinese video takes the next free Chinese slot, not one only Travel has free.
@@ -416,7 +421,7 @@ def test_episodes_post_in_number_order(tmp_path):
 
     now = datetime(2026, 10, 29, 12, 0, tzinfo=posting.TZ)
     videos = []
-    names = ("Tiếng Trung mỗi ngày 47 - B.mp4", "nostalgia-1985.mp4", "Tiếng Trung mỗi ngày 46 - A.mp4")
+    names = ("Tiếng Trung mỗi ngày 47 - B.mp4", "lesson-bi-so-sanh.mp4", "Tiếng Trung mỗi ngày 46 - A.mp4")
     for i, name in enumerate(names):
         (p := tmp_path / name).write_bytes(b"v")
         os.utime(p, (1000 + i, 1000 + i))
@@ -425,7 +430,7 @@ def test_episodes_post_in_number_order(tmp_path):
     assert posting._assign_slots(state, videos[:2], now)  # EP47 arrives first and books the first slot
     assert posting._assign_slots(state, videos, now)  # then EP46: it takes EP47's slot, EP47 its
     assert state["Tiếng Trung mỗi ngày 46 - A.mp4"]["slot"] == "2026-10-29/2"
-    assert state["nostalgia-1985.mp4"]["slot"] == "2026-10-30/1"  # another series keeps its slot
+    assert state["lesson-bi-so-sanh.mp4"]["slot"] == "2026-10-30/1"  # another series keeps its slot
     assert state["Tiếng Trung mỗi ngày 47 - B.mp4"]["slot"] == "2026-10-30/2"
     assert not posting._assign_slots(state, videos, now)
 
@@ -439,7 +444,8 @@ def test_episodes_post_in_number_order(tmp_path):
 def test_posting_channel_from_file_name():
     from museai.api.routes import posting
 
-    for name in ("zoom-madeira.mp4", "reel-ilulissat.mp4", "travel-bled.mp4", "Kelingking Beach - zoominview.mp4"):
+    for name in ("zoom-madeira.mp4", "reel-ilulissat.mp4", "travel-bled.mp4", "Kelingking Beach - zoominview.mp4",
+                 "dream-star-fisher.mp4", "healing-highland-pear-compote.mp4", "nostalgia-1985.mp4"):
         assert posting._channel(name, {}) == "travel", name
     for name in ("EVERYDAY CHINESE 13 - Finding the subway.mp4", "Tiếng Trung mỗi ngày 16 - Đi cắt tóc.mp4",
                  "lesson-bi-so-sanh_vertical_9x16.mp4", "Zoomed lesson.mp4"):

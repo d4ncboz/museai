@@ -11,8 +11,9 @@ deliver.sh puts the thumbnails (thumbnail skill) next to the video as ``<stem> -
 ``16x9``; the dashboard shows them to drag into the upload pages, and they go to the Trash with the video.
 
 Each video belongs to a channel (``CHANNELS``: separate accounts, guessed from the file name, changeable
-on the card) and gets a posting slot in that channel: two a day at the audience's peak hours (``SLOTS``),
-handed out in delivery order, with a time per platform (``OFFSETS``) to set in each platform's scheduler.
+on the card) and gets a posting slot in that channel: two a day, handed out in delivery order, with a
+time per platform (``TIMES``, in the channel's audience clock ``AUDIENCE``) to set in each platform's
+scheduler. Times are returned in GMT+7, the user's clock.
 
 With ``post_folders`` on, each delivered video (one with its 9x16 thumbnail, settled for ``SETTLE`` s)
 moves into a folder of its own, ``"Travel 01 · Fri 30-10 11h30 · <stem>"``: the video, its thumbnails
@@ -66,26 +67,38 @@ VIDEO_EXT = {".mp4", ".mov", ".m4v"}
 THUMBS = {"9x16": "YouTube Shorts, TikTok, Facebook / Instagram Reels cover",
           "16x9": "YouTube video, Facebook feed"}
 
-TZ = ZoneInfo("Asia/Ho_Chi_Minh")  # GMT+7: the viewers are in Vietnam
-# Two Shorts a day (user rule 2026-10-29), Monday first: (slot 1 midday, slot 2 evening) YouTube times.
-# 5-6 h apart so the two don't compete in subscribers' feeds; evening posts go up ~2 h before the
-# 20-22 h peak, weekends start earlier.
-SLOTS = [("11:30", "18:00"), ("11:30", "18:00"), ("11:30", "17:30"), ("11:30", "18:00"),
-         ("11:30", "18:00"), ("10:30", "17:30"), ("10:30", "17:00")]
+TZ = ZoneInfo("Asia/Ho_Chi_Minh")  # GMT+7: the user's clock; calendar days and shown times use it
 # Channels post from separate accounts, so each has its own two slots a day: (name, focus per slot).
 CHANNELS = {
     "chinese": ("Chinese", {1: "Midday: bite-sized (stroke order, word of the day)",
                             2: "Evening: conversations, common mistakes, quizzes that invite comments"}),
-    "travel": ("Travel", {1: "Midday: a quick view",
-                          2: "Evening: full reels and zoom-ins"}),
+    "travel": ("Travel", {1: "Europe's evening (US lunch): a quick view",
+                          2: "US East evening: full reels and zoom-ins"}),
 }
+# Whose clock each channel's times follow. Chinese lessons have Vietnamese captions for Vietnamese
+# learners. Travel (and the other English formats) speak to English viewers, who are asleep at Vietnam's
+# peaks: slot 1 goes out at Europe's evening peak, slot 2 at the US East evening peak, both from the
+# evening column of TIMES. Their audience day is the day before the calendar day, so both land on the
+# calendar day in GMT+7 (about 02-05 h and 06-10 h); schedule them in each platform's scheduler.
+AUDIENCE = {"chinese": (ZoneInfo("Asia/Ho_Chi_Minh"), ZoneInfo("Asia/Ho_Chi_Minh")),
+            "travel": (ZoneInfo("Europe/London"), ZoneInfo("America/New_York"))}
 # The format skills name their files <prefix>-<slug> (muse-video SKILL.md "Format skills"); a renamed file
-# that still names its format ("Kelingking Beach - zoominview.mp4") is travel too.
-TRAVEL_NAME = re.compile(r"^(zoom|reel|scenic|drop|travel)[-_ ]|\b(zoominview|scenic-drop-reel)\b", re.IGNORECASE)
-# Minutes after the YouTube time per platform (midday, evening). TikTok, Reels, X and Threads hand a
-# post out within the hour, so they go closer to the peak than Shorts, which needs a head start.
-OFFSETS = {"youtube": (0, 0), "tiktok": (30, 60), "facebook": (30, 90), "instagram": (0, 60),
-           "x": (30, 120), "threads": (0, 90)}
+# that still names its format ("Kelingking Beach - zoominview.mp4") is travel too. The English formats
+# (dream, healing, nostalgia, ...) post on the Travel accounts: their viewers share its clock.
+TRAVEL_NAME = re.compile(r"^(zoom|reel|scenic|scenery|drop|travel|dream|healing|nostalgia|gown|product)[-_ ]"
+                         r"|\b(zoominview|scenic-drop-reel)\b", re.IGNORECASE)
+# Two videos a day (user rule 2026-10-29). Each platform peaks at its own hours, so each gets its own
+# time per slot, Monday first, "slot 1 slot 2" in the audience's local time. Sources and reasoning:
+# .claude/skills/social-captions/references/posting-times.md (Buffer 2026 studies of 1.8-14M posts,
+# in the audience's local time; Vietnamese guides agree on the 11-13 h and 19-22 h peaks).
+TIMES = {
+    "youtube":   ["12:00 20:00", "12:00 20:00", "12:00 19:00", "12:00 19:00", "12:00 17:00", "11:00 19:00", "11:00 19:00"],
+    "tiktok":    ["11:00 20:00", "12:00 21:30", "12:00 21:30", "13:00 21:30", "12:00 19:00", "11:30 17:00", "09:00 19:00"],
+    "facebook":  ["12:00 21:00", "08:00 20:00", "08:00 20:30", "09:00 20:30", "08:00 20:30", "11:30 22:00", "10:00 20:30"],
+    "instagram": ["12:00 19:00", "15:00 19:00", "12:00 18:00", "09:00 20:00", "12:00 21:00", "12:00 21:00", "12:00 21:00"],
+    "x":         ["09:00 14:00", "09:00 13:00", "10:00 14:00", "09:00 13:00", "09:00 13:00", "10:00 13:00", "10:00 13:00"],
+    "threads":   ["09:00 12:00", "09:00 12:00", "09:00 12:00", "09:00 12:00", "09:00 12:00", "10:00 13:00", "11:00 14:00"],
+}  # fmt: skip
 SLOT_KEY = re.compile(r"^(\d{4}-\d{2}-\d{2})/([12])$")
 FOLDER_MARK = ".museai-post"  # marks a folder this module made for one video
 SETTLE = 30  # seconds a video must sit unchanged before it moves (deliver.sh may still be copying it)
@@ -143,22 +156,29 @@ def _thumbs(path: Path) -> dict[str, Path]:
     return {k: p for k, p in found.items() if p.is_file()}
 
 
-def _slot_times(key: str) -> dict[str, datetime]:
-    """Posting time per platform for a slot key "YYYY-MM-DD/1|2"."""
+def _slot_times(key: str, channel: str = "chinese") -> dict[str, datetime]:
+    """Posting time per platform (in GMT+7) for a slot key "YYYY-MM-DD/1|2" of ``channel``."""
     day, n = SLOT_KEY.match(key).groups()
     d, n = date.fromisoformat(day), int(n)
-    hh, mm = map(int, SLOTS[d.weekday()][n - 1].split(":"))
-    base = datetime(d.year, d.month, d.day, hh, mm, tzinfo=TZ)
-    return {p: base + timedelta(minutes=off[n - 1]) for p, off in OFFSETS.items()}
+    tz = AUDIENCE[channel][n - 1]
+    if tz == TZ:
+        col = n - 1
+    else:  # an audience west of GMT+7: its evening of the day before lands on the calendar day
+        d, col = d - timedelta(days=1), 1
+    out = {}
+    for p, week in TIMES.items():
+        hh, mm = map(int, week[d.weekday()].split()[col].split(":"))
+        out[p] = datetime(d.year, d.month, d.day, hh, mm, tzinfo=tz).astimezone(TZ)
+    return out
 
 
-def _slots_from(now: datetime):
-    """Slot keys from today on whose YouTube time is still ahead of ``now``."""
+def _slots_from(now: datetime, channel: str):
+    """Slot keys of ``channel`` from today on whose YouTube time is still ahead of ``now``."""
     d = now.astimezone(TZ).date()
     while True:
         for n in (1, 2):
             key = f"{d.isoformat()}/{n}"
-            if _slot_times(key)["youtube"] > now:
+            if _slot_times(key, channel)["youtube"] > now:
                 yield key
         d += timedelta(days=1)
 
@@ -180,12 +200,12 @@ def _assign_slots(state: dict, videos: list[Path], now: datetime) -> bool:
         auto = e.get("auto") if isinstance(e.get("auto"), dict) else {}
         planned = bool(auto) and not auto.get("off") and not auto.get("paused")  # auto-post keeps its slot
         if (key := e.get("slot")) and not e.get("posted") and not e.get("slot_pinned") and not planned \
-                and _slot_times(key)["youtube"] <= now:
+                and _slot_times(key, _channel(n, e))["youtube"] <= now:
             del e["slot"]
     # Slots of videos already posted or deleted stay booked, so a new video never refills them.
     taken = {(_channel(n, e), e["slot"]) for n, e in state.items() if e.get("slot")}
     def free_slots(ch: str) -> Iterator[str]:  # a function, so each generator keeps its own ``ch``
-        return (k for k in _slots_from(now) if (ch, k) not in taken)
+        return (k for k in _slots_from(now, ch) if (ch, k) not in taken)
 
     free = {ch: free_slots(ch) for ch in CHANNELS}
     for n, e in entries:
@@ -251,7 +271,7 @@ def _view(path: Path, entry: dict, svc: Services) -> dict:
             "posted": entry.get("posted", {}), "slot": key, "channel": _channel(path.name, entry),
             "thumbnails": [{"kind": k, "use": THUMBS[k]} for k in _thumbs(path)],
             "auto": {p: j.get("state", "") for p, j in (entry.get("auto") or {}).get("jobs", {}).items()},
-            "schedule": {p: t.isoformat() for p, t in _slot_times(key).items()} if key else {}}
+            "schedule": {p: t.isoformat() for p, t in _slot_times(key, _channel(path.name, entry)).items()} if key else {}}
 
 
 def _calendar(state: dict, names: dict[str, str], now: datetime, days: int = 7) -> dict[str, list[dict]]:
@@ -270,7 +290,7 @@ def _calendar(state: dict, names: dict[str, str], now: datetime, days: int = 7) 
             slots = []
             for n in (1, 2):
                 key = f"{d.isoformat()}/{n}"
-                slots.append({"key": key, "n": n, "time": _slot_times(key)["youtube"].isoformat(),
+                slots.append({"key": key, "n": n, "time": _slot_times(key, ch)["youtube"].isoformat(),
                               "focus": focus[n], "video": booked.get((ch, key)),
                               "gone": None if (ch, key) in booked else gone.get((ch, key))})
             out[ch].append({"date": d.isoformat(), "slots": slots})
@@ -324,14 +344,14 @@ def _folder_name(n: int, name: str, entry: dict) -> str:
     extension)."""
     parts = [f"{CHANNELS[_channel(name, entry)][0]} {n:02d}"]
     if key := entry.get("slot"):
-        parts.append(_slot_times(key)["youtube"].strftime("%a %d-%m %Hh%M"))
+        parts.append(_slot_times(key, _channel(name, entry))["youtube"].strftime("%a %d-%m %Hh%M"))
     return " · ".join(parts + [Path(name).stem[:100]])
 
 
 def _captions_text(name: str, entry: dict) -> str:
     """captions.txt: per platform its posting time and caption, ready to paste."""
     shared = entry.get("caption", "")
-    times = _slot_times(entry["slot"]) if entry.get("slot") else {}
+    times = _slot_times(entry["slot"], _channel(name, entry)) if entry.get("slot") else {}
     blocks = []
     for p, (label, _, _) in PLATFORMS.items():
         text = entry.get("captions", {}).get(p) or shared

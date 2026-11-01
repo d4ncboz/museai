@@ -210,13 +210,13 @@ def _at(d: date, hhmm: str) -> datetime:
     return datetime(d.year, d.month, d.day, hh, mm, tzinfo=posting.TZ)
 
 
-def time_for(entry: dict, platform: str) -> datetime | None:
+def time_for(name: str, entry: dict, platform: str) -> datetime | None:
     """When ``platform`` posts: the dashboard override, else the rule's fixed time, else the slot's."""
     auto = entry.get("auto") or {}
     if at := (auto.get("times") or {}).get(platform) or auto.get("at"):
         return datetime.fromisoformat(at)
     if entry.get("slot"):
-        return posting._slot_times(entry["slot"]).get(platform)
+        return posting._slot_times(entry["slot"], posting._channel(name, entry)).get(platform)
     return None
 
 
@@ -278,7 +278,7 @@ async def tick(svc: Services, now: datetime | None = None) -> list[tuple[str, st
                 continue
             if platform in entry.get("posted", {}) or job.get("state") == "error":
                 continue
-            at = time_for(entry, platform)
+            at = time_for(path.name, entry, platform)
             if at is None or at > now or job.get("next_try", 0) > now.timestamp() or job.get("state") == "missed":
                 continue
             if at < now - MISSED and job.get("state") in (None, "waiting", "needs_account"):
@@ -359,7 +359,7 @@ def _plan_view(name: str, entry: dict, rules: dict[str, Rule]) -> dict:
     jobs = []
     for p in auto.get("platforms", []):
         job = (auto.get("jobs") or {}).get(p, {})
-        at = time_for(entry, p)
+        at = time_for(name, entry, p)
         state = job.get("state") or ("posted" if p in entry.get("posted", {}) else "scheduled")
         jobs.append({"platform": p, "time": at.isoformat() if at else None, "state": state,
                      "url": job.get("url", ""), "error": job.get("error", ""), "attempts": job.get("attempts", 0),
