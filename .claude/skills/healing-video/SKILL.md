@@ -40,10 +40,10 @@ python3 scripts/ideas.py list ; python3 scripts/ideas.py stats
    6 s per shot (`DURATION=`), 9:16. `prompt/healing.txt` asks for ambience only (no music), the girl's fixed look (long chestnut hair, cream knit cardigan, linen apron, never facing the camera) and real gentle motion.
 4. **Music**: soft solo piano from ACE-Step, like reference 3 (broken-chord arpeggios with a simple melody on top, notes moving every 0.3-0.8 s, nothing above ~4 kHz): render 2-3 seeds and keep the one whose spectrogram shows separate note onsets, not a smear.
    ```bash
-   for s in 11 37 53; do scripts/music "gentle healing piano" ~/Movies/museai/healing-<slug>/p$s.m4a 24 $s; done   # ~5 min each, one at a time
+   n=<idea number>; for k in 1 2 3; do scripts/music "<season> piano lullaby, tender" ~/Movies/museai/healing-<slug>/p$k.m4a 24 $((n * 10 + k)); done   # ~5 min each, one at a time
    ffmpeg -i p37.m4a -lavfi "showspectrumpic=s=600x150:legend=0:fscale=log:stop=8000" p37.png
    ```
-   `scripts/music` names the moving line in its tags ("solo piano" alone gave a melody-less drone), starts at the body, cuts above 4.5 kHz (warm, like the references; qa `noise` then passes) and sets -18 LUFS. Reject seeds that smear into a drone (hv-0001: seed 23) or go silent before the end. `REF=ref.wav REF_STRENGTH=0.3` (audio2audio guided by a reference) is there but gave a smeared wash with no notes at 0.3; don't use it for delivery. `loops.py make` (Apple Loops) is the fallback; the user found those loops not soft enough. Never take the music from a reference reel: it is someone else's track (a claim or mute on upload); to use it, post with the platform's "use audio" instead.
+   `scripts/music` names the moving line in its tags ("solo piano" alone gave a melody-less drone) and asks for felt piano, low and middle register, sparse, pianissimo, no high notes. It starts at the body, then softens: pitch down 16 % (`asetrate=44100*0.84`), two 2.2 kHz low-passes, -20 LUFS. That brings ACE's spectral centroid from ~870 Hz to ~560 Hz (reference 3: 530 Hz). Check a take with `ffmpeg -i p.m4a -af aspectralstats=measure=centroid,ametadata=print:key=lavfi.aspectralstats.1.centroid -f null -` (median 500-600 Hz). Seeds come from the idea number: the same tags and seed give the SAME track (hv-0005's seed 37 was hv-0001's music again), so never reuse a seed list. Reject seeds that smear into a drone (hv-0001: seed 23) or go silent before the end. `REF=ref.wav REF_STRENGTH=0.3` (audio2audio guided by a reference) is there but gave a smeared wash with no notes at 0.3; don't use it for delivery. `loops.py make` (Apple Loops) is the fallback; the user found those loops not soft enough. Never take the music from a reference reel: it is someone else's track (a claim or mute on upload); to use it, post with the platform's "use audio" instead.
 5. **Check each clip**: contact sheet (`ffmpeg -i s1.mp4 -vf "fps=2,scale=180:-1,tile=6x2" -frames:v 1 s1.jpg`) and `python3 ../muse-video/scripts/qa.py s1.mp4 --travel 0 s1sheet.jpg`. Reject: text in frame, a face looking into the lens, warped hands or tableware, doubled or deformed animals, time-lapse sky, frozen-photo look. Pick the calmest 1.2-1.6 s of each clip (`clip@start`).
 6. **Compose**:
    ```bash
@@ -62,6 +62,7 @@ The user wants views "more beautiful and healing". Reference 3 is one handheld p
 - Name the light in every brief ("late summer evening, golden hour", "warm beam of low sunlight across the worktop, dust motes").
 - Never write a camera move into a landscape or animal brief ("slow drift", "push forward"): muse overdoes it (20-30 % of the frame width per second). Write "The camera is held perfectly still, only the X moves." muse still drifts 5-10 %/s, which matches reference 3 (up to 12 %/s), so qa `motion` FAIL at that level is fine here.
 - 2 s per shot (`--shot 2.0`) for this calmer look.
+- Name only things that really move by themselves as the motion: steam, a flame, dust in a sunbeam, a curtain, leaves outside, water, an animal. Never ask flowers in a vase, tableware or furniture to move: muse animates them anyway (hv-0005: the bouquet flew into the vase). Write "the flowers and the furniture stay exactly where they are; only the dust motes and the curtain move" and "camera on a tripod".
 
 ## Lessons
 - hv-0001 (2026-10-31): the user heard the sound as "laggy". There were three causes. First, the music opened on ACE's quiet intro, so it got 11 dB louder 0.9 s into the video. Second, each shot's ambience was hard-cut, so the rain level jumped up to 10 dB every 1.2 s. Third, single-pass loudnorm pumped the level. The fixes:
@@ -78,3 +79,6 @@ The user wants views "more beautiful and healing". Reference 3 is one handheld p
   - ACE got tags that name the moving line; take the best of several seeds by spectrogram (see step 4).
   - audio2audio from the reference was tried and rejected.
   - Briefs moved to golden hour, with the window-reveal opener (see Looks).
+- hv-0005 (2026-11-01): the user said the piano was "too high, too strong, not healing" and the flower shot "not natural, the video should be real". The raw ACE piano measured ~870 Hz spectral centroid against reference 3's 530 Hz. The fixes:
+  - Softer tags plus the pitch-down and low-pass chain at -20 LUFS (step 4); measure the centroid before showing a mix.
+  - The flower brief had asked the bouquet to stir; the re-render named only dust motes and the curtain as motion (see Looks).

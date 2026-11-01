@@ -9,8 +9,9 @@ SKILL_DIR=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
 MV=${MUSE_VIDEO_SCRIPTS:-$SKILL_DIR/../muse-video/scripts}  # override when this checkout is behind main
 style=$1; out=$2; secs=${3:-24}; seed=${4:-7}
 ACE_PY=${ACE_STEP_HOME:-$HOME/.local/share/ace-step}/venv/bin/python
-# "solo piano" alone gave a melody-less drone (hv-0001); name the moving line and the soft felt sound
-tags="$style, soft gentle solo piano, felt piano, slow broken-chord arpeggios with a simple lullaby melody on top, sustain pedal, healing, peaceful, 70 bpm, soft dynamics, warm close-miked intimate room recording, instrumental, no drums, no vocals"
+# "solo piano" alone gave a melody-less drone (hv-0001); name the moving line and the soft felt sound.
+# hv-0005: "too high, too strong" -> ask for the low-middle register, sparse and pianissimo
+tags="$style, soft gentle solo felt piano with muted hammers, low and middle register, slow sparse broken-chord arpeggios with a simple lullaby melody, pianissimo, sustain pedal, healing, peaceful, 60 bpm, warm close-miked intimate room recording, instrumental, no drums, no high notes, no vocals"
 raw="${out%.*}.raw.wav"
 if [[ -x $ACE_PY ]]; then
   refargs=()
@@ -40,5 +41,7 @@ fi
 # jumps +11 dB a few seconds in: hv-0001's music "kicked in" 0.9 s after the video, which felt
 # laggy); short fade in so the music is there from the first frame, fade out, one fixed gain
 start=$(python3 "$SKILL_DIR/scripts/lnorm.py" --body-start "$raw")
-python3 "$SKILL_DIR/scripts/lnorm.py" "$raw" "$out" -18 "lowpass=f=4500,lowpass=f=4500,atrim=start=$start:duration=$secs,asetpts=PTS-STARTPTS,afade=in:d=0.3,afade=out:st=$((secs - 3)):d=3"
+# soft: ACE plays brighter than the references (spectral centroid ~870 Hz vs 530): drop it ~3 semitones,
+# which also slows it 16 %, cut above 2.2 kHz, -20 LUFS (hv-0005: "too high, too strong")
+python3 "$SKILL_DIR/scripts/lnorm.py" "$raw" "$out" -20 "asetrate=44100*0.84,aresample=44100,lowpass=f=2200,lowpass=f=2200,atrim=start=$start:duration=$secs,asetpts=PTS-STARTPTS,afade=in:d=0.5,afade=out:st=$((secs-4)):d=4"
 echo "$out"
