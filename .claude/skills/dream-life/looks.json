@@ -1,0 +1,148 @@
+{
+  "pastel": {
+    "name": "Pastel Americana",
+    "refs": "reference 289a (giant plush whale, swan, snail, cat, giraffe), db40 (moon giraffe, star seedlings, rainbow laundry), grid 1/3/5/7/9",
+    "style": "Shot on 35mm Kodachrome film in a 1950s American small town: candy-pastel clapboard houses (baby pink, powder blue, mint, butter yellow), white picket fences, trimmed emerald lawns, by day a clear cornflower-blue sky with a few soft cotton clouds. Symmetrical, centred, storybook-tidy framing like a Wes Anderson film. Soft even light (flat soft sunshine by day; at dusk or night a periwinkle-to-navy sky with warm glowing windows, the time of day the shot names always wins), gentle film grain, slight halation on highlights, creamy pastel colours with rich green grass. Everyone wears 1950s clothes. Every impossible thing is soft, real and tactile: fluffy fur, felt, cotton, glass, porcelain, never CGI-glossy.",
+    "palette": [
+      "#F4C2C9 baby pink",
+      "#A9C8E8 powder blue",
+      "#BFE3D0 mint",
+      "#F6E7B8 butter cream",
+      "#7FA35B lawn green",
+      "#8FB8E0 cornflower sky"
+    ],
+    "accent": "#FFB8D2",
+    "grade": "eq=saturation=1.08:gamma=1.03,colorbalance=rs=0.03:bs=0.02:rh=0.02",
+    "music": "dreamy 1950s doo-wop ballad, instrumental, soft vibraphone melody, warm upright bass, brushed snare, celesta sparkles, vintage vinyl warmth, slow 6/8 sway, 72 bpm",
+    "cast": [
+      "a young woman with glossy dark brown victory-roll curls and a pale blue hair bow, a powder-blue puff-sleeve 1950s tea dress, white ankle socks and Mary Jane shoes",
+      "a young woman with soft blonde waves, a pink gingham swing dress with a white Peter Pan collar and a cream cardigan",
+      "a young man with neatly side-parted brown hair, a mint short-sleeve shirt, cream high-waisted trousers and suspenders",
+      "a smiling middle-aged milkman in a crisp white uniform, white cap and bow tie"
+    ]
+  },
+  "lavender": {
+    "name": "Lavender Fairytale",
+    "refs": "reference 2008 (flower gowns grown on stems, dandelion trees, lily lake, painter, cloud on an oar)",
+    "style": "A romantic pastel fairytale filmed like a dreamy 1970s soft-focus film: lavender, lilac and blush tones, a pale periwinkle sky with big pink-tinted cumulus clouds, lakes full of giant water lilies, oversized dandelion puffs and alliums taller than houses, small mint and pink cottages with white fences far away. Soft diffused light, gentle bloom, light film grain, everything slightly hazy and luminous. Fabrics are real: layered tulle, lace, embroidered silk flowers, sheer veils that move in the breeze.",
+    "palette": [
+      "#C9B6E4 lavender",
+      "#B79FD6 lilac",
+      "#F2C6D0 blush",
+      "#F7EEDC cream",
+      "#A9C5A0 sage",
+      "#9DB8DC periwinkle sky"
+    ],
+    "accent": "#E2C6FF",
+    "grade": "eq=saturation=0.98:gamma=1.05:brightness=0.02,colorbalance=rs=0.02:bs=0.05:bm=0.02,gblur=sigma=0.4",
+    "music": "romantic dreamy waltz, instrumental, music box melody, harp arpeggios, soft legato strings, celesta, gentle 3/4 time, 84 bpm",
+    "cast": [
+      "a young woman with long platinum-blonde curls, a lavender Rococo ball gown covered in tiny embroidered violets and lace ruffles, a wide lilac hat with a sheer trailing veil",
+      "a gentle young painter with tousled honey-blond hair and round glasses, a cream beret, a cream jacket over a pale blue waistcoat and trousers",
+      "a young woman with strawberry-blonde braids crowned with tiny flowers, a cream lace tea dress with a lilac sash"
+    ]
+  },
+  "workshop": {
+    "name": "Dream Workshop",
+    "refs": "reference c54a (star shop, cloud candy floss, sunset bubble, moon pancake)",
+    "style": "A warm 1970s 35mm cinema film look: cream, honey amber and dusty rose interiors of an old-fashioned workshop, shop or bakery with carved cream cabinetry, glass jars, brass instruments and tall windows; outside, a deep navy starry night or a peach-and-rose sunset sea of clouds. Practical tungsten lamps, soft glow on faces, real film grain, shallow depth of field on hands at work. The magic is crafted by hand with real tools: tweezers, ladles, copper pans, bubble wands, wicker baskets.",
+    "palette": [
+      "#EFE6D2 cream",
+      "#E8B76A honey amber",
+      "#F2B8A0 peach",
+      "#E6A3AE dusty rose",
+      "#1F2E4D night navy",
+      "#F7E9A8 star gold"
+    ],
+    "accent": "#FFD36E",
+    "grade": "eq=saturation=1.02:gamma=1.0,colorbalance=rs=0.04:gs=0.01:bh=-0.03,noise=alls=6:allf=t",
+    "music": "whimsical vintage fairytale orchestra, instrumental, pizzicato strings, glockenspiel and celesta melody, warm clarinet, soft waltz, magical workshop, 96 bpm",
+    "cast": [
+      "a freckled teenage girl with a strawberry-blonde bob and a white cotton bonnet, a long cream cotton work coat",
+      "a curly-haired young man with dark curls, a cream buttoned work coat",
+      "a white-haired old man with round glasses and a white moustache, a cream double-breasted jacket and a small bow tie",
+      "a young woman with a neat honey-brown bun, a cream belted coverall"
+    ]
+  },
+  "ink": {
+    "name": "Storybook Ink",
+    "refs": "grid 2 (snowy hillside town in ink and colour), grid 11 (Westminster at dusk in watercolour)",
+    "style": "A hand-drawn European storybook illustration brought gently to life: clean ink outlines with warm watercolour and gouache washes, ligne-claire detail, steep streets of tall gabled houses in brick red, mustard, rust and cream, windows glowing amber, tiny people in coats and scarves. Paper texture visible. Animated softly and slowly like a living picture book: snow or petals drift, smoke curls from chimneys, tiny figures walk, lamps flicker. The camera barely moves.",
+    "palette": [
+      "#C8553D brick red",
+      "#E3A73B mustard",
+      "#F4E3C1 paper cream",
+      "#3E5C76 slate blue",
+      "#F7B267 window amber",
+      "#FFFFFF snow"
+    ],
+    "accent": "#FFC94D",
+    "grade": "eq=saturation=1.05:contrast=1.03",
+    "music": "cosy storybook winter tune, instrumental, music box and celesta melody, pizzicato strings, soft sleigh bells, warm bassoon, 80 bpm",
+    "cast": [
+      "a small girl in a red wool coat and a mustard knitted scarf",
+      "an old lamplighter in a long brown coat and a flat cap"
+    ]
+  },
+  "nocturne": {
+    "name": "Golden Nocturne",
+    "refs": "grid 6 (snowy Christmas market oil painting), grid 8 (aerial snowy village at night)",
+    "style": "A living classical oil painting: thick visible brushstrokes, deep umber and slate-blue night, warm golden lamplight spilling from shop windows, snow on steep roofs, half-timbered houses, gothic spires, people with black umbrellas walking slowly. Painterly but cinematic, rich chiaroscuro, the glow of candles and lanterns. Animated gently: snow falls, lights twinkle, figures stroll, the camera drifts very slowly.",
+    "palette": [
+      "#2B2A3A night slate",
+      "#5A4632 umber",
+      "#E9B44C lamplight gold",
+      "#F3E2B3 candle cream",
+      "#7E9AB2 snow blue",
+      "#9E2B25 berry red"
+    ],
+    "accent": "#FFCF5A",
+    "grade": "eq=saturation=1.04:contrast=1.04:gamma=0.98,colorbalance=rh=0.03:bs=0.03",
+    "music": "nostalgic winter nocturne, instrumental, gentle solo piano melody over soft warm strings, distant celesta, airy choir pad, 66 bpm",
+    "cast": [
+      "a woman in a long dark green wool coat with a red umbrella",
+      "a man in a long camel coat and a hat carrying a wrapped parcel"
+    ]
+  },
+  "anime": {
+    "name": "Cosy Anime",
+    "refs": "grid 10 (towering summer cumulus), grid 12 (girl with kettle by the night window)",
+    "style": "A hand-painted 1990s Japanese animated film: soft painted backgrounds, towering sunlit cumulus clouds in a deep summer blue, lush green hills, cosy wooden kitchens with hanging herbs and glass jars, warm lamp light at night. Clean gentle character drawing, delicate shading, everything calm and nostalgic. Small natural motions: wind in grass, steam, clouds sliding, curtains breathing.",
+    "palette": [
+      "#5FA8D3 summer blue",
+      "#FFFFFF cumulus white",
+      "#8CBF6E grass green",
+      "#B5683A rust",
+      "#F2D7A6 lamp cream",
+      "#2E3A59 night indigo"
+    ],
+    "accent": "#FFE066",
+    "grade": "eq=saturation=1.06",
+    "music": "nostalgic Japanese animated film score, instrumental, gentle solo piano melody, warm strings, soft wooden flute, summer breeze, 76 bpm",
+    "cast": [
+      "a girl with a messy brown bun, a rust-coloured dress and a cream apron",
+      "a boy with a straw hat, a white short-sleeve shirt and blue shorts",
+      "an old grandmother with silver hair in a bun, a grey cardigan and a floral apron"
+    ]
+  },
+  "porcelain": {
+    "name": "Porcelain Fantasy",
+    "refs": "grid 4 (giant dreamy girl playing with a miniature lit-up kingdom)",
+    "style": "A soft 3D animated fantasy film: a porcelain-doll-like character with luminous skin, freckles and big dreamy eyes, oversized against miniature worlds - glowing castles, carousels, ferris wheels, canals and lamp-lit bridges - at blue-hour night. Ivory, rose gold and midnight blue with warm fairy-light glints, gentle bokeh, velvety depth of field, tilt-shift miniature feel.",
+    "palette": [
+      "#F5EDE3 ivory",
+      "#E3B7A0 rose gold",
+      "#1E2A4A midnight blue",
+      "#F6D58E fairy-light gold",
+      "#C9A9C7 mauve",
+      "#8FA9C9 mist blue"
+    ],
+    "accent": "#FFD3A6",
+    "grade": "eq=saturation=1.03:gamma=1.02",
+    "music": "enchanted lullaby, instrumental, music box melody, harp, celesta, soft strings and airy choir, 70 bpm",
+    "cast": [
+      "a porcelain-skinned girl with long wavy honey-blonde hair, freckles and big dreamy brown eyes, a blush-pink lace dress with puff sleeves",
+      "a porcelain-skinned girl with dark wavy hair and a pearl hairband, a cream silk dress with tiny gold stars"
+    ]
+  }
+}

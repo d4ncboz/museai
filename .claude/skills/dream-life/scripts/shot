@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Usage: shot <look> "brief" out.mp4
+# Renders one dream-life shot through muse-video (9:16, 6 s, QUALITY=0) with the look's style block
+# from ../looks.json and ../prompt/dream.txt appended. One call per shot, each in the background:
+# shots are independent, so they render in parallel on all free accounts.
+# Env passed through to muse-video: IMAGE=first_frame.png SIZE= DURATION=
+set -euo pipefail
+SKILL_DIR=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
+MUSE_VIDEO=${MUSE_VIDEO:-$SKILL_DIR/../muse-video/scripts/muse-video}  # override when this checkout is behind main
+look=$1
+style=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))[sys.argv[2]]["style"])' "$SKILL_DIR/looks.json" "$look")
+out=$(cd "$(dirname "$3")" && pwd)/$(basename "$3")
+prompt="NO TEXT ON SCREEN. $2
+
+LOOK: $style
+
+$(cat "$SKILL_DIR/prompt/dream.txt")"
+QUALITY=0 SIZE=${SIZE:-9:16} DURATION=${DURATION:-6} OUT_NAME=$(basename "$out") NO_OPEN=1 \
+  "$MUSE_VIDEO" "$prompt" "$(dirname "$out")"
