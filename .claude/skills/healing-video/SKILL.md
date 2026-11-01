@@ -32,7 +32,7 @@ python3 scripts/ideas.py list ; python3 scripts/ideas.py stats
 
 ## Steps
 1. **Pick**: `python3 scripts/ideas.py next --season now > idea.json` (or the user's idea / filters). Show the user the title, the shot list in one line each and the caption/lines; render after a yes (renders cost muse time). Human away → `webex ask`.
-2. **Write the shots**: each `shots[k]` of the idea is the brief of one shot. Make it concrete for that home and moment (real objects, which way the light falls, the one thing that moves) but keep the subject. Ode: shot k must SHOW phrase k (the curtain lifts on "lifts the curtains"). Rewrite ode phrases in fresh words when the same subject was used before (`ideas.py list`), keeping one sentence that runs over the shots.
+2. **Write the shots**: each `shots[k]` of the idea is the brief of one shot. Make it concrete for that home and moment (real objects, which way the light falls, the one thing that moves) but keep the subject. Every postcard idea in the bank opens "Through an open old window ...": replace that first shot with an opener from the rotation (see Looks). Ode: shot k must SHOW phrase k (the curtain lifts on "lifts the curtains"). Rewrite ode phrases in fresh words when the same subject was used before (`ideas.py list`), keeping one sentence that runs over the shots.
 3. **Render** every shot at once, each in its own background call (independent shots render in parallel on all free accounts):
    ```bash
    scripts/shot "<brief of shot 1>" ~/Movies/museai/healing-<slug>/s1.mp4
@@ -49,7 +49,7 @@ python3 scripts/ideas.py list ; python3 scripts/ideas.py stats
    ```bash
    python3 scripts/compose.py --idea idea.json --music track.m4a --out healing-<slug>.mp4 s1.mp4 s2.mp4@2.0 ... [--shot 3]
    ```
-   Hard cuts like the references, soft grade, Georgia text slightly below centre with a soft shadow (postcard: one caption; ode: one phrase per shot), a REAL recorded ambience bed under the music, chosen from the idea's sound (`--bed rain|water|crickets|clips|<file>`, `--ambience 0.45`: under the music, like the references; muse's own rain is flat hiss, so it is only the fallback; drop better recordings in `~/.config/museai/ambience/<name>.wav`), fade in 0.3 s / out 0.5 s, -16 LUFS. `--shot 3` (or 4) makes a slower 20-30 s version: same shots, longer windows. Then qa + sheet on the result (shared step 6).
+   Hard cuts like the references, soft grade, Georgia text slightly below centre with a soft shadow (postcard: one caption; ode: one phrase per shot), a REAL recorded ambience bed under the music, chosen from the idea's sound (`--bed rain|water|crickets|clips|<file>`, `--ambience 0.45`: under the music, like the references; muse's own rain is flat hiss, so it is only the fallback; drop better recordings in `~/.config/museai/ambience/<name>.wav`), fade in 0.3 s / out 0.5 s, -16 LUFS. `--shot 3` (or 4) makes a slower 20-30 s version: same shots, longer windows. `--dissolve 0.5` joins the shots with soft cross-dissolves instead of hard cuts (reference 4). Then qa + sheet on the result (shared step 6).
 7. **Deliver**: cover with `python3 scripts/cover.py --at s7.mp4@2.0 --title "<caption>" --sub "<season day in place>" --out thumbs/healing-<slug>_9x16.jpg` (soft italic serif on the calmest, brightest frame; NOT the travel-thumbnail shock style). Captions: `../social-captions` (`captions.py check` must PASS; YouTube description ends with `#Shorts`), opening with the video's line and naming the idea's real animal. Then shared step 7 (`FINAL=1 THUMB_DIR=thumbs CAPTIONS_FILE=captions.json ../muse-video/scripts/deliver.sh healing-<slug>.mp4 <work dir> healing-<slug>`, preview first). **Record before `FINAL=1`** (it trashes the work folder):
    ```bash
    python3 scripts/ideas.py record hv-0042 --video ~/Desktop/healing-<slug>.mp4 [--shots shots.json]
@@ -58,11 +58,25 @@ python3 scripts/ideas.py list ; python3 scripts/ideas.py stats
 
 ## Looks (reference 3, 2026-10-31)
 The user wants views "more beautiful and healing". Reference 3 is one handheld phone shot: a hand in a knit sleeve opens a white casement window onto a golden-hour garden, then wide sunlit hills with grazing animals. `prompt/healing.txt` LIGHT AND BEAUTY asks every shot for golden-hour or soft morning light, backlight through leaves, steam and petals, a clear sky, tidy corners with flowers. In briefs:
-- Open on the **window reveal**: "One continuous handheld phone shot from the girl's point of view: her hand in a cream knit sleeve slowly pushes open the casement window, and the view opens onto ...".
+- **Vary the opener and the style.** The window reveal ("her hand in a cream knit sleeve slowly pushes open the casement window, and the view opens onto ...") opened hv-0001, hv-0005 and the first cut of hv-0014, and the user asked for different styles, "not this open window anymore". Pick an opener that none of the last 3 videos used (look at the first brief of each in `~/.config/museai/healing-history.json`):
+  - a still room in sunlight (reference 4: the kitchen, then her at the sink);
+  - hands at work in close-up (pouring, kneading, picking);
+  - the animal asleep in a patch of sun;
+  - an outdoor wide view with a living motion (sea, terraces, laundry on a line, a path through the garden);
+  - a top-down table (ingredients, a basket of eggs, tea being poured).
+  Also rotate the look between golden hour (reference 3) and bright midday sun (reference 4), and between hard cuts and `--dissolve 0.5`.
 - Name the light in every brief ("late summer evening, golden hour", "warm beam of low sunlight across the worktop, dust motes").
 - Never write a camera move into a landscape or animal brief ("slow drift", "push forward"): muse overdoes it (20-30 % of the frame width per second). Write "The camera is held perfectly still, only the X moves." muse still drifts 5-10 %/s, which matches reference 3 (up to 12 %/s), so qa `motion` FAIL at that level is fine here.
 - 2 s per shot (`--shot 2.0`) for this calmer look.
 - Name only things that really move by themselves as the motion: steam, a flame, dust in a sunbeam, a curtain, leaves outside, water, an animal. Never ask flowers in a vase, tableware or furniture to move: muse animates them anyway (hv-0005: the bouquet flew into the vase). Write "the flowers and the furniture stay exactly where they are; only the dust motes and the curtain move" and "camera on a tripod".
+
+## Sunny kitchen (reference 4, 2026-11-01)
+The user's fourth reference (21.6 s, 9:16) is a bright modern home on a sunny midday: a white kitchen with an arched window onto a garden, a young woman in pink washing vegetables at a sink under the window, water running over fruit, an overhead view of her sorting fruit next to baskets of eggs, then the dining room under amber pendant lamps. Measured:
+- 5 shots of 3.5-6 s, joined by ~0.5 s cross-dissolves, not hard cuts → `compose.py --shot 4 --dissolve 0.5`.
+- Real phone footage of an ordinary task, done all the way through (open the window, wash, sort). The camera is steady; she is seen from the side or above, never facing the lens. No text on the video.
+- Light: clear midday sun, white and pale-wood surfaces, green plants on every sill. Bright, not golden.
+- Music: one clear piano melody in the middle register (melody notes ~600-750 Hz, chords 150-500 Hz), a note every 0.35-0.5 s, F/C major, ~72 bpm, birdsong under it, -16 LUFS overall. Spectral centroid ~1100 Hz: brighter than the hv-0005 soft chain (560 Hz). Render it with `MOOD=sunny scripts/music ...` (no pitch drop, 4.5 kHz cut, -16 LUFS). Take 3 seeds and keep the calmest: the reference holds each note (1.9 onsets/s). Of the first three takes (seeds 401-403), 402 came closest (2.4/s, held notes); 401 (3.4/s) and 403 (4.9/s, centroid 1640 Hz) were too busy. Reject anything above ~3 onsets/s (`librosa.onset.onset_detect` in the ACE venv).
+- Its own track is saved at `~/.config/museai/music/ref4-sunny-kitchen-piano.m4a` (`compose.py --music` takes it as is). It is someone else's recording: a video posted with it can be muted or claimed. For a post, prefer an ACE `MOOD=sunny` take, or post without music and add this track in the app with "use audio".
 
 ## Lessons
 - hv-0001 (2026-10-31): the user heard the sound as "laggy". There were three causes. First, the music opened on ACE's quiet intro, so it got 11 dB louder 0.9 s into the video. Second, each shot's ambience was hard-cut, so the rain level jumped up to 10 dB every 1.2 s. Third, single-pass loudnorm pumped the level. The fixes:
@@ -82,3 +96,4 @@ The user wants views "more beautiful and healing". Reference 3 is one handheld p
 - hv-0005 (2026-11-01): the user said the piano was "too high, too strong, not healing" and the flower shot "not natural, the video should be real". The raw ACE piano measured ~870 Hz spectral centroid against reference 3's 530 Hz. The fixes:
   - Softer tags plus the pitch-down and low-pass chain at -20 LUFS (step 4); measure the centroid before showing a mix.
   - The flower brief had asked the bouquet to stir; the re-render named only dust motes and the curtain as motion (see Looks).
+- hv-0014 (2026-11-01): the user asked for different healing styles and "not this open window anymore". The window-reveal shot was dropped from the cut, which now opens on the sunlit kitchen. Openers now rotate (see Looks).

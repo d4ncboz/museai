@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: [REF=ref.wav REF_STRENGTH=0.3] music "<style from the idea's music field>" out.m4a [seconds=24] [seed=7]
+# Usage: [MOOD=soft|sunny] [REF=ref.wav REF_STRENGTH=0.3] music "<style from the idea's music field>" out.m4a [seconds=24] [seed=7]
 # REF: a recording whose feel (instrument, register, pace) to borrow; looped to the length here.
 # Instrumental healing track with ACE-Step (muse-video "Music"): no singer, soft dynamics, -18 LUFS.
 # Calls ace_song.py directly: music.py adds lead-singer tags and a phone-loud drive, wrong for this calm format.
@@ -11,7 +11,15 @@ style=$1; out=$2; secs=${3:-24}; seed=${4:-7}
 ACE_PY=${ACE_STEP_HOME:-$HOME/.local/share/ace-step}/venv/bin/python
 # "solo piano" alone gave a melody-less drone (hv-0001); name the moving line and the soft felt sound.
 # hv-0005: "too high, too strong" -> ask for the low-middle register, sparse and pianissimo
-tags="$style, soft gentle solo felt piano with muted hammers, low and middle register, slow sparse broken-chord arpeggios with a simple lullaby melody, pianissimo, sustain pedal, healing, peaceful, 60 bpm, warm close-miked intimate room recording, instrumental, no drums, no high notes, no vocals"
+if [[ ${MOOD:-soft} == sunny ]]; then
+  # reference 4 (sunny kitchen): a clear singing piano melody in the middle register (~600-750 Hz) over
+  # light broken chords, F/C major, ~72 bpm, a note every ~0.35-0.5 s, bright but warm, -16 LUFS
+  tags="$style, gentle warm solo acoustic piano, clear simple singing melody in the middle register, light flowing broken-chord accompaniment, major key, 72 bpm, sunny peaceful morning, tender, healing, natural room recording, instrumental, no drums, no vocals"
+  lufs=-16; tone="lowpass=f=4500"
+else
+  tags="$style, soft gentle solo felt piano with muted hammers, low and middle register, slow sparse broken-chord arpeggios with a simple lullaby melody, pianissimo, sustain pedal, healing, peaceful, 60 bpm, warm close-miked intimate room recording, instrumental, no drums, no high notes, no vocals"
+  lufs=-20; tone="asetrate=44100*0.84,aresample=44100,lowpass=f=2200,lowpass=f=2200"
+fi
 raw="${out%.*}.raw.wav"
 if [[ -x $ACE_PY ]]; then
   refargs=()
@@ -42,6 +50,6 @@ fi
 # laggy); short fade in so the music is there from the first frame, fade out, one fixed gain
 start=$(python3 "$SKILL_DIR/scripts/lnorm.py" --body-start "$raw")
 # soft: ACE plays brighter than the references (spectral centroid ~870 Hz vs 530): drop it ~3 semitones,
-# which also slows it 16 %, cut above 2.2 kHz, -20 LUFS (hv-0005: "too high, too strong")
-python3 "$SKILL_DIR/scripts/lnorm.py" "$raw" "$out" -20 "asetrate=44100*0.84,aresample=44100,lowpass=f=2200,lowpass=f=2200,atrim=start=$start:duration=$secs,asetpts=PTS-STARTPTS,afade=in:d=0.5,afade=out:st=$((secs-4)):d=4"
+# which also slows it 16 %, cut above 2.2 kHz, -20 LUFS (hv-0005: "too high, too strong"); sunny: no pitch drop
+python3 "$SKILL_DIR/scripts/lnorm.py" "$raw" "$out" "$lufs" "$tone,atrim=start=$start:duration=$secs,asetpts=PTS-STARTPTS,afade=in:d=0.5,afade=out:st=$((secs-4)):d=4"
 echo "$out"

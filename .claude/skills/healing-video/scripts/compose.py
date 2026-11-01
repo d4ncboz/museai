@@ -83,6 +83,7 @@ def main():
     ap.add_argument("--bed", help=f"ambience recording: {', '.join(BEDS)} or a file; 'clips' = the clips' own "
                     "sound (default: picked from the idea's sound)")
     ap.add_argument("--size", default="1080x1920")
+    ap.add_argument("--dissolve", type=float, default=0, help="cross-dissolve seconds between shots (reference 4: 0.5); 0 = hard cuts")
     a = ap.parse_args()
 
     idea = json.loads(Path(a.idea).read_text())
@@ -107,7 +108,7 @@ def main():
     args, vf, af = ["ffmpeg", "-v", "error", "-y"], [], []
     for c in a.clips:
         path, _, start = c.partition("@")
-        args += ["-ss", start or "1.0", "-t", f"{shot:.3f}", "-i", path]
+        args += ["-ss", start or "1.0", "-t", f"{shot + a.dissolve:.3f}", "-i", path]
     bed = make_bed(a.bed, idea, total, tmp)
     if bed:
         args += ["-i", str(bed)]
@@ -132,7 +133,7 @@ def main():
         # soft, muted grade: a little less contrast and saturation, faint warmth (both references)
         v = (f"[{i}:v]scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},fps={fps},setsar=1,"
              f"eq=contrast=0.96:saturation=0.92:brightness=0.01,colorbalance=rm=0.02:bm=-0.02,"
-             f"trim=duration={shot:.3f},setpts=PTS-STARTPTS[v{i}]")
+             f"trim=duration={shot + a.dissolve:.3f},setpts=PTS-STARTPTS[v{i}]")
         vf.append(v)
         if pngs[i] is not None:
             vf.append(f"[v{i}][{pngs[i]}:v]overlay=0:0[w{i}]")
@@ -154,9 +155,17 @@ def main():
             af.append(f"[{prev}][a{i}]acrossfade=d={XF}:c1=qsin:c2=qsin[x{i}]")
             prev = f"x{i}"
         denoise = "afftdn=nf=-30,"  # only muse's sound: a real recording's rain IS the noise
-    chain = "".join(f"[w{i}]" for i in range(n))
+    if a.dissolve:
+        # each shot runs `dissolve` longer and the next one fades in over that tail: shot k starts at k*shot
+        vp = "w0"
+        for i in range(1, n):
+            vf.append(f"[{vp}][w{i}]xfade=transition=fade:duration={a.dissolve}:offset={i * shot:.3f}[d{i}]")
+            vp = f"d{i}"
+        chain = f"[{vp}]trim=duration={total:.3f},"
+    else:
+        chain = "".join(f"[w{i}]" for i in range(n)) + f"concat=n={n}:v=1:a=0,"
     graph = vf + af + [
-        f"{chain}concat=n={n}:v=1:a=0,fade=t=in:d=0.3,fade=t=out:st={total - 0.5:.3f}:d=0.5,format=yuv420p[vout]",
+        f"{chain}fade=t=in:d=0.3,fade=t=out:st={total - 0.5:.3f}:d=0.5,format=yuv420p[vout]",
         f"[{prev}]atrim=duration={total:.3f},{denoise}volume={a.ambience},"
         f"afade=in:d=0.3,afade=out:st={total - 1.2:.3f}:d=1.2[amb]",
         f"[{mi}:a]atrim=duration={total:.3f},afade=in:d=0.2,afade=out:st={total - 1.2:.3f}:d=1.2[mus]",
