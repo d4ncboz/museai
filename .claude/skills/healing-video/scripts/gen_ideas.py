@@ -312,7 +312,7 @@ CORNERS = [
     "a dresser with old plates and a jug of flowers", "a sunlit windowsill with potted herbs",
     "a staircase with a basket of linen", "a pantry shelf of jam jars and dried herbs",
     "a bed with white linen and a sunlit window", "an old armchair beside a lit fireplace",
-    "a writing desk with letters and a candle", "a doorway with boots and a straw hat",
+    "a writing desk with letters and a pencil", "a doorway with boots and a straw hat",
     "a kitchen shelf of copper pans and ceramic bowls", "a windowseat with cushions and the rain outside",
     "a hallway with a bench and a vase of branches", "a bathroom with a clawfoot tub and a plant",
 ]
@@ -353,7 +353,7 @@ ODES = {
     ]),
     "the rain": (["spring", "summer", "autumn", "winter", "rainy season"], [
         ("a thank you to the rain that", "raindrops running down an old window pane, {view} blurred behind"),
-        ("taps on the glass", "close-up of rain tapping a window, a candle glowing on the sill"),
+        ("taps on the glass", "close-up of rain tapping a window, a mug on the sill"),
         ("fills the garden", "rain falling on {garden}, {flower} glistening"),
         ("slows the afternoon", "a teacup steaming beside a rain-streaked window in {house}"),
         ("keeps us inside", "the girl, seen from behind, curled on a window seat with a blanket, rain outside"),
@@ -363,14 +363,14 @@ ODES = {
         ("a love note to the morning sun that", "the first warm sunbeam crossing an old bedroom of {house}"),
         ("wakes the house", "sunlight sliding across a kitchen table set with bread and jam"),
         ("warms the windowsill", "a sunlit windowsill with potted herbs and {flower}"),
-        ("glows in the teacup", "light shining through a glass teapot of tea, steam rising"),
+        ("glows in the teacup", "daylight shining through a glass teapot of tea, steam rising"),
         ("lights the garden", "morning sun on dew in {garden}"),
         ("and opens the day", "a door opening onto {view} in soft morning light"),
     ]),
     "the first snow": (["winter"], [
         ("a letter to the first snow that", "the first snowflakes drifting past an old window of {house}"),
         ("hushes the garden", "snow settling quietly on {garden}"),
-        ("frosts the window", "frost patterns on a window pane, a candle glowing inside"),
+        ("frosts the window", "frost patterns on a window pane, a grey morning outside"),
         ("brings the fire alive", "a wood fire crackling in a stone fireplace, a knitted blanket on the chair"),
         ("calls for cocoa", "the girl's hands holding a steaming mug of cocoa by the window"),
         ("and paints the world white", "{view} under fresh snow, calm and wide"),
@@ -380,7 +380,7 @@ ODES = {
         ("colours the hills", "{view} in autumn colours"),
         ("fills the baskets", "a wicker basket of apples and pears on a wooden table"),
         ("smells of cinnamon", "a pie cooling on a windowsill, steam rising"),
-        ("lights the candles early", "candles and a lamp glowing in a cosy corner at dusk"),
+        ("comes in early", "one small lamp switched on in a plain corner at dusk"),
         ("and covers the path", "fallen leaves on the garden path of {garden}"),
     ]),
     "the river": (["spring", "summer", "autumn", "winter", "rainy season", "dry season"], [
@@ -410,9 +410,9 @@ ODES = {
     "golden hour": (["spring", "summer", "autumn", "dry season"], [
         ("a letter to golden hour that", "low golden sun streaming into {house} across the floor"),
         ("gilds the kitchen", "golden light on copper pans and a bowl of fruit"),
-        ("warms the stone walls", "the outside wall of {house} glowing gold, {flower} by the door"),
+        ("warms the stone walls", "the outside wall of {house} in low evening sun, {flower} by the door"),
         ("stretches the shadows", "long shadows of chairs across the garden of {garden}"),
-        ("glows in the meadow", "{view} glowing gold"),
+        ("glows in the meadow", "{view} in low evening sun"),
         ("and says goodnight softly", "the sun setting behind the hills seen through a window frame"),
     ]),
     "the mist": (["spring", "autumn", "winter", "rainy season"], [
@@ -477,7 +477,7 @@ def build(count, seed):
             shots = [
                 f"Through an open old window of {house}: {view}, {weather}. A small vase of {flower} on the sill.",
                 f"A beautiful corner inside {house}: {rng.choice(CORNERS)}, soft light, {weather} outside.",
-                f"In the cosy kitchen of {house}: the girl, seen from behind and the side, {task}; steam or soft window light, hands moving slowly.",
+                f"In the kitchen of {house}: the girl, seen from behind and the side, {task}; steam or soft window light, hands moving slowly.",
                 f"Close-up of the girl's hands {task}, real texture of food and wood, calm and unhurried.",
                 f"The garden: {garden}, {flower} moving in a light breeze, {weather}.",
                 (f"{with_article(animal)[0].upper()}{with_article(animal)[1:]} relaxing near the house, moving gently and naturally, {weather}." if animal

@@ -57,7 +57,7 @@ python3 scripts/ideas.py list ; python3 scripts/ideas.py stats
    `--shots` = the briefs actually rendered (JSON list) when they differ from the bank's. Record only delivered videos.
 
 ## Looks (reference 3, 2026-10-31)
-The user wants views "more beautiful and healing". Reference 3 is one handheld phone shot: a hand in a knit sleeve opens a white casement window onto a golden-hour garden, then wide sunlit hills with grazing animals. `prompt/healing.txt` LIGHT AND BEAUTY asks every shot for golden-hour or soft morning light, backlight through leaves, steam and petals, a clear sky, tidy corners with flowers. In briefs:
+The user wants views "more beautiful and healing". Reference 3 is one handheld phone shot: a hand in a knit sleeve opens a white casement window onto a golden-hour garden, then wide sunlit hills with grazing animals. `prompt/healing.txt` asks for real phone footage in the true light of the hour (see Real look below). In briefs:
 - **Vary the opener and the style.** The window reveal ("her hand in a cream knit sleeve slowly pushes open the casement window, and the view opens onto ...") opened hv-0001, hv-0005 and the first cut of hv-0014, and the user asked for different styles, "not this open window anymore". Pick an opener that none of the last 3 videos used (look at the first brief of each in `~/.config/museai/healing-history.json`):
   - a still room in sunlight (reference 4: the kitchen, then her at the sink);
   - hands at work in close-up (pouring, kneading, picking);
@@ -68,7 +68,19 @@ The user wants views "more beautiful and healing". Reference 3 is one handheld p
 - Name the light in every brief ("late summer evening, golden hour", "warm beam of low sunlight across the worktop, dust motes").
 - Never write a camera move into a landscape or animal brief ("slow drift", "push forward"): muse overdoes it (20-30 % of the frame width per second). Write "The camera is held perfectly still, only the X moves." muse still drifts 5-10 %/s, which matches reference 3 (up to 12 %/s), so qa `motion` FAIL at that level is fine here.
 - 2 s per shot (`--shot 2.0`) for this calmer look.
-- Name only things that really move by themselves as the motion: steam, a flame, dust in a sunbeam, a curtain, leaves outside, water, an animal. Never ask flowers in a vase, tableware or furniture to move: muse animates them anyway (hv-0005: the bouquet flew into the vase). Write "the flowers and the furniture stay exactly where they are; only the dust motes and the curtain move" and "camera on a tripod".
+- Name only things that really move by themselves as the motion: steam, a flame, dust in a sunbeam, a curtain, leaves outside, water, an animal. Never ask flowers in a vase, tableware or furniture to move: muse animates them anyway (hv-0005: the bouquet flew into the vase). Write "the flowers and the furniture stay exactly where they are; only the dust motes and the curtain move" (never "tripod" or "phone on": muse draws the tripod and phone into the shot, hv-0017).
+
+## Real look (hv-0017, 2026-11-02)
+The user: "the video look AI". hv-0017 (Tyrol dumplings, rainy afternoon) had every AI tell: saturated orange HDR glow, a candle, a lamp and dahlias in every frame, a wall of flowers outside each window, five identical dumplings in a row, the dog's fur a waxy blob in the dim light, and a slow push-in on 2 shots that were meant to hold still. Real footage is plainer than muse's idea of "cosy". Rules:
+- `scripts/shot` refuses a brief with bait words (cosy, magical, dreamy, cinematic, glow, candle, lamp light, fairy lights ...): they make muse stack props and orange light. Name the plain light instead ("grey daylight from the window", "midday sun on the worktop"). `BRIEF_OK=1` only when the user asks for a candle.
+- Few things per frame: the hands, the work, two or three objects. No vase, candle and lamp together; no flowers unless the shot is about them.
+- Handmade food is uneven ("lumpy, slightly different sizes"); never "a row of" anything.
+- Animals in bright daylight only (sun patch, garden): in dim light muse melts the fur.
+- **Bright and lively, not dim.** The muted grey-rain redo of hv-0017 was "too dark, too tired and boring". Every video is a sunny day: sun streaming into a white, airy room, blue sky outside (reference 4). A rainy or winter idea becomes "sun breaking through after the rain" or "bright snowy morning", never a dim interior. `compose.py` lifts any clip darker than mean luma 135 (gamma up to 1.6), but render bright; a lift can't fix a murky shot.
+- **Something is happening in every shot**: her hands work (kneading, pouring, picking, wiping), she walks through the sun, an animal plays or eats, laundry flaps, water splashes. A static plate or empty window is at most one shot per video. Music for sunny videos: `MOOD=sunny`; cuts `--shot 2.0`.
+- `compose.py` grade: natural saturation, a touch warm, fine moving grain (hides muse's plastic smoothness), auto exposure lift.
+- Write "Static locked-off shot" for a still camera. "Phone on a tripod" put a phone on a tripod into 2 of 6 hv-0017 shots; `shot` refuses it.
+- Judge the contact sheet before compose: any shot that looks like a render (glow, halos, clutter, clones, warped hands) is re-rendered, not kept.
 
 ## Sunny kitchen (reference 4, 2026-11-01)
 The user's fourth reference (21.6 s, 9:16) is a bright modern home on a sunny midday: a white kitchen with an arched window onto a garden, a young woman in pink washing vegetables at a sink under the window, water running over fruit, an overhead view of her sorting fruit next to baskets of eggs, then the dining room under amber pendant lamps. Measured:
