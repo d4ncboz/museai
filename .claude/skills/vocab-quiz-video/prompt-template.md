@@ -1,13 +1,16 @@
-Make one finished vertical video for TikTok and YouTube Shorts: a {LANGUAGE} vocabulary quiz. Level: {LEVEL}. Topic: {TOPIC}. Do everything in this one request and send me the final MP4 file at the end. Do not ask me questions; make sensible choices.
+Chat title: {TITLE}
 
-WORDS
-Pick 6 {LANGUAGE} nouns on the topic {TOPIC} that appear in {WORD_LIST} for level {LEVEL}. Use no word from outside that list. Use the singular form. Each English word must have only one common {LANGUAGE} answer, so the viewer can guess it: skip an English word with two common {LANGUAGE} translations. For each word prepare: the English word, {ANSWER_FORM}, and {PRONUNCIATION}. Double-check every spelling{GRAMMAR_CHECK}. Avoid words whose {LANGUAGE} form has a common second meaning that the scene does not make clear.{WORD_NOTES}
+Make one finished vertical video for TikTok and YouTube Shorts: a {LANGUAGE} vocabulary quiz. Level: {LEVEL}. Topic: {TOPIC}. Do everything in this one request and send me two MP4 files: first the video without music (VERSION 1), then the same video with background music (VERSION 2). Do not ask me questions; make sensible choices.
+
+WORDS (fixed)
+Use exactly these 6 words, in this order. Each line is: English word | {LANGUAGE} answer | pronunciation. Copy every spelling and pronunciation exactly as written; do not replace, reorder or correct any word.
+{WORDS}
 
 SCENE CLIPS (6 AI clips, one per word)
 Generate 6 AI video clips, vertical 9:16, 1080x1920, about 10 seconds each. Each clip is a beautiful, real-looking scene from {COUNTRY} that matches its word and shows the word's object clearly (example: {SCENE_EXAMPLE}). Use {COUNTRY}'s landscapes, landmarks, buildings, streets, food. Slow, smooth camera, natural light. No people talking. NO text, letters, signs with readable words, or subtitles inside the clips.
 
 BUILD THE FINAL VIDEO WITH FFMPEG (all text added by ffmpeg, never by the AI model)
-Output: 1080x1920, 30 fps, H.264 + AAC, one MP4. {FONT_RULE}
+Output: 1080x1920, 30 fps, H.264 (-pix_fmt yuv420p) + AAC, -movflags +faststart, one MP4. {FONT_RULE}
 
 Text style (sizes for 1080x1920): one dark rounded card, about 84 % of the width, about 80 % opacity, 48 px padding, centered horizontally, its center at about 40 % of the height. English word 76 px bold, {LANGUAGE} answer 80 px bold ({ANSWER_STYLE}), pronunciation line 36 px, level/topic label 32 px. White text with a dark shadow. If an answer or pronunciation line is too wide for the card, make its font smaller until it fits on one line; never wrap or cut it. {TEXT_LAYOUT} Keep all text away from the top 8 %, the bottom 25 % and the right 12 % (platform buttons).
 
@@ -24,16 +27,23 @@ Text style (sizes for 1080x1920): one dark rounded card, about 84 % of the width
 
 4. End card, 3 s: "How many did you get right?" big in the center, "Comment your score: 0–6!" below it, and a small teaser line "Next: {LANGUAGE} {NEXT_LEVEL} {NEXT_TOPIC}" (32 px) under that.
 
-5. Audio: NO background music. Mute all sound from the AI clips. The only sounds are the countdown ticks and the {LANGUAGE} voice, both clear and at the same loudness for every word.
+5. Audio for VERSION 1: no background music. Mute all sound from the AI clips. The only sounds are the countdown ticks and the {LANGUAGE} voice, both clear and at the same loudness for every word. Normalize the whole audio to about -14 LUFS.
 
-6. Total length about 46.5 s (1.5 s hook + 6 × 7 s + 3 s end). Hard cuts or short 0.3 s fades between parts.
+6. Total length about 46.5 s (1.5 s hook + 6 × 7 s + 3 s end). Hard cuts between parts, so every word slot stays exactly 7.0 s.
 
 CHECK BEFORE SENDING
-- Every {LANGUAGE} spelling{GRAMMAR_CHECK} is correct, every pronunciation line is correct, and the spoken {LANGUAGE} matches the text both times.
+- The 6 words, their order, spelling and pronunciation lines are exactly as given in WORDS, and the spoken {LANGUAGE} matches the text both times.
 - Each countdown number shows exactly 1 s; ticks line up with the numbers.
 - The progress number matches the current word.
-- All 6 words are in {WORD_LIST} for level {LEVEL}.
 - The file is 1080x1920 and about 46.5 s.
 - No AI-made text appears anywhere in the clips.
 
-Send the final MP4, then list the 6 words as: English - {LANGUAGE} answer - pronunciation.
+Send VERSION 1 as an MP4 now.
+
+VERSION 2: ADD BACKGROUND MUSIC
+After sending VERSION 1, add music to it and send the result as a second MP4. Change nothing else: same picture, timing, ticks and voice.
+- Music: one real, calm instrumental track with no vocals (soft lofi, chill travel or gentle acoustic). First try Pixabay Music (search "calm lofi travel", free for commercial use). If you cannot reach it, generate the track with your music generation model. Never build music from sine waves, test tones or synth chords with ffmpeg.
+- Mix: keep the voice and ticks exactly as in VERSION 1 (do not normalize again). Between words the music is clearly audible, about 12 dB below the voice level; while the voice speaks, duck it about 4 dB more (sidechain, attack 10 ms, release 300 ms), so every word stays clear. Music fades in over 0.5 s and out over the last 2.5 s.
+- Same length as VERSION 1; if the track is shorter, use a longer one instead of looping it with an audible jump.
+
+Send VERSION 2, then list the 6 words as: English - {LANGUAGE} answer - pronunciation, and name the music track with its page URL (or say it was generated, and with which model).

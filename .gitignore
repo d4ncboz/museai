@@ -27,6 +27,7 @@ api_key
 /ep*/
 /ep*_*
 /frames*/
+.claude/skills/vocab-quiz-video/log.md
 /seceda/
 /*.jpg
 /*.png

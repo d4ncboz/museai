@@ -31,17 +31,18 @@ The tested language. Use this file as the worked example when adding a language.
 | Voice | muse.ai TTS `--language de`, article + noun, said twice | muse warned the voice "may not sound fully native"; v1/v2 speech-to-text heard every word right except one doubtful case |
 | Scenery | Germany: castles, half-timbered towns, Alps, lakes, markets, stations | Viewers liked the scenery most (review: "preserve") |
 
-## Episodes made
+## Test renders (dropped 2026-11-02, not part of the series)
+
+Kept for the lessons below. Real episodes are logged in `log.md`.
 
 | Version | Date | Words | Result |
 |---|---|---|---|
 | v1 | 2026-11-02 | Bahnhof, Zug, Hotel, Flughafen, Koffer, Stadt | Format OK. English hidden during countdown; Flughafen scene was just sky; STT heard "Bahnhofer" (unconfirmed) |
 | v2 | 2026-11-02 | Schloss, Brücke, Berg, See, Markt, Museum | All checks passed. Review 7/10: slow, weak hook, big countdown digits, small pronunciation text |
-| v3 | — | — | Template now carries every v2 fix (hook, 3 s circle timer, n/6, listen & repeat, bigger text, no music, teaser, Goethe list) |
 
 ## Lessons
 
-- muse.ai picks different words each run, even for the same level and topic. Fine for this series; to repeat a word set, list the 6 words in the prompt.
+- muse.ai picked different words each run when it chose them, so the words are now picked by Claude and fixed in the prompt.
 - Scenes must show the word's object clearly, or the frame at the answer time can miss it (v2: bridge hard to see).
 - `das Schloss` also means "lock"; the castle scene makes it clear. Avoid such words when the scene cannot.
 - muse.ai noticed a broken "·" on the intro card by itself and rebuilt; still check frames.
