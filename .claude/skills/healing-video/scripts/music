@@ -52,4 +52,15 @@ start=$(python3 "$SKILL_DIR/scripts/lnorm.py" --body-start "$raw")
 # soft: ACE plays brighter than the references (spectral centroid ~870 Hz vs 530): drop it ~3 semitones,
 # which also slows it 16 %, cut above 2.2 kHz, -20 LUFS (hv-0005: "too high, too strong"); sunny: no pitch drop
 python3 "$SKILL_DIR/scripts/lnorm.py" "$raw" "$out" "$lufs" "$tone,atrim=start=$start:duration=$secs,asetpts=PTS-STARTPTS,afade=in:d=0.5,afade=out:st=$((secs-4)):d=4"
+# hv-0002: a MOOD=sunny take at 7.2 onsets/s felt "too dramatic"; the soft take kept was 2.25/s.
+# Refuse busy takes (BUSY_OK=1 keeps one): render another seed instead.
+if [[ -x $ACE_PY ]]; then
+  rate=$("$ACE_PY" -c 'import sys, librosa
+y, sr = librosa.load(sys.argv[1], sr=22050, mono=True)
+print(f"{len(librosa.onset.onset_detect(y=y, sr=sr)) / (len(y) / sr):.2f}")' "$out" 2>/dev/null)
+  echo "music: $rate onsets/s (max 3)" >&2
+  if [[ -z ${BUSY_OK:-} ]] && python3 -c "import sys; sys.exit(float(sys.argv[1]) <= 3)" "$rate"; then
+    echo "music: too busy for a healing video; try another seed" >&2; exit 3
+  fi
+fi
 echo "$out"
