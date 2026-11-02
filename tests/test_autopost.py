@@ -99,7 +99,9 @@ def test_publisher_posts_when_due_and_ticks_the_queue(client, admin, settings, s
     row = plan_of(client, admin, CHINESE)
     early = min(datetime.fromisoformat(j["time"]) for j in row["jobs"]) - timedelta(minutes=5)
     assert run(svc, early) == []
-    assert sorted(run(svc, due(row))) == [(CHINESE, "tiktok", "posted"), (CHINESE, "youtube", "posted")]
+    ran = [r for at in sorted({datetime.fromisoformat(j["time"]) for j in row["jobs"]})
+           for r in run(svc, at + timedelta(minutes=1))]  # each platform at its own time
+    assert sorted(ran) == [(CHINESE, "tiktok", "posted"), (CHINESE, "youtube", "posted")]
     assert run(svc, due(row)) == []  # nothing twice
     for p in ("tiktok", "youtube"):
         assert len(svc.publishers[p].posts) == 1

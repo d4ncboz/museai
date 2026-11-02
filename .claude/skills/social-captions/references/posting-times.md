@@ -1,41 +1,58 @@
-# Posting times per platform (researched 2026-10-29, revised 2026-11-01)
+# Posting times per platform and content (researched 2026-10-29, revised 2026-11-02)
 
 The dashboard's "Ready to post" schedule (`src/museai/api/routes/posting.py` `TIMES`, `AUDIENCE`) gives
 each video a slot (day + slot 1 or 2, two a day per channel) and each platform its own time for that
-slot. Times are set in the audience's local time and shown in GMT+7.
+slot. Each channel has its own table, because learning and travel videos are watched at different
+moments. Times are set in the audience's local time and shown in GMT+7. Each channel's queue runs back
+to back after its last posted slot (history: `data/post-history.jsonl`).
 
 ## Whose clock
-- **Chinese** (Vietnamese captions, Vietnamese learners): Vietnam, GMT+7. Slot 1 is the left column of
-  the table (midday), slot 2 the right column (evening).
+- **Chinese** (Vietnamese captions, Vietnamese learners): Vietnam, GMT+7, both slots.
 - **Travel** and the other English formats (dream, healing, nostalgia, gown, product): English viewers.
-  Slot 1 uses the evening column in London time (Europe's evening, US East lunch). Slot 2 uses the evening
-  column in New York time. Both are the audience's day before the calendar day, so they land on the
-  calendar day in GMT+7, at about 02-05 h and 06-10 h. Schedule them in each platform's scheduler.
+  Slot 1 is in London time, slot 2 in New York time, on the audience's day before the calendar day.
+  Every travel time is 18:00 or later, so both land on the calendar day in GMT+7 (about 01-03 h and
+  06-09 h). Schedule them in each platform's scheduler.
 
-Until 2026-11-01 every channel used GMT+7 times (11:30 / 18:00). Travel reels went out at 05:30 / 12:00
-in London and 00:30 / 07:00 in New York, while their English-speaking audience was asleep or at work.
-
-| Audience-local | Mon | Tue | Wed | Thu | Fri | Sat | Sun |
+## Chinese lessons (GMT+7, slot 1 · slot 2)
+| | Mon | Tue | Wed | Thu | Fri | Sat | Sun |
 |---|---|---|---|---|---|---|---|
-| YouTube Shorts | 12:00 · 20:00 | 12:00 · 20:00 | 12:00 · 19:00 | 12:00 · 19:00 | 12:00 · 17:00 | 11:00 · 19:00 | 11:00 · 19:00 |
-| TikTok | 11:00 · 20:00 | 12:00 · 21:30 | 12:00 · 21:30 | 13:00 · 21:30 | 12:00 · 19:00 | 11:30 · 17:00 | 09:00 · 19:00 |
-| Facebook Reels | 12:00 · 21:00 | 08:00 · 20:00 | 08:00 · 20:30 | 09:00 · 20:30 | 08:00 · 20:30 | 11:30 · 22:00 | 10:00 · 20:30 |
-| Instagram Reels | 12:00 · 19:00 | 15:00 · 19:00 | 12:00 · 18:00 | 09:00 · 20:00 | 12:00 · 21:00 | 12:00 · 21:00 | 12:00 · 21:00 |
-| X | 09:00 · 14:00 | 09:00 · 13:00 | 10:00 · 14:00 | 09:00 · 13:00 | 09:00 · 13:00 | 10:00 · 13:00 | 10:00 · 13:00 |
-| Threads | 09:00 · 12:00 | 09:00 · 12:00 | 09:00 · 12:00 | 09:00 · 12:00 | 09:00 · 12:00 | 10:00 · 13:00 | 11:00 · 14:00 |
+| YouTube Shorts | 17:00 · 20:00 | 19:00 · 21:00 | 19:00 · 21:00 | 19:00 · 21:00 | 16:00 · 19:00 | 11:00 · 19:00 | 17:00 · 20:00 |
+| TikTok | 11:45 · 20:45 | 11:45 · 20:45 | 11:45 · 20:45 | 11:45 · 18:45 | 11:45 · 20:45 | 08:45 · 19:45 | 08:45 · 19:45 |
+| Facebook Reels | 11:30 · 20:30 | 11:30 · 20:30 | 11:30 · 20:30 | 11:30 · 20:30 | 11:30 · 20:30 | 09:00 · 20:30 | 09:00 · 20:30 |
+| Instagram Reels | 09:00 · 21:00 | 09:00 · 21:00 | 12:00 · 21:00 | 09:00 · 20:00 | 12:00 · 21:00 | 09:00 · 20:00 | 09:00 · 20:00 |
+| X | 08:00 · 12:00 | 08:00 · 12:00 | 08:00 · 12:00 | 08:00 · 12:00 | 08:00 · 12:00 | 09:00 · 12:00 | 09:00 · 12:00 |
+| Threads | 08:00 · 12:00 | 08:00 · 12:00 | 08:00 · 12:00 | 08:00 · 12:00 | 08:00 · 12:00 | 09:00 · 12:00 | 09:00 · 12:00 |
 
-The slot's day and its free / taken / passed state follow YouTube's time. X and Threads peak in the
-morning, so they may be due earlier than YouTube on the same slot.
+## Travel (slot 1 London · slot 2 New York, both local)
+| | Mon | Tue | Wed | Thu | Fri | Sat | Sun |
+|---|---|---|---|---|---|---|---|
+| YouTube Shorts | 20:00 | 20:00 | 19:00 | 19:00 | 18:00 | 19:00 | 19:00 |
+| TikTok | 19:45 | 19:45 | 19:45 | 18:45 | 18:45 | 18:45 | 18:45 |
+| Facebook Reels | 20:00 | 20:00 | 20:00 | 20:00 | 19:00 | 20:00 | 19:00 |
+| Instagram Reels | 19:00 | 19:00 | 18:00 | 20:00 | 18:00 | 19:00 | 19:00 |
+| X, Threads | 18:00 | 18:00 | 18:00 | 18:00 | 18:00 | 18:00 | 18:00 |
 
-## Why each row
-- **YouTube Shorts** (Buffer, 1.8M videos, 2026): evenings 18-21 h, Friday 16-18 h, Saturday 11 h.
-- **TikTok** (Buffer, 7.1M posts, 2026): evenings 18-23 h, Sunday 9 h peak, Thursday 13 h, Saturday 17 h.
-  Vietnamese guides say 11-13 h and 19-22 h.
-- **Facebook Reels** (Buffer, 14M posts, 2026): weekday mornings 7-9 h, Monday and Saturday late
-  evening. Vietnamese guides for Reels say 20-22 h and 11:30-13 h.
-- **Instagram Reels** (Buffer, 9.6M posts, 2026): 18-23 h, Wednesday noon, Thursday 8-9 h.
-- **X** (Buffer, 8.7M posts): weekday mornings 9-11 h, early afternoon. Evenings and Saturday are weakest.
-- **Threads** (Buffer, 2.5M posts): weekday mornings 6-11 h, Wednesday noon. Evenings are weakest.
+The slot's day and its free / taken / passed state follow YouTube's time.
+
+## Why
+- **YouTube Shorts** (Buffer, 1.8M videos, 2026): Shorts peak 18-23 h; the worst hours are 12-17 h,
+  except Friday, whose 16, 18 and 19 h are the week's top three. Best per day: Mon 20 h, Tue 20-21 h,
+  Wed/Thu 19-21 h, Sat 19 h and 11 h, Sun 19-20 h, 17 h. Until 2026-11-02 the Chinese slot 1 posted
+  Shorts at 11-12 h, in their weakest window: the main reason YouTube did badly. Shorts keep resurfacing
+  for days, so the hour matters less than on TikTok.
+- **Learning content** (TAKI Academy, VN; CommentGrid's review of Buffer, Sprout, Hootsuite, Later and
+  Adobe data): learners watch in short breaks (lunch 12 h, morning 9-11 h, which wins on saves) and study
+  after dinner (21 h); weekends 9 h and 20 h. Vietnamese TikTok peaks 19-22 h; posting 15 minutes before
+  the peak gives the video its first test audience as viewers arrive (hence 11:45, 20:45). Thursday 19 h is
+  Vietnam's top TikTok hour. OpusClip's 223K education clips cluster at the same lunch hours (creator
+  activity, not engagement).
+- **Travel content** (ReelReady travel niche; Buffer): travel is a wind-down and daydream watch: evenings,
+  Friday for weekend trips (earlier, 18 h), Sunday evening for trip planning. TikTok gets 15 minutes'
+  head start. X and Threads peak in the morning, but a morning in London or New York lands on the
+  previous calendar day in GMT+7, so they take the earliest evening hour (18 h).
+- **Facebook Reels** (Buffer, 14M posts; Seongon VN): Vietnamese Reels peak 11:30-13 h and 20-22 h.
+- **Instagram Reels** (Buffer, 9.6M posts): 18-23 h, Wednesday noon, Thursday 8-9 h.
+- **X / Threads** (Buffer, 8.7M / 2.5M posts): weekday mornings, early afternoon; evenings weakest.
 
 ## How much the hour matters (checked 2026-11-01)
 The hour is a small lever. A video with almost no views usually has another cause:
@@ -60,6 +77,10 @@ After two or three weeks, read each platform's own analytics for when the accoun
 and change `TIMES` if they differ.
 
 ## Sources
+- TAKI Academy, TikTok golden hours 2026 (VN, education channels): https://taki.vn/gio-vang-dang-tiktok-2026-bang-chuan-7-ngay-trong-tuan/
+- CommentGrid, best time by niche: https://commentgrid.com/blog/best-time-to-post-on-tiktok-and-instagram
+- OpusClip, education & tutorials on TikTok: https://www.opus.pro/research/best-time-education-tutorials-tiktok
+- ReelReady, travel creators: https://www.goreelready.com/tools/best-time-to-post/travel
 - Buffer, YouTube: https://buffer.com/resources/best-time-to-post-on-youtube/
 - Buffer, TikTok: https://buffer.com/resources/best-time-to-post-on-tiktok/
 - Buffer, Facebook: https://buffer.com/resources/best-time-to-post-on-facebook/

@@ -349,22 +349,49 @@ def test_posting_folders(client, admin, settings, monkeypatch):
     assert (root / folders()[0] / "reel-Da Nang.mp4").read_bytes() == b"v2"
 
 
+def test_posting_queue_follows_history(tmp_path):
+    import os
+    from datetime import datetime
+
+    from museai.api.routes import posting
+
+    # Monday 2026-11-02 08:00: history runs to Sunday 8 slot 2 (an episode posted there late), so the
+    # queue starts Monday 9 slot 1 and runs back to back: a picked slot sets the order, never a gap.
+    now = datetime(2026, 11, 2, 8, 0, tzinfo=posting.TZ)
+    videos = []
+    for i, name in enumerate(("ep47.mp4", "ep48.mp4", "ep49.mp4")):
+        (p := tmp_path / name).write_bytes(b"v")
+        os.utime(p, (1000 + i, 1000 + i))
+        videos.append(p)
+    state = {"ep45": {"slot": "2026-11-08/1", "channel": "chinese", "done": 1},
+             "ep46.mp4": {"slot": "2026-11-08/2", "posted": {"youtube": True}},
+             "ep47.mp4": {"slot": "2026-11-09/2", "slot_pinned": True},
+             "ep48.mp4": {"slot": "2026-11-11/1"}}
+    (tmp_path / "ep46.mp4").write_bytes(b"v")
+    assert posting._assign_slots(state, [*videos, tmp_path / "ep46.mp4"], now)
+    assert [state[f"ep{n}.mp4"]["slot"] for n in (46, 47, 48, 49)] == [
+        "2026-11-08/2", "2026-11-09/1", "2026-11-09/2", "2026-11-10/1"]
+    assert not posting._assign_slots(state, [*videos, tmp_path / "ep46.mp4"], now)
+
+
 def test_posting_slots(tmp_path):
     import os
     from datetime import datetime
 
     from museai.api.routes import posting
 
-    # Thursday 2026-10-29 12:00 GMT+7: today's midday slot (12:00) has passed.
-    now = datetime(2026, 10, 29, 12, 0, tzinfo=posting.TZ)
+    # Thursday 2026-10-29 20:00 GMT+7: today's first YouTube slot (19:00) has passed.
+    now = datetime(2026, 10, 29, 20, 0, tzinfo=posting.TZ)
     times = posting._slot_times("2026-10-31/2")  # Saturday evening, each platform at its own peak
     assert times["youtube"].isoformat() == "2026-10-31T19:00:00+07:00"
-    assert times["x"].isoformat() == "2026-10-31T13:00:00+07:00"
-    assert posting._slot_times("2026-11-01/1")["tiktok"].isoformat() == "2026-11-01T09:00:00+07:00"
+    assert times["x"].isoformat() == "2026-10-31T12:00:00+07:00"
+    # No YouTube Short goes out at noon (its weakest hours); a learner's Sunday starts in the morning.
+    assert all(posting._slot_times(f"2026-11-0{d}/1")["youtube"].hour not in range(12, 16) for d in range(2, 9))
+    assert posting._slot_times("2026-11-01/1")["tiktok"].isoformat() == "2026-11-01T08:45:00+07:00"
     # Travel speaks to English viewers: Monday's London evening, then Monday's New York evening,
     # both on Tuesday in GMT+7.
     assert posting._slot_times("2026-11-03/1", "travel")["youtube"].isoformat() == "2026-11-03T03:00:00+07:00"
-    assert posting._slot_times("2026-11-03/2", "travel")["tiktok"].isoformat() == "2026-11-03T08:00:00+07:00"
+    assert posting._slot_times("2026-11-03/2", "travel")["tiktok"].isoformat() == "2026-11-03T07:45:00+07:00"
 
     videos = []
     for i, name in enumerate(("a.mp4", "b.mp4", "c.mp4")):
@@ -373,13 +400,13 @@ def test_posting_slots(tmp_path):
         videos.append(p)
     state = {"b.mp4": {"slot": "2026-10-29/1", "posted": {}}}  # missed, not pinned
     assert posting._assign_slots(state, videos, now)
-    assert [state[n]["slot"] for n in ("a.mp4", "b.mp4", "c.mp4")] == [
-        "2026-10-29/2", "2026-10-30/1", "2026-10-30/2"]  # oldest delivery first
+    assert [state[n]["slot"] for n in ("b.mp4", "a.mp4", "c.mp4")] == [
+        "2026-10-29/2", "2026-10-30/1", "2026-10-30/2"]  # missed b keeps its place in line, then delivery order
     assert not posting._assign_slots(state, videos, now)
     cal = posting._calendar(state, {n: n for n in ("a.mp4", "b.mp4", "c.mp4")}, now)["chinese"]
-    assert len(cal) == 7 and cal[0]["slots"][1]["video"] == "a.mp4" and cal[0]["slots"][0]["video"] is None
+    assert len(cal) == 7 and cal[0]["slots"][1]["video"] == "b.mp4" and cal[0]["slots"][0]["video"] is None
 
-    # Travel posts from other accounts on its own clock: today's 03:00 and 08:00 slots have passed, so
+    # Travel posts from other accounts on its own clock: today's 02:00 and 06:00 slots have passed, so
     # it books tomorrow's first one, even though Chinese has that slot taken.
     (p := tmp_path / "zoom-madeira.mp4").write_bytes(b"v")
     os.utime(p, (2000, 2000))
@@ -387,7 +414,7 @@ def test_posting_slots(tmp_path):
     assert state["zoom-madeira.mp4"]["slot"] == "2026-10-30/1"
     cal = posting._calendar(state, {n: n for n in state}, now)
     assert cal["travel"][1]["slots"][0]["video"] == "zoom-madeira.mp4"
-    assert cal["chinese"][0]["slots"][1]["video"] == "a.mp4"
+    assert cal["chinese"][0]["slots"][1]["video"] == "b.mp4"
 
     # A new Chinese video takes the next free Chinese slot, not one only Travel has free.
     (p := tmp_path / "d.mp4").write_bytes(b"v")
@@ -396,20 +423,22 @@ def test_posting_slots(tmp_path):
     chinese = [e["slot"] for n, e in state.items() if posting._channel(n, e) == "chinese"]
     assert state["d.mp4"]["slot"] == "2026-10-31/1" and len(set(chinese)) == len(chinese)
 
-    # Posted / deleted videos keep their slot booked; their records go two weeks after the slot.
+    # Posted / deleted videos stay in the history (records go a year after the slot); the queue moves
+    # up behind the newest history slot.
     state["gone.mp4"] = {"slot": "2026-10-31/2", "channel": "chinese", "title": "t", "done": 1}
-    state["old.mp4"] = {"slot": "2026-10-01/1", "channel": "chinese", "title": "t", "done": 1}
+    state["old.mp4"] = {"slot": "2025-10-01/1", "channel": "chinese", "title": "t", "done": 1}
     (p := tmp_path / "e.mp4").write_bytes(b"v")
     os.utime(p, (4000, 4000))
     assert posting._forget_old(state, now) and "old.mp4" not in state
     assert posting._assign_slots(state, [*videos, tmp_path / "d.mp4", p], now)
-    assert state["e.mp4"]["slot"] == "2026-11-01/1"
-    # The same name delivered again is a new video: the old record goes, but its slot stays booked by
-    # the video posted there, so the new one takes the next free slot.
+    assert [state[n]["slot"] for n in ("b.mp4", "a.mp4", "c.mp4", "d.mp4", "e.mp4")] == [
+        "2026-11-01/1", "2026-11-01/2", "2026-11-02/1", "2026-11-02/2", "2026-11-03/1"]
+    # The same name delivered again is a new video: the old record moves aside, staying in the history,
+    # and the new one joins the end of the queue.
     (tmp_path / "gone.mp4").write_bytes(b"v")
     os.utime(tmp_path / "gone.mp4", (5000, 5000))
     assert posting._assign_slots(state, [*videos, tmp_path / "d.mp4", p, tmp_path / "gone.mp4"], now)
-    assert state["gone.mp4"]["slot"] == "2026-11-01/2" and "done" not in state["gone.mp4"]
+    assert state["gone.mp4"]["slot"] == "2026-11-03/2" and "done" not in state["gone.mp4"]
     assert state["(posted chinese 2026-10-31/2)"]["done"]  # kept for the next passes too
 
 
@@ -419,7 +448,7 @@ def test_episodes_post_in_number_order(tmp_path):
 
     from museai.api.routes import posting
 
-    now = datetime(2026, 10, 29, 12, 0, tzinfo=posting.TZ)
+    now = datetime(2026, 10, 29, 20, 0, tzinfo=posting.TZ)
     videos = []
     names = ("Tiếng Trung mỗi ngày 47 - B.mp4", "lesson-bi-so-sanh.mp4", "Tiếng Trung mỗi ngày 46 - A.mp4")
     for i, name in enumerate(names):
@@ -482,7 +511,7 @@ def test_posting_move_slot(client, admin, settings):
     r = client.post("/dashboard/posts/b.mp4", headers=admin, json={"slot": a["slot"]}).json()
     assert r["video"]["slot"] == a["slot"]
     after = {v["name"]: v["slot"] for v in client.get("/dashboard/posts", headers=admin).json()["videos"]}
-    assert after == {"a.mp4": a["slot"], "b.mp4": a["slot"]}
+    assert after["a.mp4"] == a["slot"] and after["b.mp4"] < a["slot"]  # alone in Chinese: first slot, no gap
     assert client.post("/dashboard/posts/a.mp4", headers=admin, json={"channel": "nope"}).status_code == 400
 
 

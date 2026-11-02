@@ -33,7 +33,6 @@ import subprocess
 import threading
 import time
 import unicodedata
-from collections.abc import Iterator
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -70,16 +69,16 @@ THUMBS = {"9x16": "YouTube Shorts, TikTok, Facebook / Instagram Reels cover",
 TZ = ZoneInfo("Asia/Ho_Chi_Minh")  # GMT+7: the user's clock; calendar days and shown times use it
 # Channels post from separate accounts, so each has its own two slots a day: (name, focus per slot).
 CHANNELS = {
-    "chinese": ("Chinese", {1: "Midday: bite-sized (stroke order, word of the day)",
-                            2: "Evening: conversations, common mistakes, quizzes that invite comments"}),
-    "travel": ("Travel", {1: "Europe's evening (US lunch): a quick view",
+    "chinese": ("Chinese", {1: "Late afternoon / lunch break: bite-sized (stroke order, word of the day)",
+                            2: "Study hour after dinner: conversations, common mistakes, quizzes"}),
+    "travel": ("Travel", {1: "UK / Europe evening: a quick view",
                           2: "US East evening: full reels and zoom-ins"}),
 }
-# Whose clock each channel's times follow. Chinese lessons have Vietnamese captions for Vietnamese
-# learners. Travel (and the other English formats) speak to English viewers, who are asleep at Vietnam's
-# peaks: slot 1 goes out at Europe's evening peak, slot 2 at the US East evening peak, both from the
-# evening column of TIMES. Their audience day is the day before the calendar day, so both land on the
-# calendar day in GMT+7 (about 02-05 h and 06-10 h); schedule them in each platform's scheduler.
+# Whose clock each slot's times follow. Chinese lessons have Vietnamese captions for Vietnamese
+# learners: both slots in GMT+7. Travel (and the other English formats) speak to English viewers, who
+# are asleep at Vietnam's peaks: slot 1 at the UK evening, slot 2 at the US East evening. Their audience
+# day is the day before the calendar day, and every travel time is 18:00 or later, so both land on the
+# calendar day in GMT+7 (about 01-03 h and 06-09 h); schedule them in each platform's scheduler.
 AUDIENCE = {"chinese": (ZoneInfo("Asia/Ho_Chi_Minh"), ZoneInfo("Asia/Ho_Chi_Minh")),
             "travel": (ZoneInfo("Europe/London"), ZoneInfo("America/New_York"))}
 # The format skills name their files <prefix>-<slug> (muse-video SKILL.md "Format skills"); a renamed file
@@ -87,17 +86,30 @@ AUDIENCE = {"chinese": (ZoneInfo("Asia/Ho_Chi_Minh"), ZoneInfo("Asia/Ho_Chi_Minh
 # (dream, healing, nostalgia, ...) post on the Travel accounts: their viewers share its clock.
 TRAVEL_NAME = re.compile(r"^(zoom|reel|scenic|scenery|drop|travel|dream|healing|nostalgia|gown|product)[-_ ]"
                          r"|\b(zoominview|scenic-drop-reel)\b", re.IGNORECASE)
-# Two videos a day (user rule 2026-10-29). Each platform peaks at its own hours, so each gets its own
-# time per slot, Monday first, "slot 1 slot 2" in the audience's local time. Sources and reasoning:
-# .claude/skills/social-captions/references/posting-times.md (Buffer 2026 studies of 1.8-14M posts,
-# in the audience's local time; Vietnamese guides agree on the 11-13 h and 19-22 h peaks).
+# Two videos a day per channel (user rule 2026-10-29). Each kind of content is watched at its own
+# moment and each platform peaks at its own hours, so each channel has its own table: per platform,
+# Monday first, "slot 1 slot 2" in that slot's audience clock (AUDIENCE). Revised 2026-11-02; sources
+# and reasoning: .claude/skills/social-captions/references/posting-times.md. In short: YouTube Shorts
+# do worst posted 12-17 h (Friday aside) and best 18-21 h, so no Shorts go out at noon; learners study
+# in short breaks (lunch, commute) and after dinner, weekends in the morning; TikTok gets 15 minutes'
+# head start on its peak; travel is watched as an evening wind-down and planned Sunday evening.
 TIMES = {
-    "youtube":   ["12:00 20:00", "12:00 20:00", "12:00 19:00", "12:00 19:00", "12:00 17:00", "11:00 19:00", "11:00 19:00"],
-    "tiktok":    ["11:00 20:00", "12:00 21:30", "12:00 21:30", "13:00 21:30", "12:00 19:00", "11:30 17:00", "09:00 19:00"],
-    "facebook":  ["12:00 21:00", "08:00 20:00", "08:00 20:30", "09:00 20:30", "08:00 20:30", "11:30 22:00", "10:00 20:30"],
-    "instagram": ["12:00 19:00", "15:00 19:00", "12:00 18:00", "09:00 20:00", "12:00 21:00", "12:00 21:00", "12:00 21:00"],
-    "x":         ["09:00 14:00", "09:00 13:00", "10:00 14:00", "09:00 13:00", "09:00 13:00", "10:00 13:00", "10:00 13:00"],
-    "threads":   ["09:00 12:00", "09:00 12:00", "09:00 12:00", "09:00 12:00", "09:00 12:00", "10:00 13:00", "11:00 14:00"],
+    "chinese": {
+        "youtube":   ["17:00 20:00", "19:00 21:00", "19:00 21:00", "19:00 21:00", "16:00 19:00", "11:00 19:00", "17:00 20:00"],
+        "tiktok":    ["11:45 20:45", "11:45 20:45", "11:45 20:45", "11:45 18:45", "11:45 20:45", "08:45 19:45", "08:45 19:45"],
+        "facebook":  ["11:30 20:30", "11:30 20:30", "11:30 20:30", "11:30 20:30", "11:30 20:30", "09:00 20:30", "09:00 20:30"],
+        "instagram": ["09:00 21:00", "09:00 21:00", "12:00 21:00", "09:00 20:00", "12:00 21:00", "09:00 20:00", "09:00 20:00"],
+        "x":         ["08:00 12:00", "08:00 12:00", "08:00 12:00", "08:00 12:00", "08:00 12:00", "09:00 12:00", "09:00 12:00"],
+        "threads":   ["08:00 12:00", "08:00 12:00", "08:00 12:00", "08:00 12:00", "08:00 12:00", "09:00 12:00", "09:00 12:00"],
+    },
+    "travel": {
+        "youtube":   ["20:00 20:00", "20:00 20:00", "19:00 19:00", "19:00 19:00", "18:00 18:00", "19:00 19:00", "19:00 19:00"],
+        "tiktok":    ["19:45 19:45", "19:45 19:45", "19:45 19:45", "18:45 18:45", "18:45 18:45", "18:45 18:45", "18:45 18:45"],
+        "facebook":  ["20:00 20:00", "20:00 20:00", "20:00 20:00", "20:00 20:00", "19:00 19:00", "20:00 20:00", "19:00 19:00"],
+        "instagram": ["19:00 19:00", "19:00 19:00", "18:00 18:00", "20:00 20:00", "18:00 18:00", "19:00 19:00", "19:00 19:00"],
+        "x":         ["18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00"],
+        "threads":   ["18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00"],
+    },
 }  # fmt: skip
 SLOT_KEY = re.compile(r"^(\d{4}-\d{2}-\d{2})/([12])$")
 FOLDER_MARK = ".museai-post"  # marks a folder this module made for one video
@@ -126,6 +138,12 @@ def _load(svc: Services) -> dict:
 
 def _save(svc: Services, state: dict) -> None:
     path = svc.settings.posts_file
+    with path.with_name("post-history.jsonl").open("a") as log:  # every posted / deleted video, kept for good
+        for name, e in state.items():
+            if e.get("done") and not e.get("logged"):
+                e["logged"] = True
+                log.write(json.dumps({"name": name, **{k: v for k, v in e.items() if k != "logged"}},
+                                     ensure_ascii=False) + "\n")
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(state, indent=2, ensure_ascii=False))
     tmp.replace(path)
@@ -161,13 +179,11 @@ def _slot_times(key: str, channel: str = "chinese") -> dict[str, datetime]:
     day, n = SLOT_KEY.match(key).groups()
     d, n = date.fromisoformat(day), int(n)
     tz = AUDIENCE[channel][n - 1]
-    if tz == TZ:
-        col = n - 1
-    else:  # an audience west of GMT+7: its evening of the day before lands on the calendar day
-        d, col = d - timedelta(days=1), 1
+    if tz != TZ:  # an audience west of GMT+7: its evening of the day before lands on the calendar day
+        d -= timedelta(days=1)
     out = {}
-    for p, week in TIMES.items():
-        hh, mm = map(int, week[d.weekday()].split()[col].split(":"))
+    for p, week in TIMES[channel].items():
+        hh, mm = map(int, week[d.weekday()].split()[n - 1].split(":"))
         out[p] = datetime(d.year, d.month, d.day, hh, mm, tzinfo=tz).astimezone(TZ)
     return out
 
@@ -184,34 +200,43 @@ def _slots_from(now: datetime, channel: str):
 
 
 def _assign_slots(state: dict, videos: list[Path], now: datetime) -> bool:
-    """Give every queued video a slot in its channel, oldest delivery first. A slot that passed with
-    nothing posted moves to the next free one unless the user picked it. Returns True when the state
-    changed."""
+    """Lay each channel's queue out back to back after its history. History is the slots of videos
+    posted or deleted (records) and of queued videos posted on a platform or planned for auto-posting;
+    those never move. Every other queued video takes the next slot after the channel's last history
+    slot, in queue order: its current slot (a slot the user picked keeps its place in line), then
+    delivery. So the queue has no gaps, never books a slot before the history, and a slot that passed
+    unposted moves up. A slot the user picks sets the video's place in line. Returns True when the state changed."""
     entries = [(p.name, state.setdefault(_key(p.name), {})) for p in sorted(videos, key=lambda p: p.stat().st_mtime)]
     changed = False
     for n, e in entries:
         if e.get("done"):  # the same name delivered again: a new video; the old record moves aside, its
-            # slot staying booked by the video posted there
+            # slot staying in the history
             if e.get("slot"):
                 state.setdefault(f"(posted {_channel(n, e)} {e['slot']})", dict(e))
             for k in ("done", "slot", "slot_pinned", "title"):
                 e.pop(k, None)
             changed = True
+    queued_names = {n for n, _ in entries}
+    history: dict[str, set[str]] = {ch: set() for ch in CHANNELS}
+    queue: dict[str, list[tuple[str, dict]]] = {ch: [] for ch in CHANNELS}
+    for n, e in state.items():
+        if n not in queued_names:
+            if e.get("done") and e.get("slot"):
+                history[_channel(n, e)].add(e["slot"])
+    for n, e in entries:
         auto = e.get("auto") if isinstance(e.get("auto"), dict) else {}
         planned = bool(auto) and not auto.get("off") and not auto.get("paused")  # auto-post keeps its slot
-        if (key := e.get("slot")) and not e.get("posted") and not e.get("slot_pinned") and not planned \
-                and _slot_times(key, _channel(n, e))["youtube"] <= now:
-            del e["slot"]
-    # Slots of videos already posted or deleted stay booked, so a new video never refills them.
-    taken = {(_channel(n, e), e["slot"]) for n, e in state.items() if e.get("slot")}
-    def free_slots(ch: str) -> Iterator[str]:  # a function, so each generator keeps its own ``ch``
-        return (k for k in _slots_from(now, ch) if (ch, k) not in taken)
-
-    free = {ch: free_slots(ch) for ch in CHANNELS}
-    for n, e in entries:
-        if not e.get("slot"):
-            e["slot"] = next(free[_channel(n, e)])
-            changed = True
+        if e.get("slot") and (any((e.get("posted") or {}).values()) or planned):
+            history[_channel(n, e)].add(e["slot"])
+        else:
+            queue[_channel(n, e)].append((n, e))
+    for ch, line in queue.items():
+        last = max(history[ch], default="")
+        free = (k for k in _slots_from(now, ch) if k > last and k not in history[ch])
+        for _, e in sorted(line, key=lambda ne: ne[1].get("slot") or "~"):  # stable: delivery order breaks ties
+            slot = next(free)
+            changed |= e.get("slot") != slot
+            e["slot"] = slot
     return _episode_order(entries) or changed
 
 
@@ -234,7 +259,7 @@ def _episode_order(entries: list[tuple[str, dict]]) -> bool:
     return changed
 
 
-def _forget_old(state: dict, now: datetime, keep_days: int = 14) -> bool:
+def _forget_old(state: dict, now: datetime, keep_days: int = 365) -> bool:
     """Drop records of posted / deleted videos whose slot is more than ``keep_days`` behind."""
     cut = (now.astimezone(TZ).date() - timedelta(days=keep_days)).isoformat()
     old = [n for n, e in state.items() if e.get("done") and e.get("slot", "") < cut]
