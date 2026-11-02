@@ -97,6 +97,18 @@ AUDIENCE = {"chinese": (ZoneInfo("Asia/Ho_Chi_Minh"), ZoneInfo("Asia/Ho_Chi_Minh
 # videos post on accounts of their own (user rules 2026-11-02), at the US evening.
 DREAM_NAME = re.compile(r"^dream[-_ ]|\bdream-life\b", re.IGNORECASE)
 HEALING_NAME = re.compile(r"^healing[-_ ]|\bhealing-video\b", re.IGNORECASE)
+# YouTube playlists for Dream life, picked from the file's theme slug (dream-<slug>, dream-life
+# themes.py): the first rule that matches wins, the rest are cozy everyday jobs. Playlists keep a viewer watching the
+# next video and give the channel page shelves; Instagram and Facebook Reels have none.
+DREAM_PLAYLISTS = (
+    ("Soft Dream Worlds 🧸", r"plush|made-of|everyday|pets|sweets|crystal|giant-flowers|animal|upside-down|-in-things"
+                            r"|doors|rooms-of|seasons-house|musical-garden|giants|rides"),
+    ("Dream Places I'd Live 🏡", r"(town|city|island|village|suburb|market|lake|carnival|castle|rooftops|(?<!light)house"
+                                r"|cottage|fjord|forest)(-|$)|sea-of-clouds"),
+    ("Night Sky Dream Jobs 🌙", r"moon|star|comet|firefly|lantern|lighthouse|sunset|sky|night"),
+    ("Weather & Season Dream Jobs ☁️", r"cloud|rain|snow|fog|weather|tide|sunrise|sunlight|autumn|season|umbrella|bubble"),
+)
+DREAM_CRAFTS = "Cozy Dream Jobs ☕"
 TRAVEL_NAME = re.compile(r"^(zoom|reel|scenic|scenery|drop|travel|nostalgia|gown|product)[-_ ]"
                          r"|\b(zoominview|scenic-drop-reel)\b", re.IGNORECASE)
 # Two videos a day per channel (user rule 2026-10-29). Each kind of content is watched at its own
@@ -197,6 +209,14 @@ def _channel(name: str, entry: dict) -> str:
     if HEALING_NAME.search(name):
         return "healing"
     return "travel" if TRAVEL_NAME.search(name) else "chinese"
+
+
+def _playlist(name: str, entry: dict) -> str | None:
+    """The YouTube playlist a video goes in (Dream life only)."""
+    if _channel(name, entry) != "dream":
+        return None
+    slug = re.sub(r"^dream[-_ ]+(life[-_ ]+)?", "", Path(name).stem.lower())
+    return next((title for title, rule in DREAM_PLAYLISTS if re.search(rule, slug)), DREAM_CRAFTS)
 
 
 def _kind(name: str) -> str:
@@ -361,6 +381,7 @@ def _view(path: Path, entry: dict, svc: Services) -> dict:
             "caption": entry.get("caption", ""), "captions": entry.get("captions", {}),
             "auto_captions": svc.captions.status(_key(path.name)),
             "posted": entry.get("posted", {}), "slot": key, "channel": _channel(path.name, entry),
+            "playlist": _playlist(path.name, entry),
             "thumbnails": [{"kind": k, "use": THUMBS[k]} for k in _thumbs(path)],
             "auto": {p: j.get("state", "") for p, j in (entry.get("auto") or {}).get("jobs", {}).items()},
             "schedule": {p: t.isoformat() for p, t in _slot_times(key, _channel(path.name, entry)).items()} if key else {},
@@ -463,6 +484,8 @@ def _captions_text(name: str, entry: dict) -> str:
         if text:
             when = times[p].strftime("%a %d-%m %H:%M") if p in times else ""
             blocks.append(f"=== {label}{'  ' + when if when else ''} ===\n{text.strip()}\n")
+    if playlist := _playlist(name, entry):
+        blocks.append(f"=== YouTube playlist ===\n{playlist}\n")
     return "\n".join(blocks)
 
 
