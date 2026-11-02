@@ -218,6 +218,11 @@ Finished videos can post themselves to TikTok, YouTube Shorts, Facebook Reels an
 on a schedule, with rules and per-video overrides on `/dashboard` → Auto-post. Setup of the developer
 apps, scopes and audits: [docs/auto-post.md](docs/auto-post.md).
 
+## Browser control for Claude Code
+
+To let Claude Code drive your own browser on muse.ai (with your logged-in session), run
+`bash scripts/browser-harness/install.sh`. Details: [docs/browser-harness.md](docs/browser-harness.md).
+
 ## Endpoints
 
 | Method | Route | Description |
