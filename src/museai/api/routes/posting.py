@@ -575,6 +575,7 @@ async def list_posts(svc: Services = Depends(get_services)) -> dict:
         "videos": sorted((_view(p, state.get(_key(p.name), {}), svc) for p in videos),
                          key=lambda v: v["slot"] or "~"),
         "calendar": _calendar(state, {_key(p.name): p.name for p in videos}, now),
+        "playlists": {"dream": [title for title, _ in DREAM_PLAYLISTS] + [DREAM_CRAFTS]},
     }
 
 

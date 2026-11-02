@@ -541,7 +541,9 @@ def test_posting_dream_playlists(client, admin, settings):
     settings.post_dir.mkdir()
     (settings.post_dir / "dream-star-fisher.mp4").write_bytes(b"v")
     (settings.post_dir / "reel-kyoto.mp4").write_bytes(b"v")
-    videos = {v["name"]: v for v in client.get("/dashboard/posts", headers=admin).json()["videos"]}
+    d = client.get("/dashboard/posts", headers=admin).json()
+    assert len(d["playlists"]["dream"]) == 5 and any(n.startswith("Night Sky") for n in d["playlists"]["dream"])
+    videos = {v["name"]: v for v in d["videos"]}
     assert videos["dream-star-fisher.mp4"]["playlist"].startswith("Night Sky")
     assert videos["reel-kyoto.mp4"]["playlist"] is None
     assert "=== YouTube playlist ===" in posting._captions_text("dream-star-fisher.mp4", {"caption": "hi"})

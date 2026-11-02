@@ -165,6 +165,16 @@
   .sslot.booked span { color: var(--text); }
   .sslot.late { border-color: var(--bad); }
   .sslot.gone { border-style: dashed; }
+  .sslot .pl { display: block; color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* YouTube playlists (Dream life): which to create, and which queued video goes in each */
+  .playlists { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); padding: 10px 14px; margin-bottom: 14px; }
+  .playlists summary { cursor: pointer; font-weight: 600; }
+  .playlists summary small { font-weight: 400; color: var(--muted); }
+  .pl-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 10px; font-size: 12px; }
+  .pl-cols h4 { margin: 0 0 4px; font-size: 13px; user-select: all; }
+  .pl-cols h4 small { color: var(--muted); font-weight: 400; user-select: none; }
+  .pl-cols ul { margin: 0; padding-left: 18px; }
+  .pl-cols .empty { color: var(--muted); }
   /* growth campaign (Dream life): progress toward each platform's monetization eligibility */
   .campaign { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); padding: 10px 14px; margin-bottom: 14px; }
   .campaign summary { cursor: pointer; font-weight: 600; }
@@ -277,6 +287,7 @@
       (8-9 AM in Vietnam) and the US morning commute (7-10 PM in Vietnam). Healing: one a day at the US evening. Each channel's queue fills its free slots back to back; use each platform's scheduler 1-2 days ahead; pick another slot on a card to change the order.</p>
     <div class="tabs chan-tabs" id="chanTabs"></div>
     <div class="sched" id="sched"></div>
+    <details class="playlists" id="playlists" open hidden></details>
     <details class="campaign" id="campaign" open hidden></details>
     <p class="hint">Each platform has its own caption, written to its length, hook and hashtag rules (tabs above
       the text; • = written for it; “Shared” is the fallback for a platform without one): pick the tab, “Copy” (YouTube: “Copy title” and “Copy description”), and “Show file”
@@ -745,6 +756,7 @@ const slotLabel = (key) => { const [d, n] = key.split("/"); return `${dayLabel(d
 const firstLine = (v, p) => (captionFor(v, p) || "").split("\n")[0].trim();
 function renderSchedule() {
   const today = todayGmt7();
+  renderPlaylists();
   $("campaign").hidden = chan !== "dream";
   if (chan === "dream" && !campaign) loadCampaign();
   $("sched").innerHTML = ((posts.calendar || {})[chan] || []).map((day) => `
@@ -754,9 +766,26 @@ function renderSchedule() {
         const title = v ? firstLine(v, "youtube") || v.name : s.gone ? `✓ ${s.gone.title || s.gone.name}` : "free";
         return `<button class="sslot ${v ? "booked" : ""} ${s.gone ? "gone" : ""} ${v && late(s.time) && !Object.keys(v.posted).length ? "late" : ""}"
           ${v ? `data-goto="${esc(v.name)}"` : "disabled"} title="${esc(s.focus)}${s.audience ? `\n= ${esc(audLabel(s.audience.clock, s.audience.time))} for the audience` : ""}${v ? "\n" + esc(v.name) : s.gone ? "\nPosted / deleted: " + esc(s.gone.name) : ""}">
-          <b>${esc(clock12(s.time))}</b>${s.audience ? ` <small class="aud">${esc(audLabel(s.audience.clock, s.audience.time))}</small>` : ""}<span>${esc(title)}</span></button>`;
+          <b>${esc(clock12(s.time))}</b>${s.audience ? ` <small class="aud">${esc(audLabel(s.audience.clock, s.audience.time))}</small>` : ""}<span>${esc(title)}</span>${v && v.playlist ? `<small class="pl">▸ ${esc(v.playlist)}</small>` : ""}</button>`;
       }).join("")}
     </div>`).join("");
+}
+// The channel's YouTube playlists, each with its queued videos in posting order: which to create and fill.
+function renderPlaylists() {
+  const names = (posts.playlists || {})[chan] || [];
+  $("playlists").hidden = !names.length;
+  if (!names.length) return;
+  const queued = chanVideos().filter((v) => v.playlist).sort((a, b) => (a.slot || "~").localeCompare(b.slot || "~"));
+  const count = (n) => queued.filter((v) => v.playlist === n).length;
+  const wanted = names.filter(count).length;
+  $("playlists").innerHTML = `
+    <summary>YouTube playlists <small>(${wanted} of ${names.length} needed for the queued videos; create each once in YouTube Studio, pick it when uploading)</small></summary>
+    <div class="pl-cols">${[...names].sort((a, b) => count(b) - count(a)).map((n) => {
+      const vs = queued.filter((v) => v.playlist === n);
+      return `<div><h4>${esc(n)} <small>${vs.length}</small></h4>${vs.length ? `<ul>${vs.map((v) =>
+        `<li>${v.slot ? esc(slotLabel(v.slot)) + " · " : ""}${esc(firstLine(v, "youtube") || v.name)}</li>`).join("")}</ul>`
+        : `<span class="empty">nothing queued yet</span>`}</div>`;
+    }).join("")}</div>`;
 }
 // Growth campaign of the Dream life accounts (routes/campaign.py). Loaded on opening the tab and after a
 // save, not on every refresh, so the number fields keep what is being typed.
