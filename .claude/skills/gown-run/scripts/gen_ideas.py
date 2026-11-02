@@ -106,6 +106,12 @@ DETAIL = {
         "one rounded stair-turret corner, standing alone on a low grassy promontory in the loch, the big mountain "
         "Quinag behind across the water. It is the only building: never several towers, never a large castle, "
         "never curtain walls",
+    "Cliffs of Moher, Ireland":
+        "sheer dark layered sandstone cliffs about 200 m high dropping straight into the deep blue Atlantic, a "
+        "long wavy line of headlands stretching away to the south, flat bright green grass on top. O'Brien's "
+        "Tower: ONE small round grey stone tower, two storeys, with a flat battlemented top (no roof, no cone, "
+        "no spire), standing alone near the cliff edge behind a low wall of upright grey flagstone slabs. It is "
+        "the only building: never a castle, never several towers, never houses",
 }
 
 PLACES = [
