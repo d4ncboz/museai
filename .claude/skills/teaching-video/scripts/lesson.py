@@ -53,7 +53,7 @@ def check_pinyin(zh, py):
     chars = hanzi(zh)
     want = lazy_pinyin("".join(chars), style=Style.TONE)
     alts = [p for p in pinyin("".join(chars), style=Style.TONE, heteronym=True)]
-    s = re.sub(r"[^a-zA-Zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüv]", "", unicodedata.normalize("NFC", plain(py))).lower()
+    s = re.sub(r"[^a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüv]", "", unicodedata.normalize("NFC", plain(py)).lower())
     errs, warns, pos = [], [], 0
     for i, (c, w) in enumerate(zip(chars, want, strict=True)):
         if c == "儿" and s[pos:pos + 1] == "r" and not s[pos:pos + 2] == "er":

@@ -13,6 +13,7 @@ head (EP44 intro: head top at y~300, 16 %): give the intro still headroom ("head
 frame"), or shorten the line. Run after captions and cards, before qa's frame check."""
 
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -25,11 +26,36 @@ W, H = 1080, 1920
 X0, X1, Y0, Y1 = 86, 918, 134, 365  # x8-85 %, y7-19 % at most
 GAP = 14  # px kept between the box and the highest head
 LATIN = "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
+ZH = ("/System/Library/AssetsV2/com_apple_MobileAsset_Font8/86ba2c91f017a3749571a82f2c6d890ac7ffb2fb"
+      ".asset/AssetData/PingFang.ttc")
+CJK = re.compile(r"[\u3000-\u9fff\uff00-\uffef]")
+CJK_SPLIT = re.compile(r"([\u3000-\u9fff\uff00-\uffef]+)")
 FADE = 0.3
 
 video, text, out = sys.argv[1], sys.argv[2], sys.argv[3]
 until = float(sys.argv[4]) if len(sys.argv) > 4 else 2.8
 sub = os.environ.get("SUB", "Cuối video có câu hỏi cho bạn!")
+
+
+class Mixed:
+    """Arial with Hanzi runs in PingFang, so a hook like "Được khen 很地道 là khen gì?" has no tofu boxes."""
+
+    def __init__(self, size):
+        self.size = size
+        self.latin = ImageFont.truetype(LATIN, size)
+        self.zh = ImageFont.truetype(ZH, size, index=11)
+
+    def runs(self, text):
+        return [(self.zh if CJK.match(c) else self.latin, c) for c in CJK_SPLIT.split(text) if c]
+
+    def getlength(self, text):
+        return sum(f.getlength(c) for f, c in self.runs(text))
+
+    def draw(self, d, xy, text, fill):
+        x, y = xy
+        for f, c in self.runs(text):
+            d.text((x, y), c, font=f, fill=fill)
+            x += f.getlength(c)
 
 
 def wrap(f, words, width):
@@ -47,14 +73,18 @@ def wrap(f, words, width):
         else:
             lines.append(cur)
             cur = w
-    return lines + [cur]
+    lines.append(cur)
+    if len(lines) == 2:  # balance two lines: no lone "gì?" on the second one
+        i = min(range(1, len(words)), key=lambda i: max(f.getlength(" ".join(p)) for p in (words[:i], words[i:])))
+        lines = [" ".join(words[:i]), " ".join(words[i:])]
+    return lines
 
 
 def layout(y1, sub):
     """largest font (>= 44 px) that fits the text in at most 2 lines between Y0 and y1 (sub line included)"""
     inner = X1 - X0 - 60
     for size in range(78, 42, -2):
-        f = ImageFont.truetype(LATIN, size)
+        f = Mixed(size)
         lines = wrap(f, text.split(), inner)
         fs = ImageFont.truetype(LATIN, max(30, int(size * 0.5)))
         h = len(lines) * size * 1.18 + 32 + (fs.size * 1.4 + 10 if sub else 0)
@@ -109,7 +139,7 @@ main_h = len(lines) * f.size * 1.18 + 32
 d.rounded_rectangle((bx0, Y0, bx0 + box_w, Y0 + main_h), 22, fill=(214, 32, 48, 240))
 y = Y0 + 16
 for line in lines:
-    d.text((cx - f.getlength(line) / 2, y), line, font=f, fill="white")
+    f.draw(d, (cx - f.getlength(line) / 2, y), line, "white")
     y += f.size * 1.18
 if sub:
     y = Y0 + main_h + 10

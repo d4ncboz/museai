@@ -28,6 +28,8 @@ TONE_MARKS = {c: t for t, cs in enumerate(("āēīōūǖĀĒĪŌŪǕ", "áéíó
 VOWELS = "aeiouüvAEIOUÜ" + "".join(TONE_MARKS)
 SYLLABLE = re.compile(rf"(?:[zcsZCS]h|[bpmfdtnlgkhjqxrzcsywBPMFDTNLGKHJQXRZCSYW])?[{VOWELS}]+"
                       rf"(?:ng(?![{VOWELS}])|n(?![{VOWELS}])|r(?![{VOWELS}]))?")
+CJK = re.compile(r"[\u3000-\u9fff\uff00-\uffef]")
+CJK_SPLIT = re.compile(r"([\u3000-\u9fff\uff00-\uffef]+)")
 MIN_RATIO = 0.75  # shrink a line at most to 75% of its size, then wrap it instead
 
 
@@ -39,7 +41,7 @@ def fit(path, size, text):
     """Rows for one caption line: shrink a little, else wrap at the space nearest the middle."""
     width = BOX[2] - BOX[0]
     for s in range(size, int(size * MIN_RATIO) - 1, -2):
-        if font_at(path, s).getlength(text) <= width:
+        if runs_len(font_at(path, s), text) <= width:
             return [(font_at(path, s), text)]
     half = font_at(path, size).getlength(text) / 2
     words = text.split(" ")
@@ -71,6 +73,18 @@ def tone_runs(text):
     return runs + ([(text[at:], TONE_COLORS[0])] if at < len(text) else [])
 
 
+def font_runs(font, text):
+    """[(font, chunk)]: Hanzi inside a Latin line (vi "地道 là rất chuẩn") drawn in PingFang, not Arial tofu."""
+    if "PingFang" in font.path:
+        return [(font, text)]
+    zh = font_at(ZH_FONT, font.size)
+    return [(zh if CJK.match(c) else font, c) for c in CJK_SPLIT.split(text) if c]
+
+
+def runs_len(font, text):
+    return sum(f.getlength(c) for f, c in font_runs(font, text))
+
+
 def row_h(font, stroke):
     return font.size * 1.02 + 2 * stroke
 
@@ -94,11 +108,13 @@ def render(texts, dest):
     y = BOX[1] + (BOX[3] - BOX[1] - height) / 2
     cx = (BOX[0] + BOX[2]) / 2
     for font, line, stroke, pinyin in rows:
-        x = cx - font.getlength(line) / 2
-        for chunk, colour in tone_runs(line) if pinyin else [(line, TONE_COLORS[0])]:
-            draw.text((x, y + row_h(font, stroke) / 2), chunk, font=font, anchor="lm", fill=colour,
+        x = cx - runs_len(font, line) / 2
+        chunks = tone_runs(line) if pinyin else [(c, TONE_COLORS[0], f) for f, c in font_runs(font, line)]
+        for chunk, colour, *f in chunks:
+            f = f[0] if f else font
+            draw.text((x, y + row_h(font, stroke) / 2), chunk, font=f, anchor="lm", fill=colour,
                       stroke_width=stroke, stroke_fill=(20, 20, 20, 235))
-            x += font.getlength(chunk)
+            x += f.getlength(chunk)
         y += row_h(font, stroke) + GAP
     img.save(dest)
 
