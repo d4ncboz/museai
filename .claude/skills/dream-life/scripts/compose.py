@@ -134,7 +134,10 @@ with tempfile.TemporaryDirectory() as tmp:
         chains.append(f"{vout}[t]overlay=0:0:enable='lte(t,{a.text_secs})'[vt]")
         vout = "[vt]"
     chains.append(f"[{music_in}:a]atrim=duration={total:.2f},afade=out:st={total - 2:.2f}:d=2[m]")
-    chains.append(f"[m]{au}amix=inputs=2:duration=first:normalize=0[mix]")
+    # steep roll-off above 5.5 kHz like the references' vintage top end: muse ambience hiss and the
+    # track's 6-7 kHz edge failed qa.py's noise floor (< -70 dB above 7 kHz) on dl-0005/0006
+    hiss_cut = ",".join(["lowpass=f=5500"] * 6)
+    chains.append(f"[m]{au}amix=inputs=2:duration=first:normalize=0,{hiss_cut}[mix]")
     mixed = Path(tmp) / "mix.mp4"
     subprocess.run(
         [
