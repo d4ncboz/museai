@@ -249,7 +249,7 @@
   <section data-section="post" hidden>
     <header><h1>Ready to post</h1></header>
     <p class="hint">Each channel posts from its own accounts, two videos a day at its audience's peak hours, each
-      platform at its own time for that kind of content (shown in GMT+7). Chinese: learners' breaks and the study
+      platform at its own time for that kind of content (shown in Vietnam time, GMT+7). Chinese: learners' breaks and the study
       hour after dinner (YouTube Shorts in the evening only). Travel (English): the UK evening and the US East
       evening, which are night and morning in GMT+7. Each channel's queue fills its free slots back to back; use each platform's scheduler 1-2 days ahead; pick another slot on a card to change the order.</p>
     <div class="tabs chan-tabs" id="chanTabs"></div>
@@ -345,7 +345,7 @@ function titleOf(prompt) {
   const place = line.match(/\bPLACE:\s*(.+)/i);
   return place ? place[1] : line.replace(/^NEW STANDALONE REQUEST\..*?text only\.\s*/i, "");
 }
-const fmtClock = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+const fmtClock = (t) => new Date(t * 1000).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
 function fmtDay(t) {
   const d = new Date(t * 1000), today = new Date();
   const days = Math.round((new Date(today.toDateString()) - new Date(d.toDateString())) / 86400000);
@@ -703,14 +703,16 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 const dayName = (ymd) => DAYS[new Date(ymd + "T00:00:00Z").getUTCDay()];
 const dayLabel = (ymd) => `${dayName(ymd)} ${+ymd.slice(8, 10)} ${MONTHS[+ymd.slice(5, 7) - 1]}`;
 const late = (iso) => !!iso && Date.parse(iso) < Date.now();
+// "2026-10-30T20:30:00+07:00" -> "8:30 PM", the clock as written (Vietnam time)
+const clock12 = (iso) => { const h = +iso.slice(11, 13); return `${h % 12 || 12}:${iso.slice(14, 16)} ${h < 12 ? "AM" : "PM"}`; };
 const todayGmt7 = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
 function when(iso) {
   if (!iso) return "";
   const d = iso.slice(0, 10), today = todayGmt7();
   const tomorrow = new Date(Date.parse(today + "T00:00:00Z") + 86400e3).toISOString().slice(0, 10);
-  return `${d === today ? "Today" : d === tomorrow ? "Tomorrow" : dayName(d)} ${iso.slice(11, 16)}`;
+  return `${d === today ? "Today" : d === tomorrow ? "Tomorrow" : dayName(d)} ${clock12(iso)}`;
 }
-const whenLong = (iso) => iso ? `${dayLabel(iso.slice(0, 10))} ${iso.slice(11, 16)} (GMT+7)` : "no slot";
+const whenLong = (iso) => iso ? `${dayLabel(iso.slice(0, 10))} ${clock12(iso)} (Vietnam time)` : "no slot";
 const slotLabel = (key) => { const [d, n] = key.split("/"); return `${dayLabel(d)} · slot ${n}`; };
 const firstLine = (v, p) => (captionFor(v, p) || "").split("\n")[0].trim();
 function renderSchedule() {
@@ -722,7 +724,7 @@ function renderSchedule() {
         const title = v ? firstLine(v, "youtube") || v.name : s.gone ? `✓ ${s.gone.title || s.gone.name}` : "free";
         return `<button class="sslot ${v ? "booked" : ""} ${s.gone ? "gone" : ""} ${v && late(s.time) && !Object.keys(v.posted).length ? "late" : ""}"
           ${v ? `data-goto="${esc(v.name)}"` : "disabled"} title="${esc(s.focus)}${v ? "\n" + esc(v.name) : s.gone ? "\nPosted / deleted: " + esc(s.gone.name) : ""}">
-          <b>${esc(s.time.slice(11, 16))}</b><span>${esc(title)}</span></button>`;
+          <b>${esc(clock12(s.time))}</b><span>${esc(title)}</span></button>`;
       }).join("")}
     </div>`).join("");
 }
