@@ -4,14 +4,15 @@
 
 The end-card teaser must name an episode in this table that will really be made. Series restarted 2026-11-02: the two test renders of German A1 Travel were dropped. Every made episode goes into `log.md`.
 
-| # | Language | Level | Topic | Next teaser | Status | File |
-|---|---|---|---|---|---|---|
-| 1 | German | A1 | Travel | A1 Food | made, not posted | `videos/german-a1-travel.mp4` |
-| 2 | German | A1 | Food | | planned | |
+| # | Language | Level | Topic | Next teaser | Status |
+|---|---|---|---|---|---|
+| 1 | German | A1 | Travel | A1 Food | made, not posted |
+| 2 | German | A1 | Food | A1 City | made, not posted |
+| 3 | German | A1 | City | | planned |
 
 ## 2. Design system
 
-**Same in every episode and language:** everything in SKILL.md → "Episode format": 9:16 1080x1920, ~46.5 s, hook, 6 × 7 s words, `n/6` progress, circle countdown 3-2-1 with ticks, answer said twice with "Listen & repeat", score CTA + teaser, card and text sizes, safe zone, two versions from one prompt (no music, then with a real calm instrumental chosen by muse.ai), all text by ffmpeg.
+**Same in every episode and language:** everything in SKILL.md → "Episode format": 9:16 1080x1920, ~50 s, hook and end card with English narrator, 6 × 7 s words, `n/6` progress, circle countdown 3-2-1 with ticks, answer said twice with "Listen & repeat", score CTA + teaser, card and text sizes, safe zone, one video without background music (music added on TikTok), all text by ffmpeg.
 
 **Per episode:** level, topic, words (picked by Claude from the official list, given to muse.ai in the prompt), scenery, next teaser.
 
@@ -22,7 +23,7 @@ The end-card teaser must name an episode in this table that will really be made.
 ## 3. Before posting
 
 No automatic checks after the render (the prompt gate is the quality step). **By the user:**
-- [ ] Listen to the music in VERSION 2: real instrumental, no vocals, words still clear.
+- [ ] Add music on TikTok: calm instrumental, no vocals, low enough that every word stays clear.
 - [ ] Listen to every word: native-like, grammar marker (article) spoken, same loudness.
 - [ ] Upload private/draft to **TikTok** and **YouTube Shorts**; no text under buttons or description.
 - [ ] Spot-check 2 words against the official word list.

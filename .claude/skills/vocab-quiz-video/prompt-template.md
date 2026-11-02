@@ -1,6 +1,6 @@
 Chat title: {TITLE}
 
-Make one finished vertical video for TikTok and YouTube Shorts: a {LANGUAGE} vocabulary quiz. Level: {LEVEL}. Topic: {TOPIC}. Do everything in this one request and send me two MP4 files: first the video without music (VERSION 1), then the same video with background music (VERSION 2). Do not ask me questions; make sensible choices.
+Make one finished vertical video for TikTok and YouTube Shorts: a {LANGUAGE} vocabulary quiz. Level: {LEVEL}. Topic: {TOPIC}. Do everything in this one request and send me one MP4 file, without background music (music is added later on TikTok). Do not ask me questions; make sensible choices.
 
 WORDS (fixed)
 Use exactly these 6 words, in this order. Each line is: English word | {LANGUAGE} answer | pronunciation. Copy every spelling and pronunciation exactly as written; do not replace, reorder or correct any word.
@@ -14,7 +14,7 @@ Output: 1080x1920, 30 fps, H.264 (-pix_fmt yuv420p) + AAC, -movflags +faststart,
 
 Text style (sizes for 1080x1920): one dark rounded card, about 84 % of the width, about 80 % opacity, 48 px padding, centered horizontally, its center at about 40 % of the height. English word 76 px bold, {LANGUAGE} answer 80 px bold ({ANSWER_STYLE}), pronunciation line 36 px, level/topic label 32 px. White text with a dark shadow. If an answer or pronunciation line is too wide for the card, make its font smaller until it fits on one line; never wrap or cut it. {TEXT_LAYOUT} Keep all text away from the top 8 %, the bottom 25 % and the right 12 % (platform buttons).
 
-1. Hook, 1.5 s: the first frame of clip 1, darkened. Small label "{LANGUAGE_UPPER} · {LEVEL} · {TOPIC}" (32 px) above big text "Can you get 6/6 in {LANGUAGE}?" (76 px bold).
+1. Hook, 3.0 s: the first frame of clip 1, darkened. Small label "{LANGUAGE_UPPER} · {LEVEL} · {TOPIC}" (32 px) above big text "Can you get 6/6 in {LANGUAGE}?" (76 px bold). At 0.3 s an English narrator voice (English TTS, --language en; a different voice from the {LANGUAGE} one) says: "Can you get six out of six in {LANGUAGE}? Let's go!"
 
 2. Progress: from the first word to the last, show "1/6" ... "6/6" in the top-left corner (36 px bold, at about 9 % from the top), matching the current word.
 
@@ -25,25 +25,18 @@ Text style (sizes for 1080x1920): one dark rounded card, about 84 % of the width
    - At 3.6 s a {LANGUAGE} voice ({LANGUAGE} TTS, --language {LANG_CODE}) says {VOICE_SAYS}, clearly and slowly.
    - At about 5.0 s a small label "Listen & repeat" (32 px) appears under the card, and at 5.3 s the voice says it once more.
 
-4. End card, 3 s: "How many did you get right?" big in the center, "Comment your score: 0–6!" below it, and a small teaser line "Next: {LANGUAGE} {NEXT_LEVEL} {NEXT_TOPIC}" (32 px) under that.
+4. End card, 5.0 s: "How many did you get right?" big in the center, "Comment your score: 0–6!" below it, and a small teaser line "Next: {LANGUAGE} {NEXT_LEVEL} {NEXT_TOPIC}" (32 px) under that. At 0.3 s the same English narrator voice says: "How many did you get right? Comment your score below! Next time: {LANGUAGE} {NEXT_LEVEL}, {NEXT_TOPIC}."
 
-5. Audio for VERSION 1: no background music. Mute all sound from the AI clips. The only sounds are the countdown ticks and the {LANGUAGE} voice, both clear and at the same loudness for every word. Normalize the whole audio to about -14 LUFS.
+5. Audio: no background music. Mute all sound from the AI clips. The only sounds are the countdown ticks, the {LANGUAGE} voice and the English narrator, all clear; ticks and {LANGUAGE} voice at the same loudness for every word, narrator at the same loudness as the {LANGUAGE} voice. Normalize the whole audio to about -14 LUFS.
 
-6. Total length about 46.5 s (1.5 s hook + 6 × 7 s + 3 s end). Hard cuts between parts, so every word slot stays exactly 7.0 s.
+6. Total length about 50 s (3 s hook + 6 × 7 s + 5 s end). Hard cuts between parts, so every word slot stays exactly 7.0 s. If a narrator line is longer than its part, speak it a little faster; never cut it and never change the part lengths.
 
 CHECK BEFORE SENDING
 - The 6 words, their order, spelling and pronunciation lines are exactly as given in WORDS, and the spoken {LANGUAGE} matches the text both times.
 - Each countdown number shows exactly 1 s; ticks line up with the numbers.
 - The progress number matches the current word.
-- The file is 1080x1920 and about 46.5 s.
+- The narrator says both lines in full, in English, exactly as written.
+- The file is 1080x1920 and about 50 s.
 - No AI-made text appears anywhere in the clips.
 
-Send VERSION 1 as an MP4 now.
-
-VERSION 2: ADD BACKGROUND MUSIC
-After sending VERSION 1, add music to it and send the result as a second MP4. Change nothing else: same picture, timing, ticks and voice.
-- Music: one real, calm instrumental track with no vocals (soft lofi, chill travel or gentle acoustic). First try Pixabay Music (search "calm lofi travel", free for commercial use). If you cannot reach it, generate the track with your music generation model. Never build music from sine waves, test tones or synth chords with ffmpeg.
-- Mix: keep the voice and ticks exactly as in VERSION 1 (do not normalize again). Between words the music is clearly audible, about 12 dB below the voice level; while the voice speaks, duck it about 4 dB more (sidechain, attack 10 ms, release 300 ms), so every word stays clear. Music fades in over 0.5 s and out over the last 2.5 s.
-- Same length as VERSION 1; if the track is shorter, use a longer one instead of looping it with an audible jump.
-
-Send VERSION 2, then list the 6 words as: English - {LANGUAGE} answer - pronunciation, and name the music track with its page URL (or say it was generated, and with which model).
+Send the MP4, then list the 6 words as: English - {LANGUAGE} answer - pronunciation.
