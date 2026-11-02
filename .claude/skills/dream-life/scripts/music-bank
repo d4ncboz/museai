@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Usage: music-bank fill [takes per flavour=2] | music-bank ls
+# Pre-renders raw ACE takes (40 s, every music FLAVOUR, round-robin so each flavour gets one take
+# before any gets a second) into $MUSIC_BANK, so a video's `scripts/music` takes one in seconds
+# instead of waiting ~5 min for ACE. Run it while the Mac is idle; it holds the same ACE render
+# lock as every other render, at nice 19, and waits between takes while a video holds
+# /tmp/museai-ace.lock (the agents' music wrapper), so a live video never queues behind the bank.
+set -euo pipefail
+here=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
+BANK=${MUSIC_BANK:-$HOME/.local/share/museai/music-bank}
+mkdir -p "$BANK"
+flavours=$("$here/music" "" /dev/null 32 "" list)
+case ${1:-ls} in
+  ls)
+    for f in $flavours; do n=$(find "$BANK" -name "${f}_*.wav" | wc -l); printf '%-10s %s\n' "$f" "${n// /}"; done ;;
+  fill)
+    for round in $(seq 1 "${2:-2}"); do
+      for f in $flavours; do
+        (( $(find "$BANK" -name "${f}_*.wav" | wc -l) >= round )) && continue
+        while [[ -d /tmp/museai-ace.lock ]]; do sleep 30; done
+        seed=$((RANDOM * 7 + 1))
+        # render under a temp name: a half-written take must never be picked up
+        MUSIC_FILL=1 nice -n 19 "$here/music" "" "$BANK/.tmp_${f}_$seed.wav" 34 "$seed" "$f" >/dev/null
+        mv "$BANK/.tmp_${f}_$seed.wav" "$BANK/${f}_$seed.wav"
+        echo "banked $f ($seed)"
+      done
+    done ;;
+  *) sed -n 2p "$0"; exit 2 ;;
+esac

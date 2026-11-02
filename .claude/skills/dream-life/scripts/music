@@ -7,12 +7,16 @@
 # (auto: the first one not used by the last 4 videos in the history, then a random one). The idea's
 # own music field is used only with flavour=look. Writes out.json {flavour, seed} next to the track;
 # pass it to `ideas.py record --music out.json`.
+# Music bank: `music-bank fill` pre-renders raw ACE takes per flavour into $MUSIC_BANK (idle time).
+# With a random seed, music takes a banked take of its flavour instead of rendering (seconds, not
+# ~5 min), and auto prefers fresh flavours that have one. MUSIC_BANK=off renders as before.
 set -euo pipefail
 SKILL_DIR=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
 HV=${HEALING_SCRIPTS:-$SKILL_DIR/../healing-video/scripts}
 MV=${MUSE_VIDEO_SCRIPTS:-$SKILL_DIR/../muse-video/scripts}
-style=$1; out=$2; secs=${3:-32}; seed=${4:-$((RANDOM * 7 + 1))}; flavour=${5:-auto}
-read -r flavour style < <(python3 - "$flavour" "$style" <<'PY'
+style=$1; out=$2; secs=${3:-32}; seed=${4:-}; flavour=${5:-auto}
+BANK=${MUSIC_BANK:-$HOME/.local/share/museai/music-bank}
+read -r flavour style < <(python3 - "$flavour" "$style" "$BANK" <<'PY'
 import json, random, sys
 from pathlib import Path
 FLAVOURS = {
@@ -26,22 +30,44 @@ FLAVOURS = {
     "lofi": "dreamy lo-fi, soft Rhodes piano melody, vinyl crackle, mellow laid-back beat, 80 bpm",
     "fairytale": "cinematic fairytale orchestra, flute and oboe melody, sweeping strings, french horn, 88 bpm",
     "cafejazz": "vintage Parisian cafe jazz, gypsy swing guitar, violin melody, upright bass, 120 bpm",
+    "celtic": "cozy Celtic folk, fiddle melody, Celtic harp, soft bodhran, tin whistle, 100 bpm",
+    "kalimba": "breezy kalimba and marimba groove, light hand percussion, airy pads, 98 bpm",
+    "nordic": "gentle Nordic folk, nyckelharpa melody, soft frame drum, warm drone, 84 bpm",
+    "carol": "wintry celesta carol, sleigh bells, soft choir pad, warm strings, 3/4, 90 bpm",
+    "lounge": "1960s lounge, soft vibraphone melody, brushed drums, warm piano chords, upright bass, 92 bpm",
+    "pizzicato": "airy flute melody over playful pizzicato strings, light woodblock, tiptoe rhythm, 108 bpm",
 }
-want, look_style = sys.argv[1], sys.argv[2]
+want, look_style, bank = sys.argv[1], sys.argv[2], Path(sys.argv[3])
+if want == "list":
+    print("list", " ".join(FLAVOURS))
+    sys.exit()
 if want == "look":
     print("look", look_style)
     sys.exit()
 if want == "auto":
     hist = Path.home() / ".config/museai/dream-history.json"
-    recent = [h.get("music", {}).get("flavour") for h in (json.loads(hist.read_text()) if hist.exists() else [])[-4:]]
+    recent = [h.get("music", {}).get("flavour") for h in (json.loads(hist.read_text()) if hist.exists() else [])[-8:]]
     fresh = [f for f in FLAVOURS if f not in recent]
-    want = random.choice(fresh)
+    banked = [f for f in fresh if any(bank.glob(f"{f}_*.wav"))]
+    want = random.choice(banked or fresh)
 print(want, FLAVOURS[want])
 PY
 )
 tags="$style, clear memorable melody, magical, enchanted, sparkling celesta shimmer, dreamy, whimsical, gentle dynamics, warm vintage recording, instrumental, no vocals"
+if [[ $flavour == list ]]; then echo "$style"; exit; fi
 raw="${out%.*}.raw.wav"
-if [[ -x ${ACE_PY:=${ACE_STEP_HOME:-$HOME/.local/share/ace-step}/venv/bin/python} ]]; then
+[[ ${MUSIC_FILL:-} ]] && raw=$out  # music-bank fill: keep the raw take, skip the mix
+banked=
+if [[ -z $seed && ${MUSIC_BANK:-} != off && ! ${MUSIC_FILL:-} && $secs -le 34 ]]; then  # takes are 40 s
+  # mv is atomic: two videos never take the same banked take
+  for take in "$BANK/${flavour}"_*.wav; do
+    [[ -f $take ]] && mv "$take" "$raw" 2>/dev/null && { banked=1; seed=${take##*_}; seed=${seed%.wav}; echo "music: banked $flavour take (seed $seed)" >&2; break; }
+  done
+fi
+seed=${seed:-$((RANDOM * 7 + 1))}
+if [[ $banked ]]; then
+  :
+elif [[ -x ${ACE_PY:=${ACE_STEP_HOME:-$HOME/.local/share/ace-step}/venv/bin/python} ]]; then
   # one ACE render per machine: same lock file as music.py (macOS has no flock(1), so fcntl in python)
   python3 - "$(dirname "$(dirname "$(dirname "$ACE_PY")")")/render.lock" "$ACE_PY" "$HV/ace_piano.py" --tags "$tags" \
     --duration "$((secs + 6))" --seed "$seed" --out "$raw" <<'PY'
@@ -58,6 +84,7 @@ else
   uv run --no-project "$MV/music.py" --engine musicgen --style "$tags" --bpm 76 --body-beats $((secs * 76 / 60)) --out "$raw.m4a"
   ffmpeg -v error -y -i "$raw.m4a" "$raw"
 fi
+[[ ${MUSIC_FILL:-} ]] && exit
 start=$(python3 "$HV/lnorm.py" --body-start "$raw")
 python3 "$HV/lnorm.py" "$raw" "$out" -16 "lowpass=f=6000,atrim=start=$start:duration=$secs,asetpts=PTS-STARTPTS,afade=in:d=0.3,afade=out:st=$((secs - 3)):d=3"
 printf '{"flavour": "%s", "seed": %s}\n' "$flavour" "$seed" > "${out%.*}.json"
