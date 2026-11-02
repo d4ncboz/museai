@@ -482,6 +482,22 @@ def test_posting_channel_from_file_name():
         assert posting._channel(name, {}) == "chinese", name
     assert posting._channel("reel-x.mp4", {"channel": "chinese"}) == "chinese"
 
+def test_posting_dream_one_slot_a_day(client, admin, settings):
+    from museai.api.routes import posting
+
+    # New York 21:00 on Monday is Tuesday 09:00 in GMT+7 (winter time)
+    assert posting._slot_times("2026-11-03/1", "dream")["instagram"].isoformat() == "2026-11-03T09:00:00+07:00"
+    settings.post_dir.mkdir()
+    for name in ("dream-a.mp4", "dream-b.mp4"):
+        (settings.post_dir / name).write_bytes(b"v")
+    d = client.get("/dashboard/posts", headers=admin).json()
+    assert all(len(day["slots"]) == 1 for day in d["calendar"]["dream"])
+    slots = sorted(v["slot"] for v in d["videos"])
+    assert [s[-2:] for s in slots] == ["/1", "/1"] and slots[0][:10] != slots[1][:10]
+    r = client.post("/dashboard/posts/dream-a.mp4", headers=admin, json={"slot": slots[0][:10] + "/2"})
+    assert r.status_code == 400
+
+
 def test_posting_move_slot(client, admin, settings):
     settings.post_dir.mkdir()
     for name in ("a.mp4", "b.mp4"):

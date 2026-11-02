@@ -8,7 +8,11 @@ slots back to back (history: `data/post-history.jsonl`).
 
 ## Whose clock
 - **Chinese** (Vietnamese captions, Vietnamese learners): Vietnam, GMT+7, both slots.
-- **Travel** and the other English formats (dream, healing, nostalgia, gown, product): English viewers.
+- **Dream** (dream-life reels, their own account): US viewers, one slot a day in New York time. The
+  table comes from `dream-life/scripts/post_time.py`, which weights the US time zones by population and
+  scores each hour by how much of its first two hours falls in their evening peak (dream-life
+  `references/account-kit.md`). New York 20-21 h = 08-09 h the next day in GMT+7.
+- **Travel** and the other English formats (healing, nostalgia, gown, product): English viewers.
   Slot 1 is in London time, slot 2 in New York time, on the audience's day before the calendar day.
   Every travel time is 18:00 or later, so both land on the calendar day in GMT+7 (about 01-03 h and
   06-09 h). Schedule them in each platform's scheduler.

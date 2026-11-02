@@ -635,7 +635,7 @@ document.querySelector(".nav").addEventListener("click", (e) => {
 });
 
 let posts = { platforms: [], videos: [] }, postsSig = "";
-// Channel tab (Chinese / Travel): filters the schedule and the cards; remembered per browser.
+// Channel tab (Chinese / Travel / Dream): filters the schedule and the cards; remembered per browser.
 let chan = (() => { try { return localStorage.getItem("postChannel") || "chinese"; } catch { return "chinese"; } })();
 const chanVideos = () => posts.videos.filter((v) => v.channel === chan);
 const postUrl = (name, rest = "") => `/dashboard/posts/${encodeURIComponent(name)}${rest}`;

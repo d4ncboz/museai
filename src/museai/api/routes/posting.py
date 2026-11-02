@@ -73,8 +73,8 @@ CHANNELS = {
                             2: "Study hour after dinner: conversations, common mistakes, quizzes"}),
     "travel": ("Travel", {1: "UK / Europe evening: a quick view",
                           2: "US East evening: full reels and zoom-ins"}),
-    "dream": ("Dream life", {1: "UK / Europe evening: a calm wind-down",
-                             2: "US East evening: a calm wind-down"}),
+    # a new account (dream-life skill, 2026-11): one reel a day, so each gets its own seed-audience test
+    "dream": ("Dream life", {1: "US evening: one dream-life reel a day"}),
 }
 # Whose clock each slot's times follow. Chinese lessons have Vietnamese captions for Vietnamese
 # learners: both slots in GMT+7. Travel (and the other English formats) speak to English viewers, who
@@ -83,11 +83,11 @@ CHANNELS = {
 # calendar day in GMT+7 (about 01-03 h and 06-09 h); schedule them in each platform's scheduler.
 AUDIENCE = {"chinese": (ZoneInfo("Asia/Ho_Chi_Minh"), ZoneInfo("Asia/Ho_Chi_Minh")),
             "travel": (ZoneInfo("Europe/London"), ZoneInfo("America/New_York")),
-            "dream": (ZoneInfo("Europe/London"), ZoneInfo("America/New_York"))}
+            "dream": (ZoneInfo("America/New_York"),)}
 # The format skills name their files <prefix>-<slug> (muse-video SKILL.md "Format skills"); a renamed file
 # that still names its format ("Kelingking Beach - zoominview.mp4") is travel too. The English formats
 # (healing, nostalgia, ...) post on the Travel accounts: their viewers share its clock. Dream-life videos
-# post on an account of their own (user rule 2026-11-02), at the travel times.
+# post on an account of their own (user rule 2026-11-02), at the US evening.
 DREAM_NAME = re.compile(r"^dream[-_ ]|\bdream-life\b", re.IGNORECASE)
 TRAVEL_NAME = re.compile(r"^(zoom|reel|scenic|scenery|drop|travel|healing|nostalgia|gown|product)[-_ ]"
                          r"|\b(zoominview|scenic-drop-reel)\b", re.IGNORECASE)
@@ -116,7 +116,16 @@ TIMES = {
         "threads":   ["18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00"],
     },
 }  # fmt: skip
-TIMES["dream"] = TIMES["travel"]
+# New York clock, from the dream-life skill's scripts/post_time.py: the hour whose first two hours
+# fall in the evening peak of most US viewers (Eastern to Pacific, weighted by population).
+TIMES["dream"] = {
+    "youtube":   ["20:00", "20:00", "21:00", "21:00", "21:00", "21:00", "21:00"],
+    "tiktok":    ["20:45", "20:45", "20:45", "20:45", "20:45", "20:45", "20:45"],
+    "facebook":  ["20:00", "20:00", "20:00", "20:00", "21:00", "20:00", "21:00"],
+    "instagram": ["21:00", "21:00", "21:00", "20:00", "21:00", "21:00", "21:00"],
+    "x":         ["21:00", "21:00", "21:00", "21:00", "21:00", "21:00", "21:00"],
+    "threads":   ["21:00", "21:00", "21:00", "21:00", "21:00", "21:00", "21:00"],
+}  # fmt: skip
 SLOT_KEY = re.compile(r"^(\d{4}-\d{2}-\d{2})/([12])$")
 FOLDER_MARK = ".museai-post"  # marks a folder this module made for one video
 SETTLE = 30  # seconds a video must sit unchanged before it moves (deliver.sh may still be copying it)
@@ -186,6 +195,8 @@ def _slot_times(key: str, channel: str = "chinese") -> dict[str, datetime]:
     """Posting time per platform (in GMT+7) for a slot key "YYYY-MM-DD/1|2" of ``channel``."""
     day, n = SLOT_KEY.match(key).groups()
     d, n = date.fromisoformat(day), int(n)
+    if n not in CHANNELS[channel][1]:
+        raise ValueError(f"{CHANNELS[channel][0]} has no slot {n}")
     tz = AUDIENCE[channel][n - 1]
     if tz != TZ:  # an audience west of GMT+7: its evening of the day before lands on the calendar day
         d -= timedelta(days=1)
@@ -200,7 +211,7 @@ def _slots_from(now: datetime, channel: str):
     """Slot keys of ``channel`` from today on whose YouTube time is still ahead of ``now``."""
     d = now.astimezone(TZ).date()
     while True:
-        for n in (1, 2):
+        for n in CHANNELS[channel][1]:
             key = f"{d.isoformat()}/{n}"
             if _slot_times(key, channel)["youtube"] > now:
                 yield key
@@ -320,7 +331,7 @@ def _calendar(state: dict, names: dict[str, str], now: datetime, days: int = 7) 
         for i in range(days):
             d = start + timedelta(days=i)
             slots = []
-            for n in (1, 2):
+            for n in focus:
                 key = f"{d.isoformat()}/{n}"
                 slots.append({"key": key, "n": n, "time": _slot_times(key, ch)["youtube"].isoformat(),
                               "focus": focus[n], "video": booked.get((ch, key)),
@@ -533,9 +544,9 @@ def _update(svc: Services, path: Path, body: dict) -> dict:
         entry.pop("slot_pinned", None)
     if slot := body.get("slot"):
         try:
-            _slot_times(slot)
+            _slot_times(slot, _channel(name, entry))
         except (TypeError, AttributeError, ValueError):
-            raise InvalidRequest("slot must be 'YYYY-MM-DD/1' or 'YYYY-MM-DD/2'") from None
+            raise InvalidRequest("slot must be 'YYYY-MM-DD/n', n one of the channel's slots") from None
         for other, e in state.items():
             if other != name and e.get("slot") == slot and _channel(other, e) == _channel(name, entry) \
                     and _exists(svc, other):
