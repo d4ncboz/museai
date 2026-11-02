@@ -185,6 +185,18 @@ def _channel(name: str, entry: dict) -> str:
     return "travel" if TRAVEL_NAME.search(name) else "chinese"
 
 
+def _kind(name: str) -> str:
+    """What a video is, from its format prefix (healing, gown, nostalgia, ...): a day mixes kinds. Place
+    reels (drone drops, scenery) are one kind, zoom-in views another."""
+    low = name.lower()
+    if "zoominview" in low:
+        return "zoom"
+    if "scenic-drop-reel" in low:
+        return "place"
+    word = re.split(r"[-_ ]", Path(low).stem, maxsplit=1)[0]
+    return {"reel": "place", "scenic": "place", "scenery": "place", "drop": "place", "travel": "place"}.get(word, word)
+
+
 def _thumbs(path: Path) -> dict[str, Path]:
     """The video's thumbnails on disk, by kind."""
     found = {k: path.with_name(f"{path.stem} - thumbnail {k}.jpg") for k in THUMBS}
@@ -221,9 +233,11 @@ def _slots_from(now: datetime, channel: str):
 def _assign_slots(state: dict, videos: list[Path], now: datetime) -> bool:
     """Lay each channel's queue out back to back in its free slots. History is the slots of videos
     posted or deleted (records) and of queued videos posted on a platform or planned for auto-posting;
-    those never move. Every other queued video takes the next free upcoming slot, in queue order: its
-    current slot (a slot the user picks sets its place in line), then delivery. So no upcoming slot stays
-    empty while videos wait, even next to one posted early, and a slot that passed unposted moves up.
+    those never move. Every other queued video takes a free upcoming slot, in queue order: its current
+    slot (a slot the user picks sets its place in line), then delivery. Kinds mix (``_kind``): each free
+    slot takes the first video in line of a kind not yet posting that day nor in the slot before, else
+    one not yet posting that day, else the first. So no upcoming slot stays empty while videos wait, a
+    slot that passed unposted moves up, and a day shows e.g. a healing video and a drone reel.
     Returns True when the state changed."""
     entries = [(p.name, state.setdefault(_key(p.name), {})) for p in sorted(videos, key=lambda p: p.stat().st_mtime)]
     changed = False
@@ -236,26 +250,44 @@ def _assign_slots(state: dict, videos: list[Path], now: datetime) -> bool:
                 e.pop(k, None)
             changed = True
     queued_names = {n for n, _ in entries}
-    history: dict[str, set[str]] = {ch: set() for ch in CHANNELS}
+    history: dict[str, dict[str, str]] = {ch: {} for ch in CHANNELS}  # slot -> kind of what posts there
     queue: dict[str, list[tuple[str, dict]]] = {ch: [] for ch in CHANNELS}
     for n, e in state.items():
         if n not in queued_names:
             if e.get("done") and e.get("slot"):
-                history[_channel(n, e)].add(e["slot"])
+                history[_channel(n, e)][e["slot"]] = _kind(n)
     for n, e in entries:
         auto = e.get("auto") if isinstance(e.get("auto"), dict) else {}
         planned = bool(auto) and not auto.get("off") and not auto.get("paused")  # auto-post keeps its slot
         if e.get("slot") and (any((e.get("posted") or {}).values()) or planned):
-            history[_channel(n, e)].add(e["slot"])
+            history[_channel(n, e)][e["slot"]] = _kind(n)
         else:
             queue[_channel(n, e)].append((n, e))
     for ch, line in queue.items():
-        free = (k for k in _slots_from(now, ch) if k not in history[ch])
-        for _, e in sorted(line, key=lambda ne: ne[1].get("slot") or "~"):  # stable: delivery order breaks ties
-            slot = next(free)
+        line.sort(key=lambda ne: ne[1].get("slot") or "~")  # stable: delivery order breaks ties
+        taken = history[ch]
+        for slot in (k for k in _slots_from(now, ch) if k not in taken):
+            if not line:
+                break
+            day, n = slot.split("/")
+            before = f"{day}/{int(n) - 1}" if n != "1" else \
+                f"{date.fromisoformat(day) - timedelta(days=1)}/{max(CHANNELS[ch][1])}"
+            same_day = {k for s, k in taken.items() if s.startswith(day)}
+            name, e = _pick(line, [same_day | {taken.get(before)}, same_day])
+            taken[slot] = _kind(name)
             changed |= e.get("slot") != slot
             e["slot"] = slot
     return _episode_order(entries) or changed
+
+
+def _pick(line: list[tuple[str, dict]], avoid: list[set]) -> tuple[str, dict]:
+    """Take the first video in ``line`` whose kind is in none of the first ``avoid`` set, else the
+    second, ..., else the first video."""
+    for kinds in avoid:
+        for i, (name, _) in enumerate(line):
+            if _kind(name) not in kinds:
+                return line.pop(i)
+    return line.pop(0)
 
 
 def _episode_order(entries: list[tuple[str, dict]]) -> bool:

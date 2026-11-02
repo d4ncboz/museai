@@ -168,7 +168,13 @@ class TaskManager:
         running.cancel()
         return True
 
-    async def shutdown(self) -> None:
+    async def shutdown(self, grace: float = 0) -> None:
+        """Stop the running jobs. With ``grace``, first let them finish for up to that many seconds: the
+        server no longer listens by then, and clients keep polling until it is back, so a restart loses no
+        render. Jobs still running after it are cancelled ("interrupted": clients resubmit)."""
+        if grace > 0 and self._running:
+            log.info("waiting up to %.0fs for %d running job(s) to finish", grace, len(self._running))
+            await asyncio.wait(list(self._running.values()), timeout=grace)
         self._stopping = True
         for t in list(self._running.values()):
             t.cancel()

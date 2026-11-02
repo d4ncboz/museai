@@ -374,6 +374,31 @@ def test_posting_queue_fills_free_slots(tmp_path):
     assert not posting._assign_slots(state, videos, now)
 
 
+def test_posting_queue_mixes_kinds_per_day(tmp_path):
+    import os
+    from datetime import datetime
+
+    from museai.api.routes import posting
+
+    # Delivered in a run of one kind, the travel queue still shows two kinds a day: a healing video next
+    # to a drone reel or a gown run, never two healing videos the same day.
+    now = datetime(2026, 11, 8, 12, 0, tzinfo=posting.TZ)
+    names = ("healing-a.mp4", "healing-b.mp4", "healing-c.mp4", "reel-d.mp4", "gown-e.mp4", "zoom-f.mp4")
+    videos = []
+    for i, name in enumerate(names):
+        (p := tmp_path / name).write_bytes(b"v")
+        os.utime(p, (1000 + i, 1000 + i))
+        videos.append(p)
+    state = {"scenic-x (posted)": {"slot": "2026-11-09/1", "channel": "travel", "done": 1}}
+    assert posting._assign_slots(state, videos, now)
+    days: dict[str, list[str]] = {}
+    for n in names:
+        days.setdefault(state[n]["slot"][:10], []).append(posting._kind(n))
+    assert all(len(set(kinds)) == len(kinds) for kinds in days.values()), days
+    assert state["healing-a.mp4"]["slot"] == "2026-11-09/2"  # next to the posted drone reel
+    assert not posting._assign_slots(state, videos, now)
+
+
 def test_posting_slots(tmp_path):
     import os
     from datetime import datetime

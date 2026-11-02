@@ -60,7 +60,7 @@ def create_app(settings: Settings | None = None, driver: MuseDriver | None = Non
                     loop.cancel()
                     with contextlib.suppress(asyncio.CancelledError):
                         await loop
-            await services.tasks.shutdown()
+            await services.tasks.shutdown(settings.shutdown_grace)
             await services.driver.shutdown()
 
     app = FastAPI(title="museai", version=__version__, lifespan=lifespan)

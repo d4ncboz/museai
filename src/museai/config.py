@@ -98,6 +98,8 @@ class Settings(BaseSettings):
     account_max_concurrency: int = 6
     account_cooldown: float = 120.0
     max_failover: int = 2
+    # On stop/restart, how long running image/video jobs may still finish before they are cancelled.
+    shutdown_grace: float = 900.0
 
     # --- keepalive (session renewal) ---
     keepalive_enabled: bool = False
