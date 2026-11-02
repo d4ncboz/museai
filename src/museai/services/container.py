@@ -49,6 +49,8 @@ class Services:
             driver,
             max_failover=settings.max_failover,
             media_queue_timeout=settings.media_queue_timeout or math.inf,
+            video_deadline=settings.video_job_deadline,
+            stuck_video_cooldown=settings.stuck_video_cooldown,
         )
         return cls(
             settings=settings,

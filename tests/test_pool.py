@@ -172,6 +172,61 @@ async def test_stuck_or_refused_video_moves_to_another_account_without_cooldown(
     assert all(a.status == AccountStatus.ACTIVE for a in pool.all())
 
 
+class _StuckOnDriver(MockDriver):
+    """Times out on the given accounts, renders on the rest; records each attempt's timeout."""
+
+    requires_account = True
+
+    def __init__(self, stuck: set[str]):
+        super().__init__(delay=0)
+        self.stuck, self.calls = stuck, []
+
+    async def generate_video(self, account, req):
+        self.calls.append((account.id, req.timeout))
+        if account.id in self.stuck:
+            raise GenerationTimeout("video generation timed out")
+        return await super().generate_video(account, req)
+
+
+async def test_new_video_job_skips_account_whose_render_timed_out(tmp_path):
+    pool = await _pool(tmp_path, n=2, strategy="round_robin")
+    driver = _StuckOnDriver({"a0"})
+    gw = Gateway(pool, driver, max_failover=2, stuck_video_cooldown=1800)
+    for _ in range(3):
+        assert (await gw.generate_video(VideoRequest(prompt="p", model="m"))).data
+    # a0 timed out once; every later job went straight to a1.
+    assert [acc for acc, _ in driver.calls] == ["a0", "a1", "a1", "a1"]
+
+
+async def test_stuck_account_still_takes_jobs_when_it_is_the_only_one(tmp_path):
+    pool = await _pool(tmp_path, n=1)
+    driver = _StuckOnDriver({"a0"})
+    gw = Gateway(pool, driver, max_failover=2, stuck_video_cooldown=1800)
+    for _ in range(2):
+        with pytest.raises(GenerationTimeout):
+            await gw.generate_video(VideoRequest(prompt="p", model="m"))
+    assert [acc for acc, _ in driver.calls] == ["a0", "a0"]
+
+
+async def test_video_job_render_time_is_capped_across_failovers(tmp_path, monkeypatch):
+    pool = await _pool(tmp_path, n=3, strategy="round_robin")
+    clock = [0.0]
+    monkeypatch.setattr("museai.services.gateway.time.monotonic", lambda: clock[0])
+
+    class Slow(_StuckOnDriver):
+        async def generate_video(self, account, req):
+            clock[0] += req.timeout  # renders until its deadline
+            return await super().generate_video(account, req)
+
+    driver = Slow({"a0", "a1", "a2"})
+    gw = Gateway(pool, driver, max_failover=2, video_deadline=1800)
+    with pytest.raises(GenerationTimeout):
+        await gw.generate_video(VideoRequest(prompt="p", model="m", timeout=1500))
+    # 1500 s on the first account leaves 300 s for the second; then too little for a third.
+    assert [t for _, t in driver.calls] == [1500, 300]
+    assert clock[0] <= 1800
+
+
 def test_video_timeout_scales_with_clip_length():
     s = Settings(video_timeout=1500, video_timeout_base=360, video_timeout_per_second=60)
     assert video_timeout(s, 6) == 720

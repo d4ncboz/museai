@@ -88,6 +88,11 @@ class Settings(BaseSettings):
     # ~16 min instead of holding its account for 25.
     video_timeout_base: float = 360.0
     video_timeout_per_second: float = 60.0
+    # Render time one video job may spend on accounts in all, failovers included (30 min).
+    video_job_deadline: float = 1800.0
+    # An account whose render timed out gets no new video job for this long while another
+    # account can take it.
+    stuck_video_cooldown: float = 1800.0
 
     # --- account pool ---
     pool_strategy: PoolStrategyName = "affinity"

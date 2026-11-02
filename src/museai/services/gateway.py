@@ -3,18 +3,23 @@
 from __future__ import annotations
 
 import logging
+import math
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from dataclasses import replace
 from typing import TypeVar
 
 from ..accounts.model import Account, AccountStatus
 from ..accounts.pool import AccountPool, Lease
 from ..drivers.base import ChatRequest, ImageRequest, MediaResult, MuseDriver, VideoRequest
-from ..errors import UpstreamError
+from ..errors import GenerationTimeout, UpstreamError
 
 log = logging.getLogger(__name__)
 T = TypeVar("T")
+
+# A failover with less render time left than this is not started.
+MIN_VIDEO_ATTEMPT = 120.0
 
 _ANONYMOUS = Account(id="anonymous", label="driver without accounts")
 
@@ -27,6 +32,8 @@ class Gateway:
         *,
         max_failover: int = 2,
         media_queue_timeout: float | None = None,
+        video_deadline: float = math.inf,
+        stuck_video_cooldown: float = 0.0,
     ) -> None:
         self.pool = pool
         self.driver = driver
@@ -34,6 +41,12 @@ class Gateway:
         # Image/video jobs run in the background, so they wait for the next free account
         # (one job per account) instead of failing after the chat acquire timeout.
         self.media_queue_timeout = media_queue_timeout
+        # One video job never renders longer than this in all, failovers included.
+        self.video_deadline = video_deadline
+        # An account whose render timed out gets no new video job for this long while another
+        # account can take it: one stuck account once timed out five clips in a row, 12 min each.
+        self.stuck_video_cooldown = stuck_video_cooldown
+        self._stuck_until: dict[str, float] = {}
         # What each account is doing right now (chat, image, video), for the dashboard cards:
         # tasks only record videos, so an account busy with an image used to look idle.
         self.jobs: dict[str, list[dict]] = {}
@@ -67,6 +80,14 @@ class Gateway:
             for a in accounts
         )
 
+    def _stuck_accounts(self, tried: list[str]) -> list[str]:
+        """Accounts whose last render timed out, skipped only while another usable one is left."""
+        now = time.monotonic()
+        usable = [a.id for a in self.pool.all()
+                  if a.enabled and a.status != AccountStatus.INVALID and a.id not in tried]
+        stuck = [i for i in usable if self._stuck_until.get(i, 0) > now]
+        return stuck if len(stuck) < len(usable) else []
+
     async def chat_stream(self, req: ChatRequest) -> AsyncIterator[str]:
         tried: list[str] = []
         for attempt in range(self.max_failover + 1):
@@ -99,10 +120,13 @@ class Gateway:
         owner: str | None = None,
         kind: str = "chat",
         prompt: str = "",
+        time_left: Callable[[], float] = lambda: math.inf,
     ) -> T:
         tried: list[str] = []
         for attempt in range(self.max_failover + 1):
-            async with self._lease(tried, hint, queue_timeout, owner, kind, prompt) as lease:
+            avoid = self._stuck_accounts(tried) if kind == "video" else []
+            async with self._lease(tried + avoid, hint, queue_timeout, owner, kind,
+                                   prompt) as lease:
                 if on_account:
                     on_account(lease.account)
                 try:
@@ -110,7 +134,14 @@ class Gateway:
                 except UpstreamError as exc:
                     lease.fail(exc)
                     tried.append(lease.account.id)
+                    if kind == "video" and isinstance(exc, GenerationTimeout):
+                        self._stuck_until[lease.account.id] = (
+                            time.monotonic() + self.stuck_video_cooldown)
                     if not self._should_retry(exc, attempt, tried):
+                        raise
+                    if time_left() < MIN_VIDEO_ATTEMPT:
+                        log.warning("%s failed on %s (%s), no time left to fail over",
+                                    kind, lease.account.id, exc)
                         raise
                     log.warning("call failed on %s (%s), failing over", lease.account.id, exc)
         raise AssertionError("unreachable")
@@ -125,9 +156,25 @@ class Gateway:
         self, req: VideoRequest, on_account: Callable[[Account], None] | None = None,
         owner: str | None = None,
     ) -> MediaResult:
+        # The budget counts render time on accounts only; waiting in the queue is not a stuck tab.
+        spent = 0.0
+
+        def time_left() -> float:
+            return self.video_deadline - spent
+
+        async def render(acc: Account) -> MediaResult:
+            nonlocal spent
+            start = time.monotonic()
+            try:
+                return await self.driver.generate_video(
+                    acc, replace(req, timeout=min(req.timeout, time_left())))
+            finally:
+                spent += time.monotonic() - start
+
         return await self._run(
-            lambda acc: self.driver.generate_video(acc, req),
+            render,
             queue_timeout=self.media_queue_timeout,
+            time_left=time_left,
             on_account=on_account,
             owner=owner,
             kind="video",
