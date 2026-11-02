@@ -509,20 +509,47 @@ def test_posting_channel_from_file_name():
         assert posting._channel(name, {}) == "chinese", name
     assert posting._channel("reel-x.mp4", {"channel": "chinese"}) == "chinese"
 
-def test_posting_dream_one_slot_a_day(client, admin, settings):
+def test_posting_dream_two_slots_a_day(client, admin, settings):
     from museai.api.routes import posting
 
-    # New York 21:00 on Monday is Tuesday 09:00 in GMT+7 (winter time)
+    # New York 21:00 on Monday is Tuesday 09:00 in GMT+7 (winter time); New York 08:00 Tuesday is 20:00
     assert posting._slot_times("2026-11-03/1", "dream")["instagram"].isoformat() == "2026-11-03T09:00:00+07:00"
+    assert posting._slot_times("2026-11-03/2", "dream")["instagram"].isoformat() == "2026-11-03T20:00:00+07:00"
     settings.post_dir.mkdir()
     for name in ("dream-a.mp4", "dream-b.mp4"):
         (settings.post_dir / name).write_bytes(b"v")
     d = client.get("/dashboard/posts", headers=admin).json()
-    assert all(len(day["slots"]) == 1 for day in d["calendar"]["dream"])
-    slots = sorted(v["slot"] for v in d["videos"])
-    assert [s[-2:] for s in slots] == ["/1", "/1"] and slots[0][:10] != slots[1][:10]
-    r = client.post("/dashboard/posts/dream-a.mp4", headers=admin, json={"slot": slots[0][:10] + "/2"})
-    assert r.status_code == 400
+    assert all(len(day["slots"]) == 2 for day in d["calendar"]["dream"])
+    # shown in GMT+7, with the audience's own clock beside it
+    aud = posting._audience("2026-11-03/1", "dream")
+    assert aud["clock"] == "New York" and aud["times"]["instagram"] == "2026-11-02T21:00:00-05:00"
+    assert d["calendar"]["dream"][0]["slots"][0]["audience"]["clock"] == "New York"
+    assert d["calendar"]["chinese"][0]["slots"][0]["audience"] is None
+    assert len({v["slot"] for v in d["videos"]}) == 2
+
+
+def test_campaign_progress(client, admin, settings, monkeypatch):
+    from datetime import date
+
+    from museai.api.routes import campaign
+
+    assert client.get("/dashboard/campaign/nope", headers=admin).status_code == 400
+    monkeypatch.setattr(campaign, "_today", lambda: date(2026, 11, 2))
+    r = client.post("/dashboard/campaign/dream", headers=admin,
+                    json={"start": "2026-11-02", "youtube": {"subs": 100, "shorts_views_90d": 0, "uploads_90d": 3}})
+    assert r.status_code == 200 and r.json()["day"] == 1 and r.json()["phase"]["name"].startswith("Days 1-30")
+    monkeypatch.setattr(campaign, "_today", lambda: date(2026, 11, 12))
+    d = client.post("/dashboard/campaign/dream", headers=admin,
+                    json={"youtube": {"subs": 200, "shorts_views_90d": 100_000}, "instagram": {"followers": 600}}).json()
+    fan = next(g for g in d["goals"] if g["id"] == "yt-fan")
+    subs = next(p for p in fan["parts"] if p["metric"] == "subs")
+    assert subs["have"] == 200 and subs["per_day"] == 10 and subs["pct"] == 40
+    # 3M views at 10k a day is the slowest part: 290 more days
+    assert fan["eta"] == "2027-08-29" and not fan["done"]
+    assert next(g for g in d["goals"] if g["id"] == "ig-gifts")["done"]
+    assert len(d["snapshots"]) == 2 and (settings.data_dir / "campaign-dream.json").exists()
+    bad = client.post("/dashboard/campaign/dream", headers=admin, json={"youtube": {"subs": "lots"}})
+    assert bad.status_code == 400
 
 
 def test_posting_move_slot(client, admin, settings):

@@ -157,11 +157,30 @@
   .sslot { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font-size: 12px; min-width: 0;
            background: var(--panel); text-align: left; font: inherit; font-size: 12px; color: var(--text); }
   .sslot b { font-variant-numeric: tabular-nums; }
+  .sslot .aud { color: var(--muted); font-size: 11px; }
   .sslot span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
   .sslot.booked { border-color: var(--accent); cursor: pointer; }
   .sslot.booked span { color: var(--text); }
   .sslot.late { border-color: var(--bad); }
   .sslot.gone { border-style: dashed; }
+  /* growth campaign (Dream life): progress toward each platform's monetization eligibility */
+  .campaign { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); padding: 10px 14px; margin-bottom: 14px; }
+  .campaign summary { cursor: pointer; font-weight: 600; }
+  .campaign summary small { font-weight: 400; color: var(--muted); }
+  .camp-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 10px; }
+  .camp-cols h4 { margin: 0 0 6px; font-size: 13px; }
+  .goal { margin-bottom: 10px; font-size: 12px; }
+  .goal .gname { display: flex; justify-content: space-between; gap: 8px; font-weight: 600; }
+  .goal.done .gname { color: var(--ok); }
+  .goal .part { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; margin-top: 4px; color: var(--muted); }
+  .goal .part .meter { grid-column: 1 / -1; }
+  .goal .unlocks { color: var(--muted); font-size: 11px; }
+  .campaign ul { margin: 0; padding-left: 18px; font-size: 12px; }
+  .camp-form { display: grid; grid-template-columns: 1fr 110px; gap: 4px 8px; font-size: 12px; align-items: center; }
+  .camp-form input { width: 100%; font: inherit; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px;
+                     background: var(--bg); color: var(--text); }
+  .camp-form .plat-h { grid-column: 1 / -1; font-weight: 600; margin-top: 6px; }
+  .camp-form button { grid-column: 1 / -1; margin-top: 6px; }
   .slot-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 13px; }
   .slot-head select { font: inherit; font-size: 13px; font-weight: 600; color: var(--accent); background: var(--bg);
                       border: 1px solid var(--line); border-radius: 6px; padding: 2px 4px; max-width: 100%; }
@@ -248,12 +267,15 @@
 <main id="app">
   <section data-section="post" hidden>
     <header><h1>Ready to post</h1></header>
-    <p class="hint">Each channel posts from its own accounts, two videos a day at its audience's peak hours, each
-      platform at its own time for that kind of content (shown in Vietnam time, GMT+7). Chinese: learners' breaks and the study
+    <p class="hint">Every time here is <b>Vietnam time (GMT+7)</b>: schedule it as shown. Each channel posts from
+      its own accounts at its audience's peak hours, each platform at its own time for that kind of content; for an
+      audience abroad its own clock is shown beside (“NY Mon 9:00 PM”). Chinese: learners' breaks and the study
       hour after dinner (YouTube Shorts in the evening only). Travel (English): the UK evening and the US East
-      evening, which are night and morning in GMT+7. Each channel's queue fills its free slots back to back; use each platform's scheduler 1-2 days ahead; pick another slot on a card to change the order.</p>
+      evening, which are night and morning in GMT+7. Dream life: two reels a day for US viewers, the US evening
+      (8-9 AM in Vietnam) and the US morning commute (7-10 PM in Vietnam). Healing: one a day at the US evening. Each channel's queue fills its free slots back to back; use each platform's scheduler 1-2 days ahead; pick another slot on a card to change the order.</p>
     <div class="tabs chan-tabs" id="chanTabs"></div>
     <div class="sched" id="sched"></div>
+    <details class="campaign" id="campaign" open hidden></details>
     <p class="hint">Each platform has its own caption, written to its length, hook and hashtag rules (tabs above
       the text; • = written for it; “Shared” is the fallback for a platform without one): pick the tab, “Copy” (YouTube: “Copy title” and “Copy description”), and “Show file”
       to drag the video in. Tick a platform after publishing; when all are ticked, the video moves to the Trash.</p>
@@ -685,7 +707,7 @@ function renderPosts() {
         </div>` : ""}
         <div class="plats">${posts.platforms.map((p) => `
           <label class="plat ${v.posted[p.id] ? "done" : ""} ${late(v.schedule[p.id]) ? "late" : ""}"
-                 title="Schedule on ${esc(p.name)} for ${esc(whenLong(v.schedule[p.id]))}; tick once posted">
+                 title="Schedule on ${esc(p.name)} for ${esc(whenLong(v.schedule[p.id]))}${v.audience ? ` = ${esc(audLabel(v.audience.clock, v.audience.times[p.id]))}` : ""}; tick once posted">
             <input type="checkbox" data-posted="${esc(p.id)}" ${v.posted[p.id] ? "checked" : ""}>
             <span>${esc(p.name.split(" ")[0])}<small>${esc(when(v.schedule[p.id]))}</small></span>
           </label>`).join("")}
@@ -713,21 +735,71 @@ function when(iso) {
   return `${d === today ? "Today" : d === tomorrow ? "Tomorrow" : dayName(d)} ${clock12(iso)}`;
 }
 const whenLong = (iso) => iso ? `${dayLabel(iso.slice(0, 10))} ${clock12(iso)} (Vietnam time)` : "no slot";
+// The audience's own clock ("NY Mon 9:00 PM"), written in that clock's ISO time.
+const ABBR = { "New York": "NY", London: "London" };
+const audLabel = (clock, iso) => iso ? `${ABBR[clock] || clock} ${dayName(iso.slice(0, 10))} ${clock12(iso)}` : "";
 const slotLabel = (key) => { const [d, n] = key.split("/"); return `${dayLabel(d)} · slot ${n}`; };
 const firstLine = (v, p) => (captionFor(v, p) || "").split("\n")[0].trim();
 function renderSchedule() {
   const today = todayGmt7();
+  $("campaign").hidden = chan !== "dream";
+  if (chan === "dream" && !campaign) loadCampaign();
   $("sched").innerHTML = ((posts.calendar || {})[chan] || []).map((day) => `
     <div class="sday ${day.date === today ? "today" : ""}"><h3>${esc(dayLabel(day.date))}</h3>
       ${day.slots.map((s) => {
         const v = s.video && posts.videos.find((x) => x.name === s.video);
         const title = v ? firstLine(v, "youtube") || v.name : s.gone ? `✓ ${s.gone.title || s.gone.name}` : "free";
         return `<button class="sslot ${v ? "booked" : ""} ${s.gone ? "gone" : ""} ${v && late(s.time) && !Object.keys(v.posted).length ? "late" : ""}"
-          ${v ? `data-goto="${esc(v.name)}"` : "disabled"} title="${esc(s.focus)}${v ? "\n" + esc(v.name) : s.gone ? "\nPosted / deleted: " + esc(s.gone.name) : ""}">
-          <b>${esc(clock12(s.time))}</b><span>${esc(title)}</span></button>`;
+          ${v ? `data-goto="${esc(v.name)}"` : "disabled"} title="${esc(s.focus)}${s.audience ? `\n= ${esc(audLabel(s.audience.clock, s.audience.time))} for the audience` : ""}${v ? "\n" + esc(v.name) : s.gone ? "\nPosted / deleted: " + esc(s.gone.name) : ""}">
+          <b>${esc(clock12(s.time))}</b>${s.audience ? ` <small class="aud">${esc(audLabel(s.audience.clock, s.audience.time))}</small>` : ""}<span>${esc(title)}</span></button>`;
       }).join("")}
     </div>`).join("");
 }
+// Growth campaign of the Dream life accounts (routes/campaign.py). Loaded on opening the tab and after a
+// save, not on every refresh, so the number fields keep what is being typed.
+let campaign = null;
+const PLAT_NAME = { youtube: "YouTube", facebook: "Facebook", instagram: "Instagram" };
+const num = (n) => n == null ? "–" : n >= 1e6 ? `${+(n / 1e6).toFixed(2)}M` : n >= 1e4 ? `${+(n / 1e3).toFixed(1)}k` : String(n);
+async function loadCampaign(body) {
+  try { campaign = await api("/dashboard/campaign/dream", body && JSON.stringify(body)); renderCampaign(); }
+  catch (e) { $("campaign").innerHTML = `<summary>Growth campaign</summary><p class="hint">${esc(e.message)}</p>`; }
+}
+function renderCampaign() {
+  const c = campaign;
+  const goal = (g) => `<div class="goal ${g.done ? "done" : ""}">
+    <div class="gname"><span>${g.done ? "✓ " : ""}${esc(g.name)}</span><span>${g.pct}%</span></div>
+    <div class="unlocks">${esc(g.unlocks)}${!g.done && g.eta ? ` · at this pace: ${esc(dayLabel(g.eta))}` : ""}</div>
+    ${g.parts.map((p) => `<div class="part"><span>${esc(p.label)}: <b>${num(p.have)}</b> / ${num(p.need)}</span>
+      <span title="growth per day now · needed per day to reach it by ${esc(dayLabel(c.target))}">${
+        p.per_day != null ? `+${num(p.per_day)}/day` : ""}${p.need_per_day ? ` · need +${num(Math.ceil(p.need_per_day))}/day` : ""}</span>
+      <div class="meter"><i style="width:${p.pct}%"></i></div></div>`).join("")}
+  </div>`;
+  const plats = Object.keys(c.metrics);
+  $("campaign").innerHTML = `
+    <summary>Growth campaign · day ${c.day} · ${esc(c.phase.name)} <small>(goal: eligible by ${esc(dayLabel(c.target))})</small></summary>
+    <div class="camp-cols">
+      ${plats.map((p) => `<div><h4>${PLAT_NAME[p]}</h4>${c.goals.filter((g) => g.platform === p).map(goal).join("")}</div>`).join("")}
+      <div><h4>This phase</h4><ul>${c.phase.todo.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
+        <h4 style="margin-top:10px">Every week</h4><ul>${c.weekly.map((t) => `<li>${esc(t)}</li>`).join("")}</ul></div>
+      <form class="camp-form" id="campForm"><span class="plat-h">Today's numbers${c.snapshots.length ? ` <small>(last: ${esc(dayLabel(c.snapshots.at(-1).date))})</small>` : ""}</span>
+        ${plats.map((p) => `<span class="plat-h">${PLAT_NAME[p]}</span>${c.metrics[p].map((m) => `
+          <label for="cm-${p}-${m.id}" title="${esc(m.where)}">${esc(m.label)}</label>
+          <input id="cm-${p}-${m.id}" data-p="${p}" data-m="${m.id}" type="number" min="0" step="1" placeholder="${c.current[p][m.id] ?? ""}">`).join("")}`).join("")}
+        <label for="cm-start">Campaign start</label><input id="cm-start" type="date" value="${esc(c.start)}">
+        <button type="submit">Save numbers</button>
+      </form>
+    </div>`;
+}
+$("campaign").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const body = { start: $("cm-start").value };
+  for (const i of e.target.querySelectorAll("input[data-p]")) {
+    if (i.value === "") continue;
+    (body[i.dataset.p] ||= {})[i.dataset.m] = Number(i.value);
+  }
+  loadCampaign(body);
+});
+
 function slotHead(v) {
   if (!v.slot) return "";
   const keys = ((posts.calendar || {})[v.channel] || []).flatMap((d) => d.slots.map((s) => [s.key, s.video, s.gone]));

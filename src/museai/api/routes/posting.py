@@ -73,11 +73,15 @@ CHANNELS = {
                             2: "Study hour after dinner: conversations, common mistakes, quizzes"}),
     "travel": ("Travel", {1: "UK / Europe evening: a quick view",
                           2: "US East evening: full reels and zoom-ins"}),
-    # a new account (dream-life skill, 2026-11): one reel a day, so each gets its own seed-audience test
-    "dream": ("Dream life", {1: "US evening: one dream-life reel a day"}),
+    # a new account (dream-life skill): two reels a day from 2026-11-02, 10+ hours apart, so each still gets
+    # its own seed-audience test and the account fills the 90-day Shorts-views window faster
+    "dream": ("Dream life", {1: "US evening wind-down: the strongest dream of the day",
+                             2: "US morning commute: the lighter, quicker dream"}),
     # its own account too (user rule 2026-11-02): kitchen and home clips lose travel viewers
     "healing": ("Healing", {1: "US evening wind-down: one healing video a day"}),
 }
+# Short name of an audience clock, shown beside the GMT+7 time so the user sees whose evening a slot is.
+CLOCKS = {"Europe/London": "London", "America/New_York": "New York"}
 # Whose clock each slot's times follow. Chinese lessons have Vietnamese captions for Vietnamese
 # learners: both slots in GMT+7. Travel (and the other English formats) speak to English viewers, who
 # are asleep at Vietnam's peaks: slot 1 at the UK evening, slot 2 at the US East evening. Their audience
@@ -85,7 +89,7 @@ CHANNELS = {
 # calendar day in GMT+7 (about 01-03 h and 06-09 h); schedule them in each platform's scheduler.
 AUDIENCE = {"chinese": (ZoneInfo("Asia/Ho_Chi_Minh"), ZoneInfo("Asia/Ho_Chi_Minh")),
             "travel": (ZoneInfo("Europe/London"), ZoneInfo("America/New_York")),
-            "dream": (ZoneInfo("America/New_York"),),
+            "dream": (ZoneInfo("America/New_York"), ZoneInfo("America/New_York")),
             "healing": (ZoneInfo("America/New_York"),)}
 # The format skills name their files <prefix>-<slug> (muse-video SKILL.md "Format skills"); a renamed file
 # that still names its format ("Kelingking Beach - zoominview.mp4") is travel too. The English formats
@@ -120,17 +124,19 @@ TIMES = {
         "threads":   ["18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00"],
     },
 }  # fmt: skip
-# New York clock, from the dream-life skill's scripts/post_time.py: the hour whose first two hours
-# fall in the evening peak of most US viewers (Eastern to Pacific, weighted by population).
+# New York clock, "evening morning". Slot 1, from the dream-life skill's scripts/post_time.py: the hour whose first two hours
+# fall in the evening peak of most US viewers (Eastern to Pacific, weighted by population); it lands at
+# 08-09 h in GMT+7. Slot 2: the weekday morning commute (Instagram's Thursday 8-9 h peak, X / Threads
+# mornings), later on weekends; it lands at 19-22 h the same day in GMT+7, an easy hour to post by hand.
 TIMES["dream"] = {
-    "youtube":   ["20:00", "20:00", "21:00", "21:00", "21:00", "21:00", "21:00"],
-    "tiktok":    ["20:45", "20:45", "20:45", "20:45", "20:45", "20:45", "20:45"],
-    "facebook":  ["20:00", "20:00", "20:00", "20:00", "21:00", "20:00", "21:00"],
-    "instagram": ["21:00", "21:00", "21:00", "20:00", "21:00", "21:00", "21:00"],
-    "x":         ["21:00", "21:00", "21:00", "21:00", "21:00", "21:00", "21:00"],
-    "threads":   ["21:00", "21:00", "21:00", "21:00", "21:00", "21:00", "21:00"],
+    "youtube":   ["20:00 08:00", "20:00 08:00", "21:00 08:00", "21:00 08:00", "21:00 08:00", "21:00 10:00", "21:00 10:00"],
+    "tiktok":    ["20:45 07:45", "20:45 07:45", "20:45 07:45", "20:45 07:45", "20:45 07:45", "20:45 09:45", "20:45 09:45"],
+    "facebook":  ["20:00 08:00", "20:00 08:00", "20:00 08:00", "20:00 08:00", "21:00 08:00", "20:00 10:00", "21:00 10:00"],
+    "instagram": ["21:00 08:00", "21:00 08:00", "21:00 08:00", "20:00 08:00", "21:00 08:00", "21:00 10:00", "21:00 10:00"],
+    "x":         ["21:00 08:00", "21:00 08:00", "21:00 08:00", "21:00 08:00", "21:00 08:00", "21:00 10:00", "21:00 10:00"],
+    "threads":   ["21:00 08:00", "21:00 08:00", "21:00 08:00", "21:00 08:00", "21:00 08:00", "21:00 10:00", "21:00 10:00"],
 }  # fmt: skip
-# Healing is watched as the same US evening wind-down: the dream table fits it.
+# Healing is watched as the same US evening wind-down: slot 1 of the dream table fits it.
 TIMES["healing"] = TIMES["dream"]
 SLOT_KEY = re.compile(r"^(\d{4}-\d{2}-\d{2})/([12])$")
 FOLDER_MARK = ".museai-post"  # marks a folder this module made for one video
@@ -218,12 +224,15 @@ def _slot_times(key: str, channel: str = "chinese") -> dict[str, datetime]:
     if n not in CHANNELS[channel][1]:
         raise ValueError(f"{CHANNELS[channel][0]} has no slot {n}")
     tz = AUDIENCE[channel][n - 1]
-    if tz != TZ:  # an audience west of GMT+7: its evening of the day before lands on the calendar day
-        d -= timedelta(days=1)
     out = {}
     for p, week in TIMES[channel].items():
-        hh, mm = map(int, week[d.weekday()].split()[n - 1].split(":"))
-        out[p] = datetime(d.year, d.month, d.day, hh, mm, tzinfo=tz).astimezone(TZ)
+        # an audience west of GMT+7: its evening of the day before lands on the calendar day, its morning
+        # on the same day
+        for a in (d, d - timedelta(days=1)):
+            hh, mm = map(int, week[a.weekday()].split()[n - 1].split(":"))
+            out[p] = datetime(a.year, a.month, a.day, hh, mm, tzinfo=tz).astimezone(TZ)
+            if out[p].date() == d:
+                break
     return out
 
 
@@ -354,7 +363,18 @@ def _view(path: Path, entry: dict, svc: Services) -> dict:
             "posted": entry.get("posted", {}), "slot": key, "channel": _channel(path.name, entry),
             "thumbnails": [{"kind": k, "use": THUMBS[k]} for k in _thumbs(path)],
             "auto": {p: j.get("state", "") for p, j in (entry.get("auto") or {}).get("jobs", {}).items()},
-            "schedule": {p: t.isoformat() for p, t in _slot_times(key, _channel(path.name, entry)).items()} if key else {}}
+            "schedule": {p: t.isoformat() for p, t in _slot_times(key, _channel(path.name, entry)).items()} if key else {},
+            "audience": _audience(key, _channel(path.name, entry)) if key else None}
+
+
+def _audience(key: str, channel: str) -> dict | None:
+    """The audience's own clock for a slot whose audience lives outside GMT+7: its name and the time
+    per platform there (the user schedules in GMT+7; this says whose evening it is)."""
+    tz = AUDIENCE[channel][int(key[-1]) - 1]
+    if tz == TZ:
+        return None
+    return {"clock": CLOCKS.get(tz.key, tz.key), "times": {p: t.astimezone(tz).isoformat()
+                                                           for p, t in _slot_times(key, channel).items()}}
 
 
 def _calendar(state: dict, names: dict[str, str], now: datetime, days: int = 7) -> dict[str, list[dict]]:
@@ -373,7 +393,9 @@ def _calendar(state: dict, names: dict[str, str], now: datetime, days: int = 7) 
             slots = []
             for n in focus:
                 key = f"{d.isoformat()}/{n}"
+                aud = _audience(key, ch)
                 slots.append({"key": key, "n": n, "time": _slot_times(key, ch)["youtube"].isoformat(),
+                              "audience": aud and {"clock": aud["clock"], "time": aud["times"]["youtube"]},
                               "focus": focus[n], "video": booked.get((ch, key)),
                               "gone": None if (ch, key) in booked else gone.get((ch, key))})
             out[ch].append({"date": d.isoformat(), "slots": slots})

@@ -8,12 +8,15 @@ slots back to back (history: `data/post-history.jsonl`).
 
 ## Whose clock
 - **Chinese** (Vietnamese captions, Vietnamese learners): Vietnam, GMT+7, both slots.
-- **Dream** (dream-life reels, their own account): US viewers, one slot a day in New York time. The
-  table comes from `dream-life/scripts/post_time.py`, which weights the US time zones by population and
-  scores each hour by how much of its first two hours falls in their evening peak (dream-life
-  `references/account-kit.md`). New York 20-21 h = 08-09 h the next day in GMT+7.
+- **Dream** (dream-life reels, their own account): US viewers, two slots a day in New York time (from
+  2026-11-02; a new account needs volume to fill YouTube's 90-day Shorts-views window, and 10+ hours
+  apart each reel still gets its own seed test). Slot 1, the US evening, comes from
+  `dream-life/scripts/post_time.py`, which weights the US time zones by population and scores each hour
+  by how much of its first two hours falls in their evening peak (dream-life `references/account-kit.md`):
+  New York 20-21 h = 08-09 h the next day in GMT+7. Slot 2 is the US morning commute, New York 08 h
+  (10 h at weekends) = 19-22 h the same day in GMT+7.
 - **Healing** (healing-video, its own account since 2026-11-02): the same US evening wind-down, one
-  slot a day on the Dream table.
+  slot a day: slot 1 of the Dream table.
 - **Travel** and the other English formats (nostalgia, gown, product): English viewers.
   Slot 1 is in London time, slot 2 in New York time, on the audience's day before the calendar day.
   Every travel time is 18:00 or later, so both land on the calendar day in GMT+7 (about 01-03 h and
