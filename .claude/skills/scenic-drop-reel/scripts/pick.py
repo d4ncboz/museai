@@ -124,7 +124,12 @@ def main():
         n = min(n, len(t["times"]))
     place = a.place
     local = data["local_sounds"].get(a.country.lower() or place.lower(), data["local_sounds"]["default"])
-    music["tags"] = music["tags"].replace("{local}", local)
+    if "{local}" in music["tags"]:
+        music["tags"] = music["tags"].replace("{local}", local)
+    elif a.country.lower() in data["local_sounds"]:
+        # a Japan reel with generic dreamy pop sounded like nowhere (Fuji reel, 2026-11-02): every template
+        # carries the country's own instruments
+        music["tags"] = f"{local}, {music['tags']}"
     music["lyrics"] = music["lyrics"].replace("{place}", place)
     cap = max(min(pattern), math.floor(MAX_HOLD_S / beat))  # slow patterns: no hold over MAX_HOLD_S
     if not a.n and not a.length:  # min 3 shots of a slow pattern can still overrun the reel cap

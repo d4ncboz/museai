@@ -445,13 +445,13 @@
     }
   ],
   "local_sounds": {
-    "_doc": "Style for the local-flavour template, keyed by lowercase country/region; fallback 'default'.",
+    "_doc": "Local instruments keyed by lowercase country/region: the whole style of local-flavour, and added to every other template's music when --country names one of them (fallback 'default', local-flavour only).",
     "italy": "Italian pop, mandolin, accordion, Mediterranean",
     "france": "French chanson pop, accordion, café",
     "spain": "flamenco pop, Spanish guitar, palmas",
     "portugal": "fado-inspired pop, Portuguese guitar",
     "greece": "Greek pop, bouzouki, Mediterranean",
-    "japan": "Japanese city pop, funky bass, 80s synths",
+    "japan": "Japanese pop, koto melody, shamisen accents, soft taiko",
     "korea": "K-pop, bright synths, punchy",
     "vietnam": "V-pop, dan bau melody, modern ballad pop",
     "thailand": "Thai pop, phin guitar, tropical",
