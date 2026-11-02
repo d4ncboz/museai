@@ -3,8 +3,8 @@
 The dashboard's "Ready to post" schedule (`src/museai/api/routes/posting.py` `TIMES`, `AUDIENCE`) gives
 each video a slot (day + slot 1 or 2, two a day per channel) and each platform its own time for that
 slot. Each channel has its own table, because learning and travel videos are watched at different
-moments. Times are set in the audience's local time and shown in GMT+7. Each channel's queue runs back
-to back after its last posted slot (history: `data/post-history.jsonl`).
+moments. Times are set in the audience's local time and shown in GMT+7. Each channel's queue fills its free
+slots back to back (history: `data/post-history.jsonl`).
 
 ## Whose clock
 - **Chinese** (Vietnamese captions, Vietnamese learners): Vietnam, GMT+7, both slots.

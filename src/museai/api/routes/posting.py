@@ -73,6 +73,8 @@ CHANNELS = {
                             2: "Study hour after dinner: conversations, common mistakes, quizzes"}),
     "travel": ("Travel", {1: "UK / Europe evening: a quick view",
                           2: "US East evening: full reels and zoom-ins"}),
+    "dream": ("Dream life", {1: "UK / Europe evening: a calm wind-down",
+                             2: "US East evening: a calm wind-down"}),
 }
 # Whose clock each slot's times follow. Chinese lessons have Vietnamese captions for Vietnamese
 # learners: both slots in GMT+7. Travel (and the other English formats) speak to English viewers, who
@@ -80,11 +82,14 @@ CHANNELS = {
 # day is the day before the calendar day, and every travel time is 18:00 or later, so both land on the
 # calendar day in GMT+7 (about 01-03 h and 06-09 h); schedule them in each platform's scheduler.
 AUDIENCE = {"chinese": (ZoneInfo("Asia/Ho_Chi_Minh"), ZoneInfo("Asia/Ho_Chi_Minh")),
-            "travel": (ZoneInfo("Europe/London"), ZoneInfo("America/New_York"))}
+            "travel": (ZoneInfo("Europe/London"), ZoneInfo("America/New_York")),
+            "dream": (ZoneInfo("Europe/London"), ZoneInfo("America/New_York"))}
 # The format skills name their files <prefix>-<slug> (muse-video SKILL.md "Format skills"); a renamed file
 # that still names its format ("Kelingking Beach - zoominview.mp4") is travel too. The English formats
-# (dream, healing, nostalgia, ...) post on the Travel accounts: their viewers share its clock.
-TRAVEL_NAME = re.compile(r"^(zoom|reel|scenic|scenery|drop|travel|dream|healing|nostalgia|gown|product)[-_ ]"
+# (healing, nostalgia, ...) post on the Travel accounts: their viewers share its clock. Dream-life videos
+# post on an account of their own (user rule 2026-11-02), at the travel times.
+DREAM_NAME = re.compile(r"^dream[-_ ]|\bdream-life\b", re.IGNORECASE)
+TRAVEL_NAME = re.compile(r"^(zoom|reel|scenic|scenery|drop|travel|healing|nostalgia|gown|product)[-_ ]"
                          r"|\b(zoominview|scenic-drop-reel)\b", re.IGNORECASE)
 # Two videos a day per channel (user rule 2026-10-29). Each kind of content is watched at its own
 # moment and each platform peaks at its own hours, so each channel has its own table: per platform,
@@ -111,6 +116,7 @@ TIMES = {
         "threads":   ["18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00"],
     },
 }  # fmt: skip
+TIMES["dream"] = TIMES["travel"]
 SLOT_KEY = re.compile(r"^(\d{4}-\d{2}-\d{2})/([12])$")
 FOLDER_MARK = ".museai-post"  # marks a folder this module made for one video
 SETTLE = 30  # seconds a video must sit unchanged before it moves (deliver.sh may still be copying it)
@@ -165,6 +171,8 @@ def _channel(name: str, entry: dict) -> str:
     """The video's channel: the one picked on its card, else guessed from the file name."""
     if entry.get("channel") in CHANNELS:
         return entry["channel"]
+    if DREAM_NAME.search(name):
+        return "dream"
     return "travel" if TRAVEL_NAME.search(name) else "chinese"
 
 
@@ -200,12 +208,12 @@ def _slots_from(now: datetime, channel: str):
 
 
 def _assign_slots(state: dict, videos: list[Path], now: datetime) -> bool:
-    """Lay each channel's queue out back to back after its history. History is the slots of videos
+    """Lay each channel's queue out back to back in its free slots. History is the slots of videos
     posted or deleted (records) and of queued videos posted on a platform or planned for auto-posting;
-    those never move. Every other queued video takes the next slot after the channel's last history
-    slot, in queue order: its current slot (a slot the user picked keeps its place in line), then
-    delivery. So the queue has no gaps, never books a slot before the history, and a slot that passed
-    unposted moves up. A slot the user picks sets the video's place in line. Returns True when the state changed."""
+    those never move. Every other queued video takes the next free upcoming slot, in queue order: its
+    current slot (a slot the user picks sets its place in line), then delivery. So no upcoming slot stays
+    empty while videos wait, even next to one posted early, and a slot that passed unposted moves up.
+    Returns True when the state changed."""
     entries = [(p.name, state.setdefault(_key(p.name), {})) for p in sorted(videos, key=lambda p: p.stat().st_mtime)]
     changed = False
     for n, e in entries:
@@ -231,8 +239,7 @@ def _assign_slots(state: dict, videos: list[Path], now: datetime) -> bool:
         else:
             queue[_channel(n, e)].append((n, e))
     for ch, line in queue.items():
-        last = max(history[ch], default="")
-        free = (k for k in _slots_from(now, ch) if k > last and k not in history[ch])
+        free = (k for k in _slots_from(now, ch) if k not in history[ch])
         for _, e in sorted(line, key=lambda ne: ne[1].get("slot") or "~"):  # stable: delivery order breaks ties
             slot = next(free)
             changed |= e.get("slot") != slot
