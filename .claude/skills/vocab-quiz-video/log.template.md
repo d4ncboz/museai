@@ -4,7 +4,7 @@ Add rows after every finished episode (SKILL.md step 7). Re-renders of the same 
 
 ## Content
 
-| # | Date | Language | Level | Topic | File (with music) | muse.ai chat | Music (named by muse.ai) | Gate | Posted |
+| # | Date | Language | Level | Topic | File | muse.ai chat | Music (added on TikTok) | Gate | Posted |
 |---|---|---|---|---|---|---|---|---|---|
 
 ## Vocabulary

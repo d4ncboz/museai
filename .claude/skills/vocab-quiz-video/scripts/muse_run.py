@@ -1,8 +1,7 @@
 # browser-harness script (helpers are pre-imported). Run:
 #   PROMPT_FILE=/tmp/vocab-x.prompt.txt OUT=videos/x.mp4 [REC=name] timeout 3000 browser-harness < scripts/muse_run.py
-# Opens a new muse.ai side chat, sends the prompt as one message, waits for both videos and downloads them:
-# VERSION 1 (no music) to <OUT stem>-nomusic.mp4, VERSION 2 (with music) to OUT, then renames the chat to the
-# prompt's first line "Chat title: ...".
+# Opens a new muse.ai side chat, sends the prompt as one message, waits for the video, downloads it to OUT,
+# then renames the chat to the prompt's first line "Chat title: ...".
 # ruff: noqa: F821 - browser-harness pre-imports its helpers (js, cdp, page_info, ...) before exec.
 import base64
 import json
@@ -43,22 +42,22 @@ time.sleep(5)
 activate_tab(current_tab())
 print("chat:", page_info()["url"], flush=True)
 
-# Status words also appear in the sidebar for other chats, so wait for the two final videos themselves.
+# Status words also appear in the sidebar for other chats, so wait for the final video itself.
 start = time.time()
 while True:
     vids = json.loads(
         js("JSON.stringify([...document.querySelectorAll('video')].map(v=>v.duration||0))")
     )
-    if sum(d > 30 for d in vids) >= 2:
+    if any(d > 30 for d in vids):
         break
     if time.time() - start > 2700:
-        raise SystemExit(f"timeout: {sum(d > 30 for d in vids)} of 2 videos after 45 min")
+        raise SystemExit("timeout: no video after 45 min")
     time.sleep(20)
-print(f"videos ready after {int(time.time() - start)} s", flush=True)
+print(f"video ready after {int(time.time() - start)} s", flush=True)
 time.sleep(10)
 
 text = js("document.body.innerText")
-i = text.rfind("VERSION 2")
+i = text.rfind(prompt.splitlines()[-1]) + len(prompt.splitlines()[-1])
 print("=== muse reply ===\n" + text[i : i + 3000], flush=True)
 
 
@@ -79,9 +78,7 @@ def download(src: str, path: pathlib.Path) -> None:
     print(f"saved {path} ({size} bytes)", flush=True)
 
 
-# Videos appear in chat order: VERSION 1 first, VERSION 2 last.
 srcs = js("[...document.querySelectorAll('video')].filter(v=>v.duration>30).map(v=>v.currentSrc)")
-download(srcs[0], out.with_name(out.stem + "-nomusic.mp4"))
 download(srcs[-1], out)
 
 # muse.ai names chats itself; rename this one so episodes are easy to find in the side chat list.

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Check a vocab quiz video: format, ticks, speech-to-text of every answer, frame sheet.
 # Usage: check_video.sh <video.mp4> <lang_code, e.g. de>
-# Override timings for older layouts: HOOK=2 WORD=9 VOICE1=6.5 VOICE2=6.5 check_video.sh ...
-# Timings follow SKILL.md "Episode format": hook 1.5 s, 6 words x 7 s, ticks at 0.5/1.5/2.5 s, voice at 3.6 s and 5.3 s.
+# Override timings for older layouts: HOOK=1.5 WORD=7 VOICE1=6.5 VOICE2=6.5 check_video.sh ...
+# Timings follow SKILL.md "Episode format": hook 3 s, 6 words x 7 s, ticks at 0.5/1.5/2.5 s, voice at 3.6 s and 5.3 s.
 set -euo pipefail
 video=$(realpath "$1"); lang=$2
-HOOK=${HOOK:-1.5}; WORD=${WORD:-7}; VOICE1=${VOICE1:-3.5}; VOICE2=${VOICE2:-5.2}
+HOOK=${HOOK:-3}; WORD=${WORD:-7}; VOICE1=${VOICE1:-3.5}; VOICE2=${VOICE2:-5.2}
 work="${video%.*}-check"; mkdir -p "$work"; cd "$work"
 
 echo "== format"
