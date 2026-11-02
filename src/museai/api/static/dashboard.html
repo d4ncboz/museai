@@ -269,6 +269,7 @@
   <button data-view="post">Ready to post <span class="badge" id="navPost"></span></button>
   <button data-view="activity">Activity <span class="badge" id="navVid"></span></button>
   <button data-view="queue">Queue <span class="badge" id="navQueue"></span></button>
+  <button data-view="growth">Growth</button>
   <button data-view="autopost">Auto-post <span class="badge" id="navAuto"></span></button>
   <div class="nav-foot">
     <span class="pill p-idle" id="cpu" title="Host CPU">CPU …</span>
@@ -288,12 +289,17 @@
     <div class="tabs chan-tabs" id="chanTabs"></div>
     <div class="sched" id="sched"></div>
     <details class="playlists" id="playlists" open hidden></details>
-    <details class="campaign" id="campaign" open hidden></details>
     <p class="hint">Each platform has its own caption, written to its length, hook and hashtag rules (tabs above
       the text; • = written for it; “Shared” is the fallback for a platform without one): pick the tab, “Copy” (YouTube: “Copy title” and “Copy description”), and “Show file”
       to drag the video in. Tick a platform after publishing; when all are ticked, the video moves to the Trash.</p>
     <div class="notify" id="notify"></div>
     <div class="posts" id="posts"></div>
+  </section>
+
+  <section data-section="growth" hidden>
+    <header><h1>Growth</h1></header>
+    <p class="hint">Dream life: progress of each platform toward monetization eligibility, and the plan for this phase.</p>
+    <details class="campaign" id="campaign" open></details>
   </section>
 
   <section data-section="queue" hidden>
@@ -655,7 +661,7 @@ function render() {
 }
 
 // One section at a time, picked in the sidebar, so nothing needs scrolling past.
-const VIEWS = ["post", "activity", "queue", "autopost"];
+const VIEWS = ["post", "activity", "queue", "growth", "autopost"];
 let view = "";
 function show(v) {
   v = (v || "").split("&")[0];
@@ -663,6 +669,7 @@ function show(v) {
   for (const el of document.querySelectorAll("[data-section]")) el.hidden = el.dataset.section !== view;
   for (const b of document.querySelectorAll("[data-view]")) b.classList.toggle("on", b.dataset.view === view);
   if (location.hash.slice(1) !== view && !key) history.replaceState(null, "", "#" + view);
+  if (view === "growth" && !campaign) loadCampaign();
   scrollTo(0, 0);
 }
 document.querySelector(".nav").addEventListener("click", (e) => {
@@ -757,8 +764,6 @@ const firstLine = (v, p) => (captionFor(v, p) || "").split("\n")[0].trim();
 function renderSchedule() {
   const today = todayGmt7();
   renderPlaylists();
-  $("campaign").hidden = chan !== "dream";
-  if (chan === "dream" && !campaign) loadCampaign();
   $("sched").innerHTML = ((posts.calendar || {})[chan] || []).map((day) => `
     <div class="sday ${day.date === today ? "today" : ""}"><h3>${esc(dayLabel(day.date))}</h3>
       ${day.slots.map((s) => {
@@ -787,7 +792,7 @@ function renderPlaylists() {
         : `<span class="empty">nothing queued yet</span>`}</div>`;
     }).join("")}</div>`;
 }
-// Growth campaign of the Dream life accounts (routes/campaign.py). Loaded on opening the tab and after a
+// Growth campaign of the Dream life accounts (routes/campaign.py). Loaded on opening the Growth view and after a
 // save, not on every refresh, so the number fields keep what is being typed.
 let campaign = null;
 const PLAT_NAME = { youtube: "YouTube", facebook: "Facebook", instagram: "Instagram" };
