@@ -1,0 +1,156 @@
+{
+  "topic": "travel-hsk1",
+  "lang": "en",
+  "sub": "vi",
+  "level": "HSK 1",
+  "series": "Chinese · Travel",
+  "accent": "#FF3B5C",
+  "hook": {
+    "text": "Bet you can't get 6/6",
+    "say": "Guess all six? The last one is tough.",
+    "boss_teaser": "Can you read this?",
+    "text_vi": "Cá là bạn không đúng cả 6",
+    "boss_teaser_vi": "Bạn đọc được không?"
+  },
+  "outro": {
+    "text": "How many did you get?",
+    "say": "How many did you get? Comment your score.",
+    "cta": "Comment your score · Part 2 next",
+    "text_vi": "Bạn đúng mấy câu?",
+    "cta_vi": "Bình luận điểm của bạn · Phần 2 sắp ra"
+  },
+  "rehooks": [
+    "Easy one?",
+    "Harder now",
+    "Most people miss this",
+    "Boss word"
+  ],
+  "words": [
+    {
+      "hanzi": "火车",
+      "pinyin": "huǒchē",
+      "meaning": "train",
+      "meaning_vi": "tàu hỏa",
+      "trick": "火 fire + 车 vehicle = fire-cart",
+      "trick_vi": "火 lửa + 车 xe = xe lửa",
+      "decoys": [
+        [
+          "汽车",
+          "qìchē"
+        ],
+        [
+          "飞机",
+          "fēijī"
+        ]
+      ],
+      "scene": "A red high-speed train gliding past a quiet green valley on a sunny morning, low side angle, real photo.",
+      "motion": "the train glides steadily left to right through the valley; the camera slowly tracks with it"
+    },
+    {
+      "hanzi": "酒店",
+      "pinyin": "jiǔdiàn",
+      "meaning": "hotel",
+      "meaning_vi": "khách sạn",
+      "trick": "酒 wine + 店 shop = where guests stay",
+      "trick_vi": "酒 rượu + 店 tiệm = nơi khách ở",
+      "decoys": [
+        [
+          "饭店",
+          "fàndiàn"
+        ],
+        [
+          "商店",
+          "shāngdiàn"
+        ]
+      ],
+      "scene": "A warm boutique hotel entrance at dusk, glowing windows, polished stone steps, real photo.",
+      "motion": "warm lights flicker on, a few guests walk in softly; slow push-in toward the entrance"
+    },
+    {
+      "hanzi": "机场",
+      "pinyin": "jīchǎng",
+      "meaning": "airport",
+      "meaning_vi": "sân bay",
+      "trick": "机 machine + 场 field = plane field",
+      "trick_vi": "机 máy + 场 bãi = bãi máy bay",
+      "decoys": [
+        [
+          "车站",
+          "chēzhàn"
+        ],
+        [
+          "广场",
+          "guǎngchǎng"
+        ]
+      ],
+      "scene": "A bright modern airport terminal with a plane taking off behind tall glass windows, real photo.",
+      "motion": "a plane lifts off and climbs across the sky behind the glass; slow tilt up following it"
+    },
+    {
+      "hanzi": "护照",
+      "pinyin": "hùzhào",
+      "meaning": "passport",
+      "meaning_vi": "hộ chiếu",
+      "trick": "护 protect + 照 photo = your protected photo ID",
+      "trick_vi": "护 bảo vệ + 照 ảnh = ảnh được bảo hộ",
+      "decoys": [
+        [
+          "照片",
+          "zhàopiàn"
+        ],
+        [
+          "机票",
+          "jīpiào"
+        ]
+      ],
+      "scene": "A hand holding a dark red passport with no readable text in front of a sunny airport window, shallow depth of field, real photo.",
+      "motion": "the hand slowly turns the passport a little toward the light; gentle slow push-in"
+    },
+    {
+      "hanzi": "行李",
+      "pinyin": "xíngli",
+      "meaning": "luggage",
+      "meaning_vi": "hành lý",
+      "trick": "行 travel + 李 things = what travels with you",
+      "trick_vi": "行 đi + 李 đồ = đồ mang theo",
+      "decoys": [
+        [
+          "箱子",
+          "xiāngzi"
+        ],
+        [
+          "东西",
+          "dōngxi"
+        ]
+      ],
+      "scene": "A burgundy suitcase standing alone on a sunlit train platform, real photo.",
+      "motion": "a train slides into the platform behind the suitcase; the camera slowly circles the suitcase"
+    },
+    {
+      "hanzi": "地铁",
+      "pinyin": "dìtiě",
+      "meaning": "subway",
+      "meaning_vi": "tàu điện ngầm",
+      "trick": "地 ground + 铁 iron = iron under the ground",
+      "trick_vi": "地 đất + 铁 sắt = sắt dưới lòng đất",
+      "decoys": [
+        [
+          "铁路",
+          "tiělù"
+        ],
+        [
+          "公交",
+          "gōngjiāo"
+        ]
+      ],
+      "scene": "A clean subway train arriving at a bright underground station, motion blur on the cars, real photo.",
+      "motion": "the subway train rolls smoothly into the station and stops, doors slide open; the camera stays locked on a tripod, no pillars pass in front"
+    }
+  ],
+  "rehooks_vi": [
+    "Dễ không?",
+    "Khó hơn rồi",
+    "Nhiều người sai câu này",
+    "Từ khó nhất"
+  ]
+}
