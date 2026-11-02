@@ -75,6 +75,8 @@ CHANNELS = {
                           2: "US East evening: full reels and zoom-ins"}),
     # a new account (dream-life skill, 2026-11): one reel a day, so each gets its own seed-audience test
     "dream": ("Dream life", {1: "US evening: one dream-life reel a day"}),
+    # its own account too (user rule 2026-11-02): kitchen and home clips lose travel viewers
+    "healing": ("Healing", {1: "US evening wind-down: one healing video a day"}),
 }
 # Whose clock each slot's times follow. Chinese lessons have Vietnamese captions for Vietnamese
 # learners: both slots in GMT+7. Travel (and the other English formats) speak to English viewers, who
@@ -83,13 +85,15 @@ CHANNELS = {
 # calendar day in GMT+7 (about 01-03 h and 06-09 h); schedule them in each platform's scheduler.
 AUDIENCE = {"chinese": (ZoneInfo("Asia/Ho_Chi_Minh"), ZoneInfo("Asia/Ho_Chi_Minh")),
             "travel": (ZoneInfo("Europe/London"), ZoneInfo("America/New_York")),
-            "dream": (ZoneInfo("America/New_York"),)}
+            "dream": (ZoneInfo("America/New_York"),),
+            "healing": (ZoneInfo("America/New_York"),)}
 # The format skills name their files <prefix>-<slug> (muse-video SKILL.md "Format skills"); a renamed file
 # that still names its format ("Kelingking Beach - zoominview.mp4") is travel too. The English formats
-# (healing, nostalgia, ...) post on the Travel accounts: their viewers share its clock. Dream-life videos
-# post on an account of their own (user rule 2026-11-02), at the US evening.
+# (nostalgia, gown, ...) post on the Travel accounts: their viewers share its clock. Dream-life and healing
+# videos post on accounts of their own (user rules 2026-11-02), at the US evening.
 DREAM_NAME = re.compile(r"^dream[-_ ]|\bdream-life\b", re.IGNORECASE)
-TRAVEL_NAME = re.compile(r"^(zoom|reel|scenic|scenery|drop|travel|healing|nostalgia|gown|product)[-_ ]"
+HEALING_NAME = re.compile(r"^healing[-_ ]|\bhealing-video\b", re.IGNORECASE)
+TRAVEL_NAME = re.compile(r"^(zoom|reel|scenic|scenery|drop|travel|nostalgia|gown|product)[-_ ]"
                          r"|\b(zoominview|scenic-drop-reel)\b", re.IGNORECASE)
 # Two videos a day per channel (user rule 2026-10-29). Each kind of content is watched at its own
 # moment and each platform peaks at its own hours, so each channel has its own table: per platform,
@@ -126,6 +130,8 @@ TIMES["dream"] = {
     "x":         ["21:00", "21:00", "21:00", "21:00", "21:00", "21:00", "21:00"],
     "threads":   ["21:00", "21:00", "21:00", "21:00", "21:00", "21:00", "21:00"],
 }  # fmt: skip
+# Healing is watched as the same US evening wind-down: the dream table fits it.
+TIMES["healing"] = TIMES["dream"]
 SLOT_KEY = re.compile(r"^(\d{4}-\d{2}-\d{2})/([12])$")
 FOLDER_MARK = ".museai-post"  # marks a folder this module made for one video
 SETTLE = 30  # seconds a video must sit unchanged before it moves (deliver.sh may still be copying it)
@@ -182,6 +188,8 @@ def _channel(name: str, entry: dict) -> str:
         return entry["channel"]
     if DREAM_NAME.search(name):
         return "dream"
+    if HEALING_NAME.search(name):
+        return "healing"
     return "travel" if TRAVEL_NAME.search(name) else "chinese"
 
 

@@ -380,10 +380,10 @@ def test_posting_queue_mixes_kinds_per_day(tmp_path):
 
     from museai.api.routes import posting
 
-    # Delivered in a run of one kind, the travel queue still shows two kinds a day: a healing video next
-    # to a drone reel or a gown run, never two healing videos the same day.
+    # Delivered in a run of one kind, the travel queue still shows two kinds a day: a nostalgia video next
+    # to a drone reel or a gown run, never two nostalgia videos the same day.
     now = datetime(2026, 11, 8, 12, 0, tzinfo=posting.TZ)
-    names = ("healing-a.mp4", "healing-b.mp4", "healing-c.mp4", "reel-d.mp4", "gown-e.mp4", "zoom-f.mp4")
+    names = ("nostalgia-a.mp4", "nostalgia-b.mp4", "nostalgia-c.mp4", "reel-d.mp4", "gown-e.mp4", "zoom-f.mp4")
     videos = []
     for i, name in enumerate(names):
         (p := tmp_path / name).write_bytes(b"v")
@@ -395,7 +395,7 @@ def test_posting_queue_mixes_kinds_per_day(tmp_path):
     for n in names:
         days.setdefault(state[n]["slot"][:10], []).append(posting._kind(n))
     assert all(len(set(kinds)) == len(kinds) for kinds in days.values()), days
-    assert state["healing-a.mp4"]["slot"] == "2026-11-09/2"  # next to the posted drone reel
+    assert state["nostalgia-a.mp4"]["slot"] == "2026-11-09/2"  # next to the posted drone reel
     assert not posting._assign_slots(state, videos, now)
 
 
@@ -498,10 +498,12 @@ def test_posting_channel_from_file_name():
     from museai.api.routes import posting
 
     for name in ("zoom-madeira.mp4", "reel-ilulissat.mp4", "travel-bled.mp4", "Kelingking Beach - zoominview.mp4",
-                 "healing-highland-pear-compote.mp4", "nostalgia-1985.mp4"):
+                 "nostalgia-1985.mp4"):
         assert posting._channel(name, {}) == "travel", name
     for name in ("dream-star-fisher.mp4", "Rainbow laundry - dream-life.mp4"):
         assert posting._channel(name, {}) == "dream", name
+    for name in ("healing-highland-pear-compote.mp4", "Provence herbs - healing-video.mp4"):
+        assert posting._channel(name, {}) == "healing", name
     for name in ("EVERYDAY CHINESE 13 - Finding the subway.mp4", "Tiếng Trung mỗi ngày 16 - Đi cắt tóc.mp4",
                  "lesson-bi-so-sanh_vertical_9x16.mp4", "Zoomed lesson.mp4"):
         assert posting._channel(name, {}) == "chinese", name
@@ -532,7 +534,7 @@ def test_posting_move_slot(client, admin, settings):
     assert len(set(slots.values())) == 2
     assert set(d["videos"][0]["schedule"]) == {"youtube", "tiktok", "facebook", "instagram", "x", "threads"}
     assert sum(s["video"] is not None for day in d["calendar"]["chinese"] for s in day["slots"]) == 2
-    assert {c["id"] for c in d["channels"]} == {"chinese", "travel", "dream"}
+    assert {c["id"] for c in d["channels"]} == {"chinese", "travel", "dream", "healing"}
 
     r = client.post("/dashboard/posts/a.mp4", headers=admin, json={"slot": slots["b.mp4"]}).json()
     assert r["video"]["slot"] == slots["b.mp4"]

@@ -12,7 +12,9 @@ slots back to back (history: `data/post-history.jsonl`).
   table comes from `dream-life/scripts/post_time.py`, which weights the US time zones by population and
   scores each hour by how much of its first two hours falls in their evening peak (dream-life
   `references/account-kit.md`). New York 20-21 h = 08-09 h the next day in GMT+7.
-- **Travel** and the other English formats (healing, nostalgia, gown, product): English viewers.
+- **Healing** (healing-video, its own account since 2026-11-02): the same US evening wind-down, one
+  slot a day on the Dream table.
+- **Travel** and the other English formats (nostalgia, gown, product): English viewers.
   Slot 1 is in London time, slot 2 in New York time, on the audience's day before the calendar day.
   Every travel time is 18:00 or later, so both land on the calendar day in GMT+7 (about 01-03 h and
   06-09 h). Schedule them in each platform's scheduler.
