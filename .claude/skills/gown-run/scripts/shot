@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Usage: shot "brief" out.mp4
+# Renders one gown-run shot through muse-video (9:16, 6 s, QUALITY=0) with ../prompt/gown.txt appended
+# (same copper-haired woman from behind, real fabric physics, gown pops, ambience only). One call per
+# shot, each in the background: shots are independent, so they render in parallel on all free accounts.
+# Env passed through to muse-video: IMAGE=first_frame.png SIZE= DURATION=
+set -euo pipefail
+SKILL_DIR=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
+MUSE_VIDEO="$SKILL_DIR/../muse-video/scripts/muse-video"
+out=$(cd "$(dirname "$2")" && pwd)/$(basename "$2")
+prompt="NO TEXT ON SCREEN. $1
+
+$(cat "$SKILL_DIR/prompt/gown.txt")"
+QUALITY=0 SIZE=${SIZE:-9:16} DURATION=${DURATION:-6} OUT_NAME=$(basename "$out") NO_OPEN=1 \
+  "$MUSE_VIDEO" "$prompt" "$(dirname "$out")"
