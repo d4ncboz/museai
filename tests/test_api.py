@@ -4,6 +4,8 @@ import json
 import time
 import unicodedata
 
+import pytest
+
 
 def test_health(client):
     assert client.get("/healthz").json()["ok"] is True
@@ -573,7 +575,16 @@ def test_campaign_progress(client, admin, settings, monkeypatch):
     assert bad.status_code == 400
 
 
-def test_posting_move_slot(client, admin, settings):
+@pytest.mark.parametrize("clock", ["09:00", "18:00", "20:30", "23:59"])  # GMT+7, Monday 2026-11-02
+def test_posting_move_slot(client, admin, settings, monkeypatch, clock):
+    from datetime import datetime
+
+    from museai.api.routes import posting
+
+    # Freeze the listing's clock: once a day's Chinese slots have passed, its first free slot is
+    # tomorrow's, the same key as Travel's first (London's evening lands after midnight GMT+7).
+    now = datetime.fromisoformat(f"2026-11-02T{clock}+07:00")
+    monkeypatch.setattr(posting, "datetime", type("Clock", (datetime,), {"now": classmethod(lambda cls, tz=None: now)}))
     settings.post_dir.mkdir()
     for name in ("a.mp4", "b.mp4"):
         (settings.post_dir / name).write_bytes(b"v")
@@ -603,7 +614,8 @@ def test_posting_move_slot(client, admin, settings):
     r = client.post("/dashboard/posts/b.mp4", headers=admin, json={"slot": a["slot"]}).json()
     assert r["video"]["slot"] == a["slot"]
     after = {v["name"]: v["slot"] for v in client.get("/dashboard/posts", headers=admin).json()["videos"]}
-    assert after["a.mp4"] == a["slot"] and after["b.mp4"] < a["slot"]  # alone in Chinese: first slot, no gap
+    assert after["a.mp4"] == a["slot"]
+    assert after["b.mp4"] == next(posting._slots_from(now, "chinese"))  # alone in Chinese: first slot, no gap
     assert client.post("/dashboard/posts/a.mp4", headers=admin, json={"channel": "nope"}).status_code == 400
 
 
