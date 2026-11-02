@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Usage: song "<style>" "<4-line chorus>" "<one-line scene>" out.m4a
+# Makes a gown-run track on a muse account instead of the local ACE engine: renders a short muse music-video
+# clip whose soundtrack is the song (muse caps it at 10 s), keeps only its audio, and loops its longest
+# run of whole 8-beat phrases on the beat to 15.2 s. Runs in parallel with the shot renders, each take on its own account.
+# Two calls with the same prompt return the same clip: vary <scene> (or the style) for a second take.
+set -euo pipefail
+SKILL_DIR=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
+MUSE_VIDEO="$SKILL_DIR/../muse-video/scripts/muse-video"
+out=$(cd "$(dirname "$4")" && pwd)/$(basename "$4")
+tmp=$(mktemp -d)
+prompt="NO TEXT ON SCREEN. A music video clip: $3 Real phone footage, her face never shown.
+
+SOUND (most important): a complete, catchy, upbeat song from the very first second to the end: $1. A bright female singer sings this chorus clearly in English with a melody you remember after one listen:
+\"$2\"
+Studio-quality mix, loud and clear. Only the song: no wind, no ambience, no speech, no sound effects, no silence at the start or end."
+QUALITY=0 SIZE=9:16 DURATION=15 OUT_NAME=song.mp4 NO_OPEN=1 "$MUSE_VIDEO" "$prompt" "$tmp"
+ffmpeg -v error -y -i "$tmp/song.mp4" -vn -ar 44100 -ac 2 "$tmp/song.wav"
+# the longest run of whole 8-beat phrases from the first beat, so the loop seam lands on a downbeat
+read -r b0 bn < <(uv run --no-project --python 3.12 --with librosa python -c "
+import librosa, sys
+y, sr = librosa.load(sys.argv[1], sr=22050)
+_, b = librosa.beat.beat_track(y=y, sr=sr)
+t = librosa.frames_to_time(b, sr=sr)
+n = (len(t) - 1) // 8 * 8
+if n < 8:
+    sys.exit(f'only {len(t)} beats in the muse song: no steady beat, render another take')
+print(f'{t[0]:.3f} {t[n]:.3f}')" "$tmp/song.wav")
+ffmpeg -v error -y -i "$tmp/song.wav" -filter_complex \
+  "[0:a]atrim=$b0:$bn,asetpts=PTS-STARTPTS,asplit=4[p][q][r][s];[p][q]acrossfade=d=0.12:c1=tri:c2=tri[pq];[pq][r]acrossfade=d=0.12:c1=tri:c2=tri[pqr];[pqr][s]acrossfade=d=0.12:c1=tri:c2=tri,atrim=0:15.2[a]" \
+  -map "[a]" -c:a aac -b:a 192k "$out"
+cp "$tmp/song.mp4" "${out%.*}.clip.mp4"
+rm -rf "$tmp"
+echo "$out: 15.2 s, loop of $b0-$bn s of the muse song (clip kept as ${out%.*}.clip.mp4)"
