@@ -17,7 +17,8 @@ case ${1:-ls} in
     for round in $(seq 1 "${2:-2}"); do
       for f in $flavours; do
         (( $(find "$BANK" -name "${f}_*.wav" | wc -l) >= round )) && continue
-        while [[ -d /tmp/museai-ace.lock ]]; do sleep 30; done
+        # a lock dir older than 45 min was left by a killed wrapper
+while [[ -n $(find /tmp/museai-ace.lock -maxdepth 0 -mmin -45 2>/dev/null) ]]; do sleep 30; done
         seed=$((RANDOM * 7 + 1))
         # render under a temp name: a half-written take must never be picked up
         MUSIC_FILL=1 nice -n 19 "$here/music" "" "$BANK/.tmp_${f}_$seed.wav" 34 "$seed" "$f" >/dev/null

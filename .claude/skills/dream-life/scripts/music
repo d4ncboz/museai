@@ -68,6 +68,8 @@ seed=${seed:-$((RANDOM * 7 + 1))}
 if [[ $banked ]]; then
   :
 elif [[ -x ${ACE_PY:=${ACE_STEP_HOME:-$HOME/.local/share/ace-step}/venv/bin/python} ]]; then
+  # cached model -> offline: ACE's Hugging Face check can hang for hours on a dead socket, holding the lock
+  [[ -d $HOME/.cache/ace-step/checkpoints/models--ACE-Step--ACE-Step-v1-3.5B ]] && export HF_HUB_OFFLINE=${HF_HUB_OFFLINE:-1}
   # one ACE render per machine: same lock file as music.py (macOS has no flock(1), so fcntl in python)
   python3 - "$(dirname "$(dirname "$(dirname "$ACE_PY")")")/render.lock" "$ACE_PY" "$HV/ace_piano.py" --tags "$tags" \
     --duration "$((secs + 6))" --seed "$seed" --out "$raw" <<'PY'
@@ -78,7 +80,10 @@ with open(sys.argv[1], "w") as lf:
     except BlockingIOError:
         print("another ACE render is running on this machine; waiting for it", file=sys.stderr)
         fcntl.flock(lf, fcntl.LOCK_EX)
-    sys.exit(subprocess.run(sys.argv[2:]).returncode)
+    try:  # a hung render must not hold the lock forever (a normal one takes 4-25 min)
+        sys.exit(subprocess.run(sys.argv[2:], timeout=1800).returncode)
+    except subprocess.TimeoutExpired:
+        sys.exit("ACE render hung for 30 min; killed it")
 PY
 else
   uv run --no-project "$MV/music.py" --engine musicgen --style "$tags" --bpm 76 --body-beats $((secs * 76 / 60)) --out "$raw.m4a"
