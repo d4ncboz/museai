@@ -31,7 +31,10 @@ def main(files):
         for s in json.loads(Path(f).read_text()):
             n += 1
             sid = s.get("id", "?")
-            e = lambda m: errs.append(f"{Path(f).name} {sid}: {m}")
+
+            def e(m, f=f, sid=sid):
+                errs.append(f"{Path(f).name} {sid}: {m}")
+
             if sid in ids:
                 e("duplicate id")
             ids.add(sid)
@@ -67,7 +70,7 @@ def main(files):
                         e(f"{x['id']} speaker {ln['who']} not in shot cast")
                     if x.get("framing") == "wide":
                         e(f"{x['id']} line in a wide shot")
-            if not any(has_phrase(l["en"], ph) for l in lines):
+            if not any(has_phrase(ln["en"], ph) for ln in lines):
                 e(f"phrase {ph!r} not spoken")
     for m in errs:
         print("ERROR", m)

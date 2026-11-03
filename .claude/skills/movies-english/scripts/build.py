@@ -101,7 +101,7 @@ def build(sid, work):
         (work / d).mkdir(parents=True, exist_ok=True)
     (work / "script.json").write_text(json.dumps(sc, ensure_ascii=False, indent=1))
     stills, lines = {}, ["#!/usr/bin/env bash", "# render every shot in parallel, one muse call each",
-                         "set -u", f"cd {work}", f"MV=${{MUSE_VIDEO:-$HOME/Work/museai-main/.claude/skills/muse-video/scripts/muse-video}}"]
+                         "set -u", f"cd {work}", "MV=${MUSE_VIDEO:-$HOME/Work/museai-main/.claude/skills/muse-video/scripts/muse-video}"]
     for shot in sc["shots"]:
         k = still_key(shot, sc)
         stills.setdefault(k, still_prompt(shot, sc))

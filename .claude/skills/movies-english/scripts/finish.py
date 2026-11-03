@@ -237,7 +237,7 @@ def finish(work, out):
     inputs += sum((["-i", str(ov / f"cap{i}.png")] for i in range(len(cues))), [])
     fc = [f"[1:v]fps={FPS},format=yuv420p,setsar=1[card]",
           "[0:v][card]concat=n=2:v=1:a=0[v0]",
-          f"[v0][2:v]overlay=enable='lt(t,2.8)'[v1]",
+          "[v0][2:v]overlay=enable='lt(t,2.8)'[v1]",
           f"[v1][3:v]overlay=enable='lt(t,{total:.3f})'[v2]"]
     cur = "v2"
     for i, (s, e, *_ ) in enumerate(cues):
