@@ -53,17 +53,18 @@ def still_key(shot, sc):
 
 def still_prompt(shot, sc):
     people = " ".join(person(k, sc, shot.get("state", "")) for k in shot["cast"])
-    pose = shot.get("still_pose") or shot["action"]
-    return (f"Vertical 9:16 frame from a late-1990s Hollywood romantic comedy shot on 35 mm colour negative. "
-            f"{FRAMING[shot['framing']]}. Place: {sc['setting']}. The moment: {pose} Mouths closed, natural "
-            f"expressions, caught mid-moment, not posing. {people} LEFT and RIGHT mean the person's own side. "
-            f"Original faces that resemble no actor, celebrity or public figure; very attractive in a natural, "
-            f"unretouched way: real skin texture, soft lens, gentle halation, fine film grain, warm creamy "
-            f"colour, shallow depth of field. Everyone looks in their early twenties, fresh and youthful. "
-            f"Bright, airy, high-key: soft diffused light, faces evenly lit, low contrast, milky lifted "
-            f"shadows, pale cream-and-pastel palette; even night or rain is bright and warm like a lit studio "
-            f"set, never dark or moody, never teal-and-orange. No HDR, no airbrushed or plastic skin, no CGI look. "
-            f"No text, no logos, no watermark.")
+    # close/medium stills are shared by every shot of that person: a calm face, the clip does the acting
+    pose = shot.get("still_pose") or (f"{' and '.join(CAST[k]['name'].split()[0] for k in shot['cast'])} "
+        "poised and relaxed, a faint knowing half-smile, eyes just off camera." if shot["framing"] in ("close", "medium") else shot["action"])
+    return (f"Vertical 9:16 frame from a glossy late-1990s Hollywood romantic comedy, 35 mm Kodak colour negative "
+            f"with a soft Pro-Mist diffusion filter. {FRAMING[shot['framing']]}. Place: {sc['setting']}. The moment: "
+            f"{pose} Mouths closed, poised confident expressions, never frowning, caught mid-moment, not posing. {people} LEFT and RIGHT "
+            f"mean the person's own side. Original faces that resemble no actor, celebrity or public figure; very "
+            f"young and breathtakingly beautiful like elegant 1990s supermodels, women in polished glam makeup with big "
+            f"glossy blowout hair, men clean-cut and model-handsome; flattering soft-focus glowing skin, never waxy. "
+            f"Warm, gently muted golden colour, creamy whites, deep warm-brown shadows, soft bloom around lights, fine film "
+            f"grain, shallow depth of field. Never cold, grey, blue or teal, never flat overcast light, no HDR, no "
+            f"CGI look. No text, no logos, no watermark.")
 
 
 def shot_prompt(shot, sc):

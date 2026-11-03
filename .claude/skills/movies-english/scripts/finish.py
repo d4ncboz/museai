@@ -32,10 +32,13 @@ YELLOW, WHITE = (255, 214, 64), (255, 255, 255)
 HANDLE = os.environ.get("HANDLE", "Movies English")
 
 
-# 1990s print look of the reference reels: lifted milky blacks, soft highlights, warm cast, fine grain.
-# References measure mean Y 81-115 with blacks near 38; raw muse renders sit darker and more contrasty.
-GRADE = os.environ.get("GRADE", "curves=all='0/0.1 0.5/0.55 1/0.96',"
-                       "colorbalance=rs=0.03:bs=-0.04:rm=0.02:bm=-0.02,eq=saturation=0.95,noise=alls=5:allf=t")
+# Grade toward the reference reels (glossy 1990s print, Pro-Mist): deep warm blacks, warm amber mids, cream
+# highlights, a soft screen-blended bloom, fine grain. References: shadows RGB ~20/15/10, mids R-B 25-42.
+# RGB before the blend: a screen blend on YUV planes shifts colour to magenta.
+GRADE = os.environ.get("GRADE", "format=gbrp,curves=all='0/0.04 0.5/0.54 1/0.97',"
+                       "colorbalance=rs=0.01:bs=-0.01:rm=0.02:bm=-0.02:rh=0.02:bh=-0.01,"
+                       "split[a][b];[b]gblur=sigma=30[g];[a][g]blend=all_mode=screen:all_opacity=0.14,"
+                       "noise=alls=5:allf=t,format=yuv420p")
 
 
 def run(a, **kw):
@@ -139,15 +142,28 @@ def caption_png(en, vi, phrase, path):
     d = ImageDraw.Draw(img)
     fe, fv = font(BOLD, 66), font(BOLD, 44)
     y = int(H * 0.63)
-    # mark the key phrase (any inflection of its words, in order) in yellow
+    # mark the key phrase (any inflection of its words) in yellow: only runs of at least two adjacent phrase
+    # words (one for a one-word phrase), so a lone "a" or "the" elsewhere in the line stays white
     keys = set(words_of(phrase))
+    toks = en.split()
+    match = [any(k == w or (len(k) > 3 and w.startswith(k[:-1])) for w in words_of(tok) for k in keys) for tok in toks]
+    hit, run = [False] * len(toks), []
+    for j, m in enumerate(match + [False]):
+        if m:
+            run.append(j)
+            continue
+        if len(run) >= min(2, len(keys)):
+            for r in run:
+                hit[r] = True
+        run = []
+    n = 0
     for row in wrap(en, fe, W * 0.84, d):
         x = (W - d.textlength(row, font=fe)) / 2
         for i, tok in enumerate(row.split(" ")):
             tok_s = tok + (" " if i < len(row.split(" ")) - 1 else "")
-            hit = any(k == w or (len(k) > 3 and w.startswith(k[:-1])) for w in words_of(tok) for k in keys)
-            outlined(d, (x, y), tok_s, fe, YELLOW if hit else WHITE)
+            outlined(d, (x, y), tok_s, fe, YELLOW if hit[n] else WHITE)
             x += d.textlength(tok_s, font=fe)
+            n += 1
         y += 80
     y += 6
     for row in wrap(vi, fv, W * 0.84, d):
