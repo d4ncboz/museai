@@ -1,0 +1,112 @@
+{
+ "_note": "Recurring cast of Movies English (Reel English). build.py copies `identity`, `wardrobe` and `voice` verbatim into every still and shot prompt so faces never drift by retyping. Faces are original designs (references in ../american-everyday-stories/references/faces.md rules: one shape, one dominant feature, one or two sided details, never a scar or mark through a brow, never 'looks like'). Three pairs, each with its own comic engine; any character may cross into another pair's story. `letter` = speaker letter in cues/speakers.txt; never W or M.",
+ "VIV": {
+  "name": "Vivienne 'Viv' Laurent",
+  "age": 25,
+  "sex": "F",
+  "letter": "V",
+  "pair": "JAMIE",
+  "role": "Fashion-magazine assistant editor in Manhattan; elegant, always slightly late, never admits she is wrong.",
+  "engine": "Ice-queen comebacks that backfire on her a second later; Jamie always gets the last word.",
+  "identity": "Viv, a 25-year-old French-American woman, strikingly beautiful in a natural, unretouched way: heart-shaped face, warm olive-ivory skin, honey-amber eyes under full dark brows, a straight nose, full lips in a soft brick-red lipstick, one dimple in her LEFT cheek when she smiles. Big glossy 1990s blowout: thick espresso-brown hair to the collarbones, bouncy round-brush volume swept back from the face. Small gold heart-shaped earrings. Slim, 5 ft 7 in.",
+  "wardrobe": {
+   "city": "cream boucle tweed jacket with black trim and gold buttons over a black silk camisole, slim black trousers, black quilted shoulder bag, small gold heart earrings",
+   "coat": "long camel wool wrap coat over a black turtleneck, black trousers, small gold heart earrings",
+   "night": "black satin slip dress with thin straps under a cropped cream cardigan, small gold heart earrings",
+   "cozy": "pale pink satin pyjama set with white piping, small gold heart earrings",
+   "snow": "fitted burgundy one-piece ski suit with a cream collar, small gold heart earrings"
+  },
+  "voice": "low, smooth, faintly amused American English with a hint of French polish, dry and unhurried",
+  "still": "standing at a Manhattan bakery counter with pink cake boxes, 1990s winter daylight through the shop window"
+ },
+ "JAMIE": {
+  "name": "Jamie Calloway",
+  "age": 27,
+  "sex": "M",
+  "letter": "J",
+  "pair": "VIV",
+  "role": "Runs his grandfather's corner bakery in the West Village; flirts with everyone, means it only with Viv.",
+  "engine": "Cheeky one-liners; calm, unbothered, always one step ahead.",
+  "identity": "Jamie, a 27-year-old Italian-American man, handsome in a warm, lived-in way: long face with high cheekbones, light olive skin with a little sun, warm chocolate-brown eyes with laugh lines, thick dark-brown curly hair worn a bit messy, light stubble, a smile that lifts higher on his RIGHT side. Lean, broad-shouldered, 6 ft.",
+  "wardrobe": {
+   "bakery": "faded light-blue oxford shirt with sleeves rolled to the elbow, flour-dusted white canvas apron",
+   "city": "dark navy pea coat over a grey crewneck sweater, dark jeans, brown leather boots",
+   "night": "white open-collar shirt, charcoal trousers, sleeves rolled",
+   "cozy": "oatmeal cable-knit crewneck sweater, dark trousers"
+  },
+  "voice": "warm baritone, relaxed New York American English, teasing, never loud",
+  "still": "leaning on a worn wooden bakery counter with bread racks behind him, 1990s morning light"
+ },
+ "SIENNA": {
+  "name": "Sienna Hart",
+  "age": 24,
+  "sex": "F",
+  "letter": "S",
+  "pair": "THEO",
+  "role": "Colorado ski-resort receptionist and terrible skier who pretends to be great at everything.",
+  "engine": "Sunny chaos: big confidence, bigger accidents; sweet romance under the slapstick.",
+  "identity": "Sienna, a 24-year-old American woman, radiantly pretty in a fresh, outdoorsy way: oval face, fair skin with rosy cheeks and a light dusting of freckles across the nose, bright sea-blue eyes, soft natural brows with her LEFT brow a touch higher, wide expressive mouth with natural pink lips. Long honey-blonde hair in soft 1990s layered waves with feathered face-framing pieces. 5 ft 6 in.",
+  "wardrobe": {
+   "snow": "fitted burgundy one-piece ski suit with a cream collar, cream knit headband",
+   "lodge": "chunky cream turtleneck sweater, slim burgundy corduroy trousers, cream wool socks",
+   "city": "soft blue denim jacket over a white tee, light-wash high-waisted jeans, white sneakers",
+   "night": "emerald-green velvet mini dress, small pearl earrings"
+  },
+  "voice": "bright, quick, warm American English with a light Colorado openness, expressive",
+  "still": "on a snowy alpine lodge terrace with string lights and pine trees, 1990s winter afternoon"
+ },
+ "THEO": {
+  "name": "Theo Ashford",
+  "age": 28,
+  "sex": "M",
+  "letter": "T",
+  "pair": "SIENNA",
+  "role": "Patient ski instructor from an old-money family who hides that he is rich.",
+  "engine": "Deadpan rescuer; reveals at the end he knew all along.",
+  "identity": "Theo, a 28-year-old American man, classically handsome in an easy, sun-kissed way: square jaw, light tanned skin, grey-green eyes, straight brows, sandy-blond hair side-parted and a bit windswept, a single dimple in his RIGHT cheek when he smiles. Athletic, 6 ft 1 in.",
+  "wardrobe": {
+   "snow": "olive-green quilted down jacket over a cream roll-neck sweater, black ski trousers, amber ski goggles pushed up on his head",
+   "lodge": "navy cashmere crewneck over a white collar, grey wool trousers",
+   "city": "camel overcoat over a white oxford shirt, dark jeans",
+   "night": "black tuxedo with a loosened bow tie"
+  },
+  "voice": "calm, low, dry American English, gentle humour, slow and steady",
+  "still": "beside a ski lift on a sunny snowy slope, 1990s winter light"
+ },
+ "MAYA": {
+  "name": "Maya Rivera-Chen",
+  "age": 26,
+  "sex": "F",
+  "letter": "Y",
+  "pair": "LUCAS",
+  "role": "Sharp-tongued lawyer in Los Angeles; competitive about everything, even board games.",
+  "engine": "Sarcasm duels with Lucas; she wins the argument, he wins the moment.",
+  "identity": "Maya, a 26-year-old Chinese-Mexican American woman, stunning in a bold, natural way: diamond-shaped face with high cheekbones, warm golden-tan skin, dark brown almond-shaped eyes with a sharp natural wing of liner, defined brows, full lips in a muted berry tone. Long glossy black hair, very straight, with soft curtain bangs. Two small gold hoops in her LEFT ear, one in her RIGHT. 5 ft 5 in.",
+  "wardrobe": {
+   "office": "tailored ivory blazer over a black fitted top, black pencil skirt, thin gold chain necklace",
+   "home": "oversized grey college sweatshirt, black bike shorts, thick white socks",
+   "night": "deep red satin wrap dress, thin gold chain necklace",
+   "beach": "white linen button-up shirt over a black swimsuit, straw hat"
+  },
+  "voice": "clear, quick, confident West Coast American English, crisp and witty",
+  "still": "in a sunny 1990s Los Angeles apartment with palm shadows on the wall"
+ },
+ "LUCAS": {
+  "name": "Lucas Moreau",
+  "age": 29,
+  "sex": "M",
+  "letter": "L",
+  "pair": "MAYA",
+  "role": "Calm architect, Maya's neighbour and rival-turned-boyfriend; never raises his voice.",
+  "engine": "Stone-faced, one short line that flips the scene.",
+  "identity": "Lucas, a 29-year-old French-Moroccan man, strikingly handsome in a quiet, intense way: long oval face, warm olive-brown skin, deep-set dark brown eyes under strong straight brows, a straight strong nose, short dark-brown hair combed back, neat short beard shadow. Tall and lean, 6 ft 2 in.",
+  "wardrobe": {
+   "office": "crisp white shirt with sleeves rolled, charcoal trousers, steel wristwatch",
+   "home": "soft black crewneck tee, grey drawstring trousers",
+   "night": "black suit over a black open-collar shirt",
+   "beach": "loose white linen shirt half-buttoned, khaki shorts"
+  },
+  "voice": "deep, calm, low American English with a faint French softness, very few words, deadpan",
+  "still": "on a sunny Los Angeles apartment balcony with terracotta pots, 1990s afternoon"
+ }
+}
