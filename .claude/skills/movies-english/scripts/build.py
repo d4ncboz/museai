@@ -61,14 +61,15 @@ def still_prompt(shot, sc):
     # close/medium stills are shared by every shot of that person: a calm face, the clip does the acting
     pose = shot.get("still_pose") or (f"{' and '.join(CAST[k]['name'].split()[0] for k in shot['cast'])} "
         "relaxed and natural, a small candid smile, eyes just off camera." if shot["framing"] in ("close", "medium") else shot["action"])
-    return (f"Vertical 9:16 frame from a late-1990s Hollywood romantic comedy, as it looks on a DVD. {FRAMING[shot['framing']]}. "
+    return (f"A frame grab from a 1999 Hollywood romantic comedy, shot on 35 mm film with an 85 mm lens wide open, "
+            f"slightly soft like a DVD frame. Vertical 9:16. {FRAMING[shot['framing']]}. "
             f"Place: {sc['setting']}. The moment: {pose} Caught mid-moment, real and candid, not posing; a speaker's "
             f"mouth closed. {people} LEFT and RIGHT mean the person's own side. Original faces that resemble no actor, "
-            f"celebrity or public figure; very young, fresh and pretty like real young actors: soft youthful features, "
-            f"rosy natural skin with fine real texture, light makeup, soft sheer lips with natural edges, never contoured, "
-            f"lined lips, airbrushed or plastic. Bright, soft, airy light from the front, low contrast, gently muted warm "
-            f"pastel colour, creamy whites, a slightly soft picture with fine film grain. Never cold, grey, blue or teal, "
-            f"never saturated, HDR or razor-sharp, no CGI look. No text, no logos, no watermark.")
+            f"celebrity or public figure. The background is completely out of focus, melted into soft creamy blur with "
+            f"glowing window light; only the faces are in focus. Soft focus, Pro-Mist diffusion glow, natural film grain, "
+            f"warm soft daylight from the front, low contrast, gently muted warm pastel colour. Real young actors on a "
+            f"real film set, real skin, not a render. Never cold, grey, blue or teal, never saturated, HDR or "
+            f"razor-sharp, no CGI look. No text, no logos, no watermark.")
 
 
 def shot_prompt(shot, sc):
@@ -108,12 +109,14 @@ def build(sid, work):
     stills, lines = {}, ["#!/usr/bin/env bash", "# render every shot in parallel, one muse call each",
                          "set -u", f"cd {work}", "MV=${MUSE_VIDEO:-$HOME/Work/museai-main/.claude/skills/muse-video/scripts/muse-video}"]
     for shot in sc["shots"]:
-        k = still_key(shot, sc)
-        stills.setdefault(k, still_prompt(shot, sc))
+        # "first": a frame you supply (e.g. a reference frame) is the first frame; no still is generated
+        k = shot.get("first") or still_key(shot, sc)
+        if not shot.get("first"):
+            stills.setdefault(k, still_prompt(shot, sc))
         text, dur = shot_prompt(shot, sc)
         (work / "shots" / f"{shot['id']}.prompt.txt").write_text(text)
         out = f"{sid.lower()}-{shot['id']}.mp4"
-        lines.append(f"( [ -f clips/{out} ] || {{ SIZE=9:16 DURATION={dur} IMAGE=stills/{k}.png OUT_NAME={out} "
+        lines.append(f"( [ -f clips/{out} ] || {{ SIZE=9:16 DURATION={dur} IMAGE={shot.get('first') or f'stills/{k}.png'} OUT_NAME={out} "
                      f"NO_OPEN=1 \"$MV\" -f shots/{shot['id']}.prompt.txt && cp ~/Movies/museai/{out} clips/; }} "
                      f"> clips/{shot['id']}.log 2>&1; echo \"{shot['id']} $?\" ) &")
     lines.append("wait")

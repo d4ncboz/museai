@@ -51,3 +51,4 @@ learning element is the end card, which lists the script's `words` (else its `ph
 - `vi`: natural spoken Vietnamese with the same tone and humour (anh/em/tôi/cậu chosen by relationship), not word-by-word.
 - `words`: 2-3 items `{en, vi}` from the episode (the key phrase first) for the end card. `hook_vi` ≤ 8 words; `cta_vi` invites a comment in English.
 - No two scripts share a key phrase across the whole library.
+- Optional shot fields: `state` (a string, or `{"VIV": "soaked"}` for one person), `hold` (seconds kept after the line), `still` (share a named still), `still_pose`, and `first` (an absolute path to a frame you supply, used as the first frame instead of a generated still; muse keeps that face only in that frame's own scene).

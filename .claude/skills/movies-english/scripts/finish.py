@@ -106,7 +106,9 @@ def cut(work, sc, tr):
         seg = work / "seg" / f"{sh['id']}.mp4"
         seg.parent.mkdir(exist_ok=True)
         run(["ffmpeg", "-v", "error", "-y", "-ss", f"{s}", "-i", str(clip), "-frames:v", str(n),
+             # the 540 p pass gives the soft DVD picture of the references (no crisp micro-detail)
              "-vf", f"scale={W}:{H}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{H},fps={FPS},"
+                    f"scale=540:960:flags=area,scale={W}:{H}:flags=bicubic,"
                     f"setsar=1,{GRADE}",
              "-af", f"aresample=48000,apad,atrim=0:{length:.4f}", "-ar", "48000", "-ac", "2",
              "-c:v", "libx264", "-crf", "16", "-preset", "medium", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k",

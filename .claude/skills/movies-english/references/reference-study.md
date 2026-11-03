@@ -28,10 +28,13 @@ already mid-action (a scream, a counter exchange, a pillow fight); no establishi
 - Bright, soft, airy late-1990s rom-com: soft diffused front light, low contrast, gently muted warm
   pastel colour (cream, blush pink, camel, soft red), creamy whites, a slightly soft picture (720p, no
   crisp micro-detail). Mean RGB 88/72/65, 130/109/96, 100/84/81; shadows ~20/15/10; mids R-B 25-42.
-- Faces: very young (19-21), fresh and soft: full youthful cheeks, soft rounded features, big bright
-  eyes, rosy-peach skin, light makeup, soft rose or sheer red lips with soft natural edges (never
-  lined, never matte brick red, never sculpted contour). Big glossy 1990s blowouts. Men boyish and
-  handsome, natural grins.
+- Faces: very young (19-21) and model-beautiful: the bakery girl (the user's minimum bar) has warm
+  light-olive skin, dark eyes with soft liner, matte brick-red lips and a big smooth swept-back
+  shoulder-length blowout. Men boyish and handsome, natural grins.
+- Focus: 85 mm wide open. Only faces sharp, the background melted (edge mean 2.6-5.3, background
+  corner 3.0-3.7 at 720x1280). Our stills land at ~8 / ~4; finish.py's 540 p pass closes the gap.
+- Sending a reference frame as `"first"` works: muse animates it and keeps the face. It refused the
+  same face in a new setting, so a reference frame only fits shots in that frame's own scene.
 - What made earlier versions read as AI: sculpted contour and heavy brows (look 30), lined matte lips,
   contrasty saturated golden grade, razor-sharp 1080p detail, every face posed the same way.
 
