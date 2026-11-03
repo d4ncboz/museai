@@ -7,11 +7,12 @@
 Stills: one first frame per (framing, cast, wardrobe, state) group, so all close-ups of one person in
 one episode start from the same face (image generation takes no reference image; sharing the still is
 what keeps a face identical across cuts). A shot may set "still": "<name>" to share or split a group,
-and "state" (e.g. "soaked") to change the look mid-episode.
+and "state" (e.g. "soaked", or {"VIV": "soaked"} for one person of a two-shot) to change the look mid-episode.
 Shots: one muse render per shot, first frame = its still, one line at most, timed so the line starts
 at 0.6 s (a line at 0 s fails SOUND WITHOUT LIPS) and the clip runs `sec + 1` s for trimming room.
 """
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -20,6 +21,7 @@ SKILL = Path(__file__).resolve().parent.parent
 CAST = json.loads((SKILL / "series/cast.json").read_text())
 LOOK = (SKILL / "prompt/look.txt").read_text().strip()
 FRAMING = {
+    "ecu": "Extreme close-up: the face fills the frame, eyes and mouth large and centred, front view",
     "wide": "Wide shot, the whole scene and the people full-length, the place clearly established",
     "medium": "Medium shot from the waist up, the speaker large in the upper half of the frame",
     "close": "Close-up from the chest up, the face large in the upper half of the frame, both eyes and the whole mouth clearly visible, front three-quarter view, never profile",
@@ -38,6 +40,7 @@ def load_script(sid):
 def person(key, sc, state=""):
     c = CAST[key]
     wk = sc.get("wardrobe", {}).get(key) or next(iter(c["wardrobe"]))
+    state = state.get(key, "") if isinstance(state, dict) else state
     extra = f" Right now: {state}." if state else ""
     return f"{c['identity']} Wearing: {c['wardrobe'][wk]}.{extra}"
 
@@ -46,7 +49,9 @@ def still_key(shot, sc):
     if shot.get("still"):
         return shot["still"]
     who = "-".join(shot["cast"])
-    state = "-".join(re.findall(r"[a-z]+", shot.get("state", "").lower())[:2])
+    st = shot.get("state", "")
+    st = " ".join(st.values()) if isinstance(st, dict) else st
+    state = "-".join(re.findall(r"[a-z]+", st.lower())[:2])
     return f"{shot['framing']}-{who}" + (f"-{state}" if state else "") \
         if shot["framing"] in ("close", "medium") else shot["id"]
 
@@ -55,20 +60,19 @@ def still_prompt(shot, sc):
     people = " ".join(person(k, sc, shot.get("state", "")) for k in shot["cast"])
     # close/medium stills are shared by every shot of that person: a calm face, the clip does the acting
     pose = shot.get("still_pose") or (f"{' and '.join(CAST[k]['name'].split()[0] for k in shot['cast'])} "
-        "poised and relaxed, a faint knowing half-smile, eyes just off camera." if shot["framing"] in ("close", "medium") else shot["action"])
-    return (f"Vertical 9:16 frame from a glossy late-1990s Hollywood romantic comedy, 35 mm Kodak colour negative "
-            f"with a soft Pro-Mist diffusion filter. {FRAMING[shot['framing']]}. Place: {sc['setting']}. The moment: "
-            f"{pose} Mouths closed, poised confident expressions, never frowning, caught mid-moment, not posing. {people} LEFT and RIGHT "
-            f"mean the person's own side. Original faces that resemble no actor, celebrity or public figure; very "
-            f"young and breathtakingly beautiful like elegant 1990s supermodels, women in polished glam makeup with big "
-            f"glossy blowout hair, men clean-cut and model-handsome; flattering soft-focus glowing skin, never waxy. "
-            f"Warm, gently muted golden colour, creamy whites, deep warm-brown shadows, soft bloom around lights, fine film "
-            f"grain, shallow depth of field. Never cold, grey, blue or teal, never flat overcast light, no HDR, no "
-            f"CGI look. No text, no logos, no watermark.")
+        "relaxed and natural, a small candid smile, eyes just off camera." if shot["framing"] in ("close", "medium") else shot["action"])
+    return (f"Vertical 9:16 frame from a late-1990s Hollywood romantic comedy, as it looks on a DVD. {FRAMING[shot['framing']]}. "
+            f"Place: {sc['setting']}. The moment: {pose} Caught mid-moment, real and candid, not posing; a speaker's "
+            f"mouth closed. {people} LEFT and RIGHT mean the person's own side. Original faces that resemble no actor, "
+            f"celebrity or public figure; very young, fresh and pretty like real young actors: soft youthful features, "
+            f"rosy natural skin with fine real texture, light makeup, soft sheer lips with natural edges, never contoured, "
+            f"lined lips, airbrushed or plastic. Bright, soft, airy light from the front, low contrast, gently muted warm "
+            f"pastel colour, creamy whites, a slightly soft picture with fine film grain. Never cold, grey, blue or teal, "
+            f"never saturated, HDR or razor-sharp, no CGI look. No text, no logos, no watermark.")
 
 
 def shot_prompt(shot, sc):
-    dur = shot["sec"] + 1
+    dur = max(4, math.ceil(shot["sec"]) + 1)
     people = "\n".join(f"- {CAST[k]['name'].split()[0]}: {person(k, sc, shot.get('state', ''))} "
                        f"Voice: {CAST[k]['voice']}." for k in shot["cast"])
     p = [f"NO TEXT ON SCREEN. One continuous {dur}-second shot of a short film. The attached image is the exact "

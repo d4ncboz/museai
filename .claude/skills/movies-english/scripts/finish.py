@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
-"""Cut the rendered shots into the reel, then burn hook, bilingual captions and the phrase card.
+"""Cut the rendered shots into the reel the way the reference reels look, then add subtitles and new words.
 
-  uv run --no-project --python 3.12 --with faster-whisper --with pillow python scripts/finish.py WORK OUT.mp4
+  uv run --no-project --python 3.12 --with faster-whisper --with 'av<14' --with pillow python scripts/finish.py WORK OUT.mp4
 
 WORK holds script.json (build.py) and clips/<id>-<shot>.mp4 (render.sh). Steps:
 1. Per line shot, Whisper word times -> keep 0.35 s before the first word to 0.6 s after the last
-   (the reaction beat the reference reels hold); a silent shot keeps 0.3 s .. 0.3 + sec. Each heard
+   (the reaction beat the reference reels hold; a shot's "hold": N keeps N s after it, for a payoff such as
+   a laugh after the punchline); a silent shot keeps 0.3 s .. 0.3 + sec. Each heard
    line is compared with the script; under 70 % word match prints MISHEARD (re-render that shot).
-2. Every segment is re-encoded to 1080x1920, exactly N frames at 24 fps with its audio padded/cut to
-   the same length, then joined with hard cuts (concat demuxer), so lips never drift at a join.
-3. Overlays (Pillow PNGs, ffmpeg overlay with enable windows): the Vietnamese hook in the top band for
-   the first 2.8 s, each line's English (key phrase in yellow) with Vietnamese under it in the lower
-   caption band (y 62-74 %, clear of faces and of platform buttons), a small handle bottom-left, then a
-   3 s phrase card over a blurred, darkened freeze of the last frame.
-Optional MUSIC=file.m4a lays a bed at MUSIC_DB (default -24 dB) under the reel.
-Writes WORK/trims.json, WORK/cues.json ([start, end, en, vi] in reel time) and OUT."""
+2. Every segment is graded and re-encoded to 720x1280 (the references' size: a softer picture reads as
+   film, 1080p micro-detail reads as AI), exactly N frames at 24 fps with its audio padded/cut to the same
+   length, then joined with hard cuts (concat demuxer), so lips never drift at a join.
+3. Overlays (Pillow PNGs, ffmpeg overlay with enable windows), all as in references/reference-study.md:
+   each spoken line as a small white English subtitle centred at ~74 %, an optional handle watermark
+   (HANDLE="@page"), then a 3.5 s "new words" card (script `words`, else its phrase) over a blurred
+   freeze of the last frame. Nothing else: no hook, no translation line, no highlight.
+Optional MUSIC=file.m4a lays a bed at MUSIC_DB (default -26 dB) under the reel.
+Writes WORK/trims.json, WORK/cues.json ([start, end, en] in reel time) and OUT."""
 import json
 import os
 import re
@@ -24,21 +26,23 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-W, H, FPS = 1080, 1920, 24
-BOLD = "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
-REG = "/System/Library/Fonts/Supplemental/Arial.ttf"
-SERIF = "/System/Library/Fonts/Supplemental/Georgia Bold.ttf"
-YELLOW, WHITE = (255, 214, 64), (255, 255, 255)
-HANDLE = os.environ.get("HANDLE", "Movies English")
+W, H, FPS = 720, 1280, 24
+FONTS = "/System/Library/Fonts/Supplemental/"
+ROUND, SERIF, ITALIC = FONTS + "Arial Rounded Bold.ttf", FONTS + "Georgia Bold.ttf", FONTS + "Georgia Italic.ttf"
+VI = FONTS + "Arial Bold.ttf"  # Arial Rounded has no Vietnamese diacritics
+WHITE = (255, 255, 255)
+HANDLE = os.environ.get("HANDLE", "")
+CARD = 3.5
 
 
-# Grade toward the reference reels (glossy 1990s print, Pro-Mist): deep warm blacks, warm amber mids, cream
-# highlights, a soft screen-blended bloom, fine grain. References: shadows RGB ~20/15/10, mids R-B 25-42.
-# RGB before the blend: a screen blend on YUV planes shifts colour to magenta.
-GRADE = os.environ.get("GRADE", "format=gbrp,curves=all='0/0.04 0.5/0.54 1/0.97',"
-                       "colorbalance=rs=0.01:bs=-0.01:rm=0.02:bm=-0.02:rh=0.02:bh=-0.01,"
-                       "split[a][b];[b]gblur=sigma=30[g];[a][g]blend=all_mode=screen:all_opacity=0.14,"
-                       "noise=alls=5:allf=t,format=yuv420p")
+# Grade toward the reference reels: soft, low-contrast, gently muted warm pastel. A small lift and a soft
+# top end, a little less saturation, warm mids, a light screen-blended halation, a touch of blur to take
+# the AI micro-sharpness off skin, fine grain. References: mean RGB 88-130/72-109/65-96, shadows ~20/15/10,
+# mids R-B 25-42. RGB before the blend: a screen blend on YUV planes shifts colour to magenta.
+GRADE = os.environ.get("GRADE", "format=gbrp,curves=all='0/0.05 0.25/0.29 0.5/0.58 0.8/0.86 1/0.97',"
+                       "eq=saturation=0.86,colorbalance=rs=0.01:bs=-0.01:rm=0.025:bm=-0.025:rh=0.01:bh=-0.005,"
+                       "split[a][b];[b]gblur=sigma=24[g];[a][g]blend=all_mode=screen:all_opacity=0.12,"
+                       "gblur=sigma=0.6,noise=alls=4:allf=t,format=yuv420p")
 
 
 def run(a, **kw):
@@ -63,7 +67,7 @@ def trims(work, sc):
         d = dur(clip)
         if not sh.get("line"):
             a = min(0.3, max(0, d - sh["sec"]))
-            out[sh["id"]] = [a, min(d, a + sh["sec"]), None]
+            out[sh["id"]] = [a, min(d, a + sh["sec"]), None, None]
             continue
         segs, _ = model.transcribe(str(clip), language="en", word_timestamps=True, vad_filter=False)
         ws = [w for s in segs for w in s.words]
@@ -84,8 +88,9 @@ def trims(work, sc):
                     last = j
                     break
         s = max(0.0, (ws[0].start if ws else 0.6) - 0.35)
-        e = min(d, (ws[last].end if ws else sh["sec"]) + 0.6)
-        out[sh["id"]] = [round(s, 3), round(e, 3), round((ws[0].start if ws else 0.6) - s, 3)]
+        said = ws[last].end if ws else sh["sec"]
+        e = min(d, said + sh.get("hold", 0.6))
+        out[sh["id"]] = [round(s, 3), round(e, 3), round((ws[0].start if ws else 0.6) - s, 3), round(said + 0.5 - s, 3)]
         print(f"{sh['id']} {match:.0%} heard {heard!r} keep {s:.2f}-{e:.2f}")
     (work / "trims.json").write_text(json.dumps(out, indent=1))
     return out, bad
@@ -95,18 +100,19 @@ def cut(work, sc, tr):
     segs, cues, t = [], [], 0.0
     for sh in sc["shots"]:
         clip = work / "clips" / f"{sc['id'].lower()}-{sh['id']}.mp4"
-        s, e, lead = tr[sh["id"]]
+        s, e, lead, said = tr[sh["id"]]
         n = max(1, round((e - s) * FPS))
         length = n / FPS
         seg = work / "seg" / f"{sh['id']}.mp4"
         seg.parent.mkdir(exist_ok=True)
         run(["ffmpeg", "-v", "error", "-y", "-ss", f"{s}", "-i", str(clip), "-frames:v", str(n),
-             "-vf", f"scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},fps={FPS},setsar=1,{GRADE}",
+             "-vf", f"scale={W}:{H}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{H},fps={FPS},"
+                    f"setsar=1,{GRADE}",
              "-af", f"aresample=48000,apad,atrim=0:{length:.4f}", "-ar", "48000", "-ac", "2",
-             "-c:v", "libx264", "-crf", "15", "-preset", "medium", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k",
+             "-c:v", "libx264", "-crf", "16", "-preset", "medium", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k",
              str(seg)])
         if sh.get("line"):
-            cues.append([round(t + lead - 0.1, 3), round(t + length, 3), sh["line"]["en"], sh["line"]["vi"]])
+            cues.append([round(t + lead - 0.1, 3), round(t + min(said, length), 3), sh["line"]["en"]])
         segs.append(seg)
         t += length
     lst = work / "seg" / "list.txt"
@@ -121,10 +127,6 @@ def font(p, size):
     return ImageFont.truetype(p, size)
 
 
-def outlined(d, xy, text, f, fill, stroke=6):
-    d.text(xy, text, font=f, fill=fill, stroke_width=stroke, stroke_fill=(0, 0, 0))
-
-
 def wrap(text, f, maxw, d):
     lines, cur = [], ""
     for w in text.split():
@@ -137,97 +139,46 @@ def wrap(text, f, maxw, d):
     return lines + [cur]
 
 
-def caption_png(en, vi, phrase, path):
-    img = Image.new("RGBA", (W, H))
-    d = ImageDraw.Draw(img)
-    fe, fv = font(BOLD, 66), font(BOLD, 44)
-    y = int(H * 0.63)
-    # mark the key phrase (any inflection of its words) in yellow: only runs of at least two adjacent phrase
-    # words (one for a one-word phrase), so a lone "a" or "the" elsewhere in the line stays white
-    keys = set(words_of(phrase))
-    toks = en.split()
-    match = [any(k == w or (len(k) > 3 and w.startswith(k[:-1])) for w in words_of(tok) for k in keys) for tok in toks]
-    hit, run = [False] * len(toks), []
-    for j, m in enumerate(match + [False]):
-        if m:
-            run.append(j)
-            continue
-        if len(run) >= min(2, len(keys)):
-            for r in run:
-                hit[r] = True
-        run = []
-    n = 0
-    for row in wrap(en, fe, W * 0.84, d):
-        x = (W - d.textlength(row, font=fe)) / 2
-        for i, tok in enumerate(row.split(" ")):
-            tok_s = tok + (" " if i < len(row.split(" ")) - 1 else "")
-            outlined(d, (x, y), tok_s, fe, YELLOW if hit[n] else WHITE)
-            x += d.textlength(tok_s, font=fe)
-            n += 1
-        y += 80
-    y += 6
-    for row in wrap(vi, fv, W * 0.84, d):
-        outlined(d, ((W - d.textlength(row, font=fv)) / 2, y), row, fv, (235, 235, 235), 5)
-        y += 56
-    img.save(path)
+def centred(d, y, text, f, fill, stroke=2):
+    d.text(((W - d.textlength(text, font=f)) / 2, y), text, font=f, fill=fill, stroke_width=stroke,
+           stroke_fill=(20, 16, 14))
 
 
-def hook_png(text, path):
+def subtitle_png(en, path):
     img = Image.new("RGBA", (W, H))
     d = ImageDraw.Draw(img)
-    f = font(BOLD, 58)
-    text = re.sub(r"[^\w\s?!.,'’:-]", "", text).strip()
-    rows = wrap(text, f, W * 0.8, d)
-    bh = 76 * len(rows) + 36
-    y0 = int(H * 0.11)
-    bw = max(d.textlength(r, font=f) for r in rows) + 64
-    d.rounded_rectangle(((W - bw) / 2, y0, (W + bw) / 2, y0 + bh), 26, fill=(214, 40, 60, 235))
-    for i, r in enumerate(rows):
-        d.text(((W - d.textlength(r, font=f)) / 2, y0 + 18 + 76 * i), r, font=f, fill=WHITE)
-    fs = font(BOLD, 34)
-    tag = "Học tiếng Anh qua phim"
-    outlined(d, ((W - d.textlength(tag, font=fs)) / 2, y0 + bh + 18), tag, fs, WHITE, 4)
+    f = font(ROUND, 30)
+    rows = wrap(en, f, W * 0.8, d)
+    y = int(H * 0.735) - 19 * (len(rows) - 1)
+    for r in rows:
+        centred(d, y, r, f, WHITE)
+        y += 38
     img.save(path)
 
 
 def handle_png(path):
     img = Image.new("RGBA", (W, H))
     d = ImageDraw.Draw(img)
-    f = font(SERIF, 30)
-    d.text((W - 60 - d.textlength(HANDLE, font=f), int(H * 0.585)), HANDLE, font=f, fill=(255, 255, 255, 150))
+    f = font(ITALIC, 20)
+    d.text((W - 40 - d.textlength(HANDLE, font=f), int(H * 0.945)), HANDLE, font=f, fill=(255, 255, 255, 140))
     img.save(path)
 
 
-def card_png(frame, ph, path):
-    base = Image.open(frame).convert("RGB").resize((W, H)).filter(ImageFilter.GaussianBlur(18))
-    base = Image.blend(base, Image.new("RGB", (W, H), (12, 10, 14)), 0.55).convert("RGBA")
+def words_png(frame, words, path):
+    base = Image.open(frame).convert("RGB").resize((W, H)).filter(ImageFilter.GaussianBlur(14))
+    base = Image.blend(base, Image.new("RGB", (W, H), (14, 11, 10)), 0.5).convert("RGBA")
     d = ImageDraw.Draw(base)
-    y = int(H * 0.27)
-    ft = font(BOLD, 40)
-    t = "CÂU HÔM NAY"
-    d.text(((W - d.textlength(t, font=ft)) / 2, y), t, font=ft, fill=(255, 255, 255, 200))
-    y += 90
-    fp = font(SERIF, 92)
-    for r in wrap(ph["en"], fp, W * 0.86, d):
-        outlined(d, ((W - d.textlength(r, font=fp)) / 2, y), r, fp, YELLOW, 4)
-        y += 110
-    fv = font(BOLD, 58)
-    for r in wrap("= " + ph["vi"], fv, W * 0.86, d):
-        d.text(((W - d.textlength(r, font=fv)) / 2, y + 10), r, font=fv, fill=WHITE)
-        y += 74
-    y += 60
-    fe, fx = font(BOLD, 46), font(REG, 40)
-    for r in wrap(ph["example_en"], fe, W * 0.82, d):
-        d.text(((W - d.textlength(r, font=fe)) / 2, y), r, font=fe, fill=WHITE)
-        y += 60
-    for r in wrap(ph["example_vi"], fx, W * 0.82, d):
-        d.text(((W - d.textlength(r, font=fx)) / 2, y + 6), r, font=fx, fill=(220, 220, 220))
-        y += 54
-    fs = font(BOLD, 40)
-    t = "Follow để học 1 câu mỗi ngày"
-    d.rounded_rectangle(((W - d.textlength(t, font=fs)) / 2 - 36, H * 0.70, (W + d.textlength(t, font=fs)) / 2 + 36,
-                         H * 0.70 + 78), 39, fill=(214, 40, 60, 240))
-    d.text(((W - d.textlength(t, font=fs)) / 2, H * 0.70 + 16), t, font=fs, fill=WHITE)
+    fh, fe, fv = font(ROUND, 22), font(SERIF, 40), font(VI, 25)
+    blocks = [[(r, fe, WHITE, 50) for r in wrap(w["en"], fe, W * 0.84, d)]
+              + [(r, fv, (232, 224, 218), 38) for r in wrap(w["vi"], fv, W * 0.84, d)] for w in words]
+    y = (H - 64 - sum(sum(x[3] for x in b) + 36 for b in blocks)) / 2
+    centred(d, y, "NEW WORDS", fh, (255, 255, 255, 200), 1)
+    y += 64
+    for b in blocks:
+        for r, f, c, lh in b:
+            centred(d, y, r, f, c, 1)
+            y += lh
+        y += 36
     base.save(path)
 
 
@@ -240,33 +191,29 @@ def finish(work, out):
     ov.mkdir(exist_ok=True)
     last = ov / "last.png"
     run(["ffmpeg", "-v", "error", "-y", "-sseof", "-0.05", "-i", str(film), "-frames:v", "1", "-update", "1", str(last)])
-    card = ov / "card.png"
-    card_png(last, sc["phrase"], card)
-    hook_png(sc["hook_vi"], ov / "hook.png")
-    handle_png(ov / "handle.png")
+    words_png(last, sc.get("words") or [sc["phrase"]], ov / "card.png")
     for i, c in enumerate(cues):
-        caption_png(c[2], c[3], sc["phrase"]["en"], ov / f"cap{i}.png")
-    card_len = 3.0
-    end = total + card_len
-    inputs = ["-i", str(film), "-loop", "1", "-t", f"{card_len}", "-i", str(card),
-              "-i", str(ov / "hook.png"), "-i", str(ov / "handle.png")]
-    inputs += sum((["-i", str(ov / f"cap{i}.png")] for i in range(len(cues))), [])
-    fc = [f"[1:v]fps={FPS},format=yuv420p,setsar=1[card]",
-          "[0:v][card]concat=n=2:v=1:a=0[v0]",
-          "[v0][2:v]overlay=enable='lt(t,2.8)'[v1]",
-          f"[v1][3:v]overlay=enable='lt(t,{total:.3f})'[v2]"]
-    cur = "v2"
-    for i, (s, e, *_ ) in enumerate(cues):
+        subtitle_png(c[2], ov / f"sub{i}.png")
+    end = total + CARD
+    inputs = ["-i", str(film), "-loop", "1", "-t", f"{CARD}", "-i", str(ov / "card.png")]
+    fc = [f"[1:v]fps={FPS},format=yuv420p,setsar=1[card]", "[0:v][card]concat=n=2:v=1:a=0[v0]"]
+    cur, k = "v0", 2
+    if HANDLE:
+        handle_png(ov / "handle.png")
+        inputs += ["-i", str(ov / "handle.png")]
+        fc.append(f"[v0][2:v]overlay=enable='lt(t,{total:.3f})'[vh]")
+        cur, k = "vh", 3
+    for i, (s, e, _) in enumerate(cues):
+        inputs += ["-i", str(ov / f"sub{i}.png")]
         nxt = cues[i + 1][0] if i + 1 < len(cues) else total
-        fc.append(f"[{cur}][{4 + i}:v]overlay=enable='between(t,{max(0, s):.3f},{min(e + 0.4, nxt, total):.3f})'[c{i}]")
+        fc.append(f"[{cur}][{k + i}:v]overlay=enable='between(t,{max(0, s):.3f},{min(e, nxt, total):.3f})'[c{i}]")
         cur = f"c{i}"
-    fc.append(f"[0:a]apad=whole_dur={end:.3f}[a0]")
+    fc.append(f"[0:a]apad=whole_dur={end:.3f},afade=t=out:st={total:.3f}:d=1.5[a0]")
     amap = "[a0]"
     music = os.environ.get("MUSIC")
     if music:
         inputs += ["-stream_loop", "-1", "-i", music]
-        mi = 4 + len(cues)
-        fc.append(f"[{mi}:a]atrim=0:{end:.3f},volume={os.environ.get('MUSIC_DB', '-24')}dB,"
+        fc.append(f"[{k + len(cues)}:a]atrim=0:{end:.3f},volume={os.environ.get('MUSIC_DB', '-26')}dB,"
                   f"afade=t=in:d=1,afade=t=out:st={end - 2:.3f}:d=2[m]")
         fc.append("[a0][m]amix=inputs=2:duration=first:normalize=0[a1]")
         amap = "[a1]"

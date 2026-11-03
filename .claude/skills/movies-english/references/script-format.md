@@ -1,12 +1,9 @@
 # Script format (library/batch_NN.json = JSON array of these)
 
-Measured from the user's three reference reels (2026-11-03): 15-30 s, 9:16, 24 fps, 6-12 hard cuts,
-1990s rom-com film look, beautiful leads in glamorous everyday places (bakery, ski slope, Christmas
-mansion), only 2-5 short spoken lines (2-7 words each), white centred captions, and a punchline or
-twist in the last 3 s (she tips him a dollar, she skis into him and he "teaches skiing", she packs a
-suitcase over a fart). The comedy is in the picture and the timing, the words are few, so a learner
-catches every one. Movies English adds: one key phrase per video, highlighted in the captions, a
-Vietnamese line under each English line, and a 2.5 s phrase card at the end.
+Measurements of the three reference reels: `reference-study.md`. A script is a short rom-com movie, not a
+lesson: 2-6 short lines, the comedy in the picture and the timing, a twist in the last shots. The only
+learning element is the end card, which lists the script's `words` (else its `phrase`). `phrase`,
+`hook_vi` and `cta_vi` stay for social captions; nothing of them appears in the video except the card.
 
 ```json
 {
@@ -43,14 +40,14 @@ Vietnamese line under each English line, and a 2.5 s phrase card at the end.
 ```
 
 ## Rules (check.py enforces the countable ones)
-- 4-8 shots, `sec` 3-5 each, 16-32 s total; 2-6 spoken lines, each ≤ 8 words, one line per shot, one speaker per shot.
+- 4-12 shots, `sec` 0.5-9 each (mix 1.5-2.5 s reactions with 4-7 s takes), 14-32 s total; 2-6 spoken lines, each ≤ 8 words, one line per shot, one speaker per shot.
 - The key phrase (`phrase.en`, any inflection) appears in one spoken line, word for word.
-- A speaker is never filmed from behind; a line shot is `close`, `medium` or `two-shot` with the speaker's face visible.
+- A speaker is never filmed from behind; a line shot is `ecu`, `close`, `medium` or `two-shot` with the speaker's face visible.
 - Line 1 within the first 5 s; the hook is a situation, never a greeting or a lesson.
 - The last shot is the payoff: a twist, a callback to the phrase, or a romantic beat. No moral, no teacher voice.
 - Every shot is one simple filmable action in one place; physical comedy is simple (a splash, a slip, a door, a reveal).
 - Cast keys and wardrobe keys come from series/cast.json; extras are described in `action` (a waiter, a cab driver), never named recurring people.
 - Natural, idiomatic modern English; no slang that dates fast, nothing crude, no brand names, no real people.
 - `vi`: natural spoken Vietnamese with the same tone and humour (anh/em/tôi/cậu chosen by relationship), not word-by-word.
-- `hook_vi` ≤ 8 words; `cta_vi` invites a comment in English.
+- `words`: 2-3 items `{en, vi}` from the episode (the key phrase first) for the end card. `hook_vi` ≤ 8 words; `cta_vi` invites a comment in English.
 - No two scripts share a key phrase across the whole library.

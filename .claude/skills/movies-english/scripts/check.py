@@ -7,7 +7,7 @@ from pathlib import Path
 
 SKILL = Path(__file__).resolve().parent.parent
 CAST = json.loads((SKILL / "series/cast.json").read_text())
-FRAMINGS = {"wide", "medium", "close", "two-shot"}
+FRAMINGS = {"wide", "medium", "close", "ecu", "two-shot"}
 
 
 def words(s):
@@ -42,7 +42,7 @@ def main(files):
             if ph in phrases:
                 e(f"phrase {ph!r} also in {phrases[ph]}")
             phrases[ph] = sid
-            for k in ("title_en", "title_vi", "genre", "level", "cast", "setting", "phrase", "hook_vi", "shots", "twist", "cta_vi"):
+            for k in ("title_en", "title_vi", "genre", "level", "cast", "setting", "phrase", "shots", "twist"):
                 if k not in s:
                     e(f"missing {k}")
             for k in s["cast"]:
@@ -53,13 +53,18 @@ def main(files):
             shots = s["shots"]
             total = sum(x["sec"] for x in shots)
             lines = [x["line"] for x in shots if x.get("line")]
-            if not 4 <= len(shots) <= 8:
+            if not 4 <= len(shots) <= 12:
                 e(f"{len(shots)} shots")
-            if not 16 <= total <= 32:
+            if not 14 <= total <= 32:
                 e(f"{total} s total")
             if not 2 <= len(lines) <= 6:
                 e(f"{len(lines)} lines")
+            for w in s.get("words", []):
+                if not w.get("en") or not w.get("vi"):
+                    e(f"word {w} needs en and vi")
             for x in shots:
+                if not 0.5 <= x["sec"] <= 9:
+                    e(f"{x['id']} {x['sec']} s")
                 if x.get("framing") not in FRAMINGS:
                     e(f"{x['id']} framing {x.get('framing')}")
                 ln = x.get("line")

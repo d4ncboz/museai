@@ -13,7 +13,7 @@
    "VIV": "coat",
    "JAMIE": "city"
   },
-  "setting": "West Village street in the late 1990s just after a spring shower, soft warm afternoon daylight glowing on wet cobblestones, outside a small cream-and-blush-pink cafe with a striped awning, flower buckets and warm lit windows, yellow cabs",
+  "setting": "West Village street in the late 1990s in a light spring rain, bright soft overcast-warm daylight, outside a small cream-and-blush-pink bakery cafe with a striped awning, flower buckets and warm lit windows, wet cobblestones, yellow cabs, a few passers-by with umbrellas",
   "phrase": {
    "en": "take a rain check",
    "vi": "hẹn dịp khác",
@@ -26,23 +26,23 @@
   "shots": [
    {
     "id": "S1",
-    "sec": 4,
+    "sec": 3,
     "framing": "wide",
     "cast": [
      "VIV",
      "JAMIE"
     ],
-    "action": "Viv shelters under a narrow cafe awning in pouring rain, arms crossed, no umbrella; Jamie walks up holding a big black umbrella and stops beside her.",
+    "action": "Viv shelters under the narrow bakery awning in the rain, arms crossed; Jamie strolls up with a big black umbrella and stops beside her, passers-by hurry past with umbrellas.",
     "line": null
    },
    {
     "id": "S2",
-    "sec": 4,
+    "sec": 2.5,
     "framing": "close",
     "cast": [
      "JAMIE"
     ],
-    "action": "Jamie under his umbrella, rain behind him, looks at her with a lopsided grin.",
+    "action": "Jamie under his umbrella grins at her, playful.",
     "line": {
      "who": "JAMIE",
      "en": "Need an umbrella?",
@@ -51,26 +51,26 @@
    },
    {
     "id": "S3",
-    "sec": 4,
+    "sec": 2.5,
     "framing": "close",
     "cast": [
      "VIV"
     ],
-    "action": "Viv raises one brow, unimpressed.",
+    "action": "Viv raises one brow, amused and unimpressed.",
     "line": {
      "who": "VIV",
      "en": "Is that a pickup line?",
-     "vi": "Đang tán tỉnh tôi đấy à?"
+     "vi": "Đang tán tôi đấy à?"
     }
    },
    {
     "id": "S4",
-    "sec": 4,
+    "sec": 2,
     "framing": "close",
     "cast": [
      "JAMIE"
     ],
-    "action": "Jamie shrugs innocently.",
+    "action": "Jamie shrugs innocently, holding up the umbrella.",
     "line": {
      "who": "JAMIE",
      "en": "It's an umbrella.",
@@ -79,12 +79,12 @@
    },
    {
     "id": "S5",
-    "sec": 4,
-    "framing": "close",
+    "sec": 3,
+    "framing": "medium",
     "cast": [
      "VIV"
     ],
-    "action": "Viv gives a sweet fake smile and turns to leave.",
+    "action": "Viv gives a sweet, smug smile, tosses her hair and turns toward the street.",
     "line": {
      "who": "VIV",
      "en": "I'll take a rain check.",
@@ -98,43 +98,57 @@
     "cast": [
      "VIV"
     ],
-    "action": "Viv steps proudly off the curb; a yellow cab drives through a puddle and drenches her head to toe; she freezes, mouth open.",
+    "action": "Viv steps proudly off the curb; a yellow cab drives through a big puddle and throws a huge wave of water over her head to toe; she freezes, arms out, dripping, as a passer-by stops and stares.",
     "line": null,
-    "still_pose": "Viv stands at the very edge of the curb about to step off, chin up, a yellow cab approaching through a big puddle behind her."
+    "still_pose": "Viv steps proudly off the curb, chin up, a yellow cab speeding toward a big puddle right beside her."
    },
    {
     "id": "S7",
-    "sec": 4,
+    "sec": 1.5,
+    "framing": "ecu",
+    "cast": [
+     "VIV"
+    ],
+    "action": "Viv, soaked, gasps with her mouth wide open in total shock, water dripping off her nose and hair, eyes huge.",
+    "line": null,
+    "state": "just drenched head to toe by a cab's puddle splash: hair wet and dripping, water running down her face, coat soaked dark",
+    "still_pose": "Viv, soaked and dripping, mouth wide open in a huge shocked gasp, eyes huge."
+   },
+   {
+    "id": "S8",
+    "sec": 5,
     "framing": "two-shot",
     "cast": [
      "VIV",
      "JAMIE"
     ],
-    "action": "Jamie calmly steps in and holds the umbrella over the soaked Viv, grinning.",
+    "action": "Jamie steps up and holds the umbrella over the soaked Viv with a big grin; after his line she glares, then bursts out laughing with him.",
     "line": {
      "who": "JAMIE",
      "en": "Rain check's here.",
      "vi": "Dịp khác tới rồi đây."
     },
-    "state": "just drenched by a puddle splash: hair wet and slicked back, droplets sparkling on her face, coat darkened with water, makeup still perfect, still gorgeous"
-   },
-   {
-    "id": "S8",
-    "sec": 4,
-    "framing": "close",
-    "cast": [
-     "VIV"
-    ],
-    "action": "Viv, dripping wet under his umbrella, glares, then a small smile breaks.",
-    "line": {
-     "who": "VIV",
-     "en": "You're buying coffee.",
-     "vi": "Anh mời cà phê đấy."
+    "state": {
+     "VIV": "just drenched head to toe by a cab's puddle splash: hair wet and dripping, water running down her face, coat soaked dark"
     },
-    "state": "just drenched by a puddle splash: hair wet and slicked back, droplets sparkling on her face, coat darkened with water, makeup still perfect, still gorgeous"
+    "hold": 4
    }
   ],
   "twist": "Her elegant brush-off is undone by a cab splash a second later; the 'rain check' arrives instantly.",
-  "cta_vi": "Bạn sẽ nói gì nếu là Viv? Comment bằng tiếng Anh nhé 👇"
+  "cta_vi": "Bạn sẽ nói gì nếu là Viv? Comment bằng tiếng Anh nhé 👇",
+  "words": [
+   {
+    "en": "take a rain check",
+    "vi": "hẹn dịp khác"
+   },
+   {
+    "en": "pickup line",
+    "vi": "câu thả thính"
+   },
+   {
+    "en": "drenched",
+    "vi": "ướt sũng"
+   }
+  ]
  }
 ]
