@@ -59,7 +59,10 @@ def still_prompt(shot, sc):
             f"expressions, caught mid-moment, not posing. {people} LEFT and RIGHT mean the person's own side. "
             f"Original faces that resemble no actor, celebrity or public figure; very attractive in a natural, "
             f"unretouched way: real skin texture, soft lens, gentle halation, fine film grain, warm creamy "
-            f"colour, shallow depth of field. No HDR, no airbrushed or plastic skin, no CGI look. "
+            f"colour, shallow depth of field. Everyone looks in their early twenties, fresh and youthful. "
+            f"Bright, airy, high-key: soft diffused light, faces evenly lit, low contrast, milky lifted "
+            f"shadows, pale cream-and-pastel palette; even night or rain is bright and warm like a lit studio "
+            f"set, never dark or moody, never teal-and-orange. No HDR, no airbrushed or plastic skin, no CGI look. "
             f"No text, no logos, no watermark.")
 
 
