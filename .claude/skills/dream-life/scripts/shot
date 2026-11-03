@@ -8,6 +8,8 @@ set -euo pipefail
 SKILL_DIR=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
 MUSE_VIDEO=${MUSE_VIDEO:-$SKILL_DIR/../muse-video/scripts/muse-video}  # override when this checkout is behind main
 look=$1
+# an empty brief (e.g. a zsh `jq .beats[0]` glob error upstream) renders the same generic clip 6 times
+if (( ${#2} < 40 )); then echo "shot: brief is empty or too short (${#2} chars): '$2'" >&2; exit 2; fi
 style=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))[sys.argv[2]]["style"])' "$SKILL_DIR/looks.json" "$look")
 out=$(cd "$(dirname "$3")" && pwd)/$(basename "$3")
 prompt="NO TEXT ON SCREEN. $2
