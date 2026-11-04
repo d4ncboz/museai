@@ -7,7 +7,7 @@ from pathlib import Path
 
 SKILL = Path(__file__).resolve().parent.parent
 CAST = json.loads((SKILL / "series/cast.json").read_text())
-FRAMINGS = {"wide", "medium", "close", "ecu", "two-shot"}
+FRAMINGS = {"wide", "medium", "close", "ecu", "ots", "two-shot"}
 
 
 def words(s):

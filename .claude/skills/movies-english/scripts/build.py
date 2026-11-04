@@ -25,6 +25,7 @@ FRAMING = {
     "wide": "Wide shot, the whole scene and the people full-length, the place clearly established",
     "medium": "Medium shot from the waist up, the speaker large in the upper half of the frame",
     "close": "Close-up from the chest up, the face large in the upper half of the frame, both eyes and the whole mouth clearly visible, front three-quarter view, never profile",
+    "ots": "Over-the-shoulder shot: the second person's shoulder, hair and cheek soft and out of focus in the near foreground at one side, the first person facing the camera in three-quarter view from the chest up, sharp, looking at the second person's eyes",
     "two-shot": "Medium two-shot from the waist up, both bodies facing the camera squarely, each turning only the head partway toward the other, both faces in front three-quarter view, both mouths visible",
 }
 
@@ -58,15 +59,19 @@ def still_key(shot, sc):
     st = " ".join(st.values()) if isinstance(st, dict) else st
     state = "-".join(re.findall(r"[a-z]+", st.lower())[:2])
     return f"{shot['framing']}-{who}" + (f"-{state}" if state else "") \
-        if shot["framing"] in ("close", "medium") else shot["id"]
+        if shot["framing"] in ("close", "medium", "ots") else shot["id"]
 
 
 def still_prompt(shot, sc):
     people = " ".join(person(k, sc, shot.get("state", "")) for k in shot["cast"])
     # close/medium stills are shared by every shot of that person: a calm face, the clip does the acting
-    pose = shot.get("still_pose") or (f"{' and '.join(CAST[k]['name'].split()[0] for k in shot['cast'])} "
-        "relaxed and natural, a small candid smile, eyes just off camera." if shot["framing"] in ("close", "medium") else shot["action"])
-    return (f"A frame grab from a 1999 Hollywood romantic comedy, shot on 35 mm film with an 85 mm lens wide open, "
+    names = [CAST[k]["name"].split()[0] for k in shot["cast"]]
+    pose = shot.get("still_pose") or (
+        f"{names[0]} listens to {names[1]}, eyes on {names[1]}'s face, a quiet, thoughtful look, mouth closed."
+        if shot["framing"] == "ots" else
+        f"{' and '.join(names)} in a quiet moment, a natural resting face, mouth closed, eyes just off camera."
+        if shot["framing"] in ("close", "medium") else shot["action"])
+    return (f"A frame grab from a 1999 Hollywood drama, shot on 35 mm film with an 85 mm lens wide open, "
             f"slightly soft like a DVD frame. Vertical 9:16. {FRAMING[shot['framing']]}. "
             f"Place: {sc['setting']}. The moment: {pose} Caught mid-moment, real and candid, not posing; a speaker's "
             f"mouth closed. {people} LEFT and RIGHT mean the person's own side. Original faces that resemble no actor, "
@@ -92,7 +97,7 @@ def shot_prompt(shot, sc):
     if ln:
         who = CAST[ln["who"]]["name"].split()[0].strip("'")
         others = [CAST[k]["name"].split()[0] for k in shot["cast"] if k != ln["who"]]
-        listen = (f" {', '.join(others)} listens with lips closed and still, reacting only with the eyes."
+        listen = (f" {', '.join(others)} listens with lips closed, eyes on {who}, reacting only with the eyes."
                   if others else "")
         sex = "her" if CAST[ln["who"]]["sex"] == "F" else "his"
         p.append(f"SCRIPT (natural American English, normal conversational pace, the exact words, nothing added):\n"
@@ -123,7 +128,7 @@ def build(sid, work):
         text, dur = shot_prompt(shot, sc)
         (work / "shots" / f"{shot['id']}.prompt.txt").write_text(text)
         out = f"{sid.lower()}-{shot['id']}.mp4"
-        lines.append(f"( [ -f clips/{out} ] || {{ SIZE=9:16 DURATION={dur} IMAGE={shot.get('first') or f'stills/{k}.png'} OUT_NAME={out} "
+        lines.append(f"( [ -f clips/{out} ] || {{ SIZE=9:16 DURATION={dur} QUALITY=0 IMAGE={shot.get('first') or f'stills/{k}.png'} OUT_NAME={out} "
                      f"NO_OPEN=1 \"$MV\" -f shots/{shot['id']}.prompt.txt && cp ~/Movies/museai/{out} clips/; }} "
                      f"> clips/{shot['id']}.log 2>&1; echo \"{shot['id']} $?\" ) &")
     lines.append("wait")
