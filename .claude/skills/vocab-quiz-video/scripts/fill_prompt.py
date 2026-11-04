@@ -2,7 +2,8 @@
 """Build the muse.ai prompt from prompt-template.md + languages/<lang>.md + episode values + the 6 picked words.
 
 Words file: 6 lines "English | answer | pronunciation", in quiz order; lines starting with # are ignored.
-Fails if a word was already used for this language in log.md -> Vocabulary.
+Fails if a word was already used for this language in log.md -> Vocabulary by another episode
+(a re-render of the same episode number may reuse its own words).
 """
 
 import argparse
@@ -35,8 +36,8 @@ def read_words(path: Path) -> list[list[str]]:
     return words
 
 
-def used_answers(language: str) -> set[str]:
-    """Answers already logged for this language in log.md -> Vocabulary."""
+def used_answers(language: str, episode: int) -> set[str]:
+    """Answers logged for this language in log.md -> Vocabulary by other episodes."""
     log = SKILL / "log.md"
     if not log.exists():
         return set()
@@ -46,7 +47,7 @@ def used_answers(language: str) -> set[str]:
     for line in table.splitlines():
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
         # Columns: Episode # | Language | Level | Topic | English | Answer | Pronunciation
-        if len(cells) == 7 and cells[1].lower() == language.lower():
+        if len(cells) == 7 and cells[1].lower() == language.lower() and cells[0] != str(episode):
             used.add(cells[5].lower())
     return used
 
@@ -70,7 +71,7 @@ def main() -> None:
     values["TITLE"] = f"Vocab Quiz #{a.episode} · {datetime.date.today()} · {values['LANGUAGE']} {a.level} {a.topic}"
 
     words = read_words(a.words)
-    repeated = [w[1] for w in words if w[1].lower() in used_answers(values["LANGUAGE"])]
+    repeated = [w[1] for w in words if w[1].lower() in used_answers(values["LANGUAGE"], a.episode)]
     if repeated:
         sys.exit(f"Already used in log.md: {', '.join(repeated)}")
     values["WORDS"] = "\n".join(f"{i}. {' | '.join(w)}" for i, w in enumerate(words, 1))

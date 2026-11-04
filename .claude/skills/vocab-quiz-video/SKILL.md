@@ -1,6 +1,6 @@
 ---
 name: vocab-quiz-video
-description: Make a vertical vocabulary quiz video (TikTok / YouTube Shorts) for any language and level with ONE prompt in muse.ai - hook "Can you get 6/6?", 6 words over scenery from the language's country, English prompt with a 3-2-1 circle countdown and ticks, then the answer with pronunciation said twice (listen & repeat), score CTA and next-episode teaser. Use when the user asks for a vocabulary / word quiz / flashcard video in German, Spanish, French, Japanese, Chinese or another language, names a level (A1, A2, B1, HSK 2, N5, ...) and a topic, or wants a new episode of the vocab quiz series.
+description: Make a vertical vocabulary quiz video (TikTok / YouTube Shorts) for any language and level with ONE prompt in muse.ai - hook "Can you get 6/6?", 6 words over scenery from the language's country, fast ~36 s cut with the first word at 1.5 s, English prompt with a 2-1 circle countdown, a reveal chime, the answer with gender-colored article and IPA said once with a listen-and-repeat pause, a recap, one score CTA and a next-episode teaser. Use when the user asks for a vocabulary / word quiz / flashcard video in German, Spanish, French, Japanese, Chinese or another language, names a level (A1, A2, B1, HSK 2, N5, ...) and a topic, or wants a new episode of the vocab quiz series.
 ---
 
 # vocab-quiz-video
@@ -29,21 +29,22 @@ Needs: `browser-harness` connected to a Chromium/Chrome that is logged in to mus
 
 ## Episode format (same in every language)
 
-- 1080x1920, 30 fps, about 50 s. Ticks + voices only, no background music (added on TikTok).
-- 0-3 s hook: "Can you get 6/6 in {LANGUAGE}?" + small "{LANGUAGE} · {LEVEL} · {TOPIC}" badge. English narrator at 0.3 s: "Can you get six out of six in {LANGUAGE}? Let's go!"
-- 6 words × 7.0 s, progress `n/6` top-left:
-  - 0-3.5 s: card with "{LEVEL} · {TOPIC}" and the English word (stays the whole time).
-  - 0.5-3.5 s: small circle countdown 3-2-1 below the card, a tick at the start of each number.
-  - 3.5-7.0 s: card switches to the answer + pronunciation. Voice at 3.6 s; "Listen & repeat" at 5.0 s; voice again at 5.3 s.
-- 5 s end card: "How many did you get right?", "Comment your score: 0–6!", "Next: {LANGUAGE} {NEXT_LEVEL} {NEXT_TOPIC}". English narrator at 0.3 s: "How many did you get right? Comment your score below! Next time: {LANGUAGE} {NEXT_LEVEL}, {NEXT_TOPIC}."
+- 1080x1920, 30 fps, about 36 s (fast cut, default since 2026-11-04; episodes 1-14 are the 50 s baseline). Ticks, reveal chime + voices only, no background music (added on TikTok).
+- 0-1.5 s hook over clip 1 playing in full color: "{LANGUAGE} {LEVEL}: Can you get 6/6?" + small "{TOPIC}" label. English narrator at 0.1 s: "Can you get six out of six?"
+- 6 words × 5.0 s, progress `n/6` top-left, clip keeps moving:
+  - 0-2.0 s: compact card with the English word; small circle countdown 2-1 below it, a soft tick at the start of each number.
+  - 2.0-2.2 s: reveal, 200 ms fade + scale-in and one soft chime (means "here is the answer", never "you were right").
+  - 2.2-5.0 s: answer (article colored by gender, article always written) + IPA. Voice once at 2.3 s; then "Listen & repeat" and silence for the viewer to say it back.
+- 4.5 s end over clip 1 again (loops into the opening): 0-2 s recap of all 6 answers, then "What was your score? 0–6", "Comment below", small "Next: {LANGUAGE} {NEXT_LEVEL} {NEXT_TOPIC}". English narrator at 2.1 s: "What was your score? Comment zero to six!" One ask only.
+- All 6 clips: same warm color grade, real motion or a gentle push-in, framing varied, object large in frame.
 - All text is added by ffmpeg. The AI clips contain no text.
 
-Why it is built this way (tested on muse.ai, 2026-11-02): one AI clip is ~10 s and not controllable, at most 6 AI clips per message, and the model cannot spell text reliably inside a scene. muse.ai has ffmpeg and TTS on its own machine, so it can do all overlays and the join itself. User choices: English stays visible during the countdown; small circle timer; 3 s guess; listen & repeat; English narrator script on hook and end card (hook 3 s, end 5 s to fit it); one video without music, music added on TikTok (muse.ai music was a sine-wave chord bed when left free); one new chat per video.
+Why it is built this way (tested on muse.ai, 2026-11-02): one AI clip is ~10 s and not controllable, at most 6 AI clips per message, and the model cannot spell text reliably inside a scene. muse.ai has ffmpeg and TTS on its own machine, so it can do all overlays and the join itself. User choices: English stays visible during the countdown; small circle timer; listen & repeat; English narrator on hook and end card; after the 2026-11-04 review: fast 36 s cut (first word at 1.5 s, 2 s guess, 5 s per word), IPA only, gender colors der blue / die red / das green, reveal chime, recap and one score CTA; one video without music, music added on TikTok (muse.ai music was a sine-wave chord bed when left free); one new chat per video.
 
 ## Steps
 
 1. **Pick the episode.** Language, level, topic, next level and topic. Check `series.md`: the teaser must name an episode that will really be made. If the language has no file in `languages/`, create one from `_new-language.md` first (see "New language").
-2. **Pick the 6 words** and write them to `/tmp/vocab-german-a1-travel.words.txt`, one per line in quiz order: `English | answer | pronunciation` (example: `bridge | die Brücke | BRÜ-keh · /ˈbʁʏkə/`). Rules:
+2. **Pick the 6 words** and write them to `/tmp/vocab-german-a1-travel.words.txt`, one per line in quiz order: `English | answer | pronunciation` (example: `bridge | die Brücke | /ˈbʁʏkə/`). Rules:
    - From the official list in the language file's `word_list` for this level, on the topic; nouns, singular, in the language file's `answer_form` and `pronunciation` format.
    - One common answer per English word (skip "ticket": die Fahrkarte / das Ticket). No word with a second meaning the scene cannot make clear; follow the language file's `word_notes`.
    - The object can be filmed clearly in a scene from the country (not "airport" if the scene would be only sky).
@@ -62,7 +63,7 @@ Why it is built this way (tested on muse.ai, 2026-11-02): one AI clip is ~10 s a
      timeout 3000 browser-harness < scripts/muse_run.py
    ```
    Several videos at once on one browser profile (museai running): `bash .claude/skills/vocab-quiz-video/scripts/run_parallel.sh <profile> <prompt files...>` from the repo root. It launches the profile through `/v1/profiles`, runs each prompt in its own background tab of the profile's one window, 20 s apart, and closes each run's tabs when it ends.
-   Run it in the background; it takes about 15-20 min. It prints the chat URL first and muse's final reply at the end, and saves `german-a1-travel.mp4`. Then it renames the chat to the prompt's first line, `Vocab Quiz #<episode> · <date> · <language> <level> <topic>`, so episodes are easy to find in muse.ai's side chat list. Send nothing else in the chat. Old or failed chats: Archive them (thread menu), never Delete.
+   Run it in the background; it takes about 10-40 min. It prints the chat URL first and muse's final reply at the end, and saves `german-a1-travel.mp4`. Then it renames the chat to the prompt's first line, `Vocab Quiz #<episode> · <date> · <language> <level> <topic>`, so episodes are easy to find in muse.ai's side chat list. Send nothing else in the chat. Old or failed chats: Archive them (thread menu), never Delete.
 6. **Report** to the user: the file path, chat URL, the gate verdict and score, the 6 words, and what still needs their ears/eyes (`series.md` → "By you").
 7. **Log it.** If `log.md` does not exist, copy `log.template.md` to it. Add one row to `log.md` → "Content" and six rows to `log.md` → "Vocabulary" (the words file).
 8. **Update `series.md`** (episode row + status) and, if something new was learned about the language, the language file's "Lessons".
@@ -82,6 +83,8 @@ If muse.ai sends no video or fails, start again in a **new** chat with the same 
 - The muse.ai sidebar lists other chats with words like "Generating"; wait for a `<video>` longer than 30 s, not for a status word (`muse_run.py` does this).
 - 5 chats at once per account (2026-11-04, 10 videos, one window per run): 8 finished in 15-30 min, but 1 chat per account stayed on "Assistant is typing" with no output until the 45 min timeout, and the browser stalled with 20+ tabs. Retries in new chats worked. Since then runs share the profile's window as background tabs, close their tabs, and `bh-profile` starts Chromium with background throttling off.
 - A background tab never loads `<video>` metadata, so `muse_run.py` does not read the length in the page: when muse.ai stops replying it downloads the new videos newest first and keeps the first one over 30 s (`ffprobe`). Scene clips (~5 s) sit in the chat next to the final video.
+- muse.ai can keep its Stop button after the final reply, so `muse_run.py` checks new videos as soon as they appear instead of waiting for muse.ai to go idle.
+- A chat reopened in a background tab that was never shown renders no messages (only "Show in library"); activate the tab to read an old chat. New runs are not affected.
 - The chat rename in `muse_run.py` fails in background tabs (the active thread row is not found); rename by hand. Tested 2026-11-04: 2 runs in one window, Kitchen in 7 min, Body in 40 min, both found within 20 s of muse.ai finishing.
 - Videos come back as `blob:` URLs; `muse_run.py` downloads them in 3 MB chunks.
 - A new Chromium start shows "Allow remote debugging?" once; the user clicks Allow.

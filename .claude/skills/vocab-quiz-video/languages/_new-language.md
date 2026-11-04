@@ -33,10 +33,10 @@ Copy this file to `languages/<language>.md` and fill every key above. `languages
 | `answer_form` | What the answer shows | the German noun with its article (der/die/das) | the Spanish noun with its article (el/la); the Chinese word in simplified characters |
 | `grammar_check` | Added to "Double-check every spelling…"; start with a space, or leave empty | ` and article (der/die/das)` | ` and article (el/la)`; empty for Japanese |
 | `word_notes` | Language traps; start with a space, or leave empty | der See / die See | Spanish: el agua is feminine |
-| `pronunciation` | Pronunciation aid to prepare | easy spelling + IPA | pinyin with tone marks (zh); romaji (ja) |
-| `pronunciation_example` | One example line | BAHN-hohf · /ˈbaːnˌhoːf/ | huǒchēzhàn (zh) |
+| `pronunciation` | Pronunciation aid to prepare | broad IPA in slashes | pinyin with tone marks (zh); romaji (ja) |
+| `pronunciation_example` | One example line | /ˈbaːnˌhoːf/ | huǒchēzhàn (zh) |
 | `answer_example` | One example answer | der Bahnhof | la estación; 火车站 |
-| `answer_style` | Colors in the answer | article in light blue, noun in white | article in light blue (es); characters in white, pinyin in light blue (zh) |
+| `answer_style` | Colors in the answer | article colored by gender (der blue, die red, das green), noun in white | article in light blue (es); characters in white, pinyin in light blue (zh) |
 | `voice_says` | What the voice reads | the article and noun together | the article and noun (es); the word (zh, ja) |
 | `scene_example` | One scene example | die Brücke = a bridge clearly in view | la playa = a beach clearly in view |
 | `font_rule` | Font that covers the script | DejaVu Sans with IPA | Noto Sans CJK SC (zh), Noto Sans JP (ja), Noto Naskh Arabic (ar) |
