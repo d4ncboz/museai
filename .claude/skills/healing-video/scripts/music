@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: [MOOD=soft|sunny] [REF=ref.wav REF_STRENGTH=0.3] music "<style from the idea's music field>" out.m4a [seconds=24] [seed=7]
+# Usage: [MOOD=soft|sunny (needs SUNNY_OK=1)] [REF=ref.wav REF_STRENGTH=0.3] music "<style from the idea's music field>" out.m4a [seconds=24] [seed=7]
 # REF: a recording whose feel (instrument, register, pace) to borrow; looped to the length here.
 # Instrumental healing track with ACE-Step (muse-video "Music"): no singer, soft dynamics, -18 LUFS.
 # Calls ace_song.py directly: music.py adds lead-singer tags and a phone-loud drive, wrong for this calm format.
@@ -11,13 +11,18 @@ style=$1; out=$2; secs=${3:-24}; seed=${4:-7}
 ACE_PY=${ACE_STEP_HOME:-$HOME/.local/share/ace-step}/venv/bin/python
 # "solo piano" alone gave a melody-less drone (hv-0001); name the moving line and the soft felt sound.
 # hv-0005: "too high, too strong" -> ask for the low-middle register, sparse and pianissimo
+# 2026-11-04: the user heard delivered tracks (3.4-3.5 onsets/s, centroid 860-1020 Hz) as "dramatic";
+# a healing track must feel peaceful inside: slow held notes, no build, no bright running lines
+if [[ ${MOOD:-soft} == sunny && -z ${SUNNY_OK:-} ]]; then
+  echo "music: MOOD=sunny was too dramatic (hv-0002); only with SUNNY_OK=1 when the user asks for a brighter track" >&2; exit 2
+fi
 if [[ ${MOOD:-soft} == sunny ]]; then
   # reference 4 (sunny kitchen): a clear singing piano melody in the middle register (~600-750 Hz) over
   # light broken chords, F/C major, ~72 bpm, a note every ~0.35-0.5 s, bright but warm, -16 LUFS
   tags="$style, gentle warm solo acoustic piano, clear simple singing melody in the middle register, light flowing broken-chord accompaniment, major key, 72 bpm, sunny peaceful morning, tender, healing, natural room recording, instrumental, no drums, no vocals"
   lufs=-16; tone="lowpass=f=4500"
 else
-  tags="$style, soft gentle solo felt piano with muted hammers, low and middle register, slow sparse broken-chord arpeggios with a simple lullaby melody, pianissimo, sustain pedal, healing, peaceful, 60 bpm, warm close-miked intimate room recording, instrumental, no drums, no high notes, no vocals"
+  tags="$style, soft gentle solo felt piano with muted hammers, low and middle register, very slow sparse simple lullaby melody of long held notes left to ring, soft open chords, pianissimo throughout, constant quiet dynamics, no crescendo, no build-up, sustain pedal, meditative, soothing, healing, peaceful, calm, 50 bpm, warm close-miked intimate room recording, instrumental, no drums, no high notes, no vocals"
   lufs=-20; tone="asetrate=44100*0.84,aresample=44100,lowpass=f=2200,lowpass=f=2200"
 fi
 raw="${out%.*}.raw.wav"
@@ -52,15 +57,9 @@ start=$(python3 "$SKILL_DIR/scripts/lnorm.py" --body-start "$raw")
 # soft: ACE plays brighter than the references (spectral centroid ~870 Hz vs 530): drop it ~3 semitones,
 # which also slows it 16 %, cut above 2.2 kHz, -20 LUFS (hv-0005: "too high, too strong"); sunny: no pitch drop
 python3 "$SKILL_DIR/scripts/lnorm.py" "$raw" "$out" "$lufs" "$tone,atrim=start=$start:duration=$secs,asetpts=PTS-STARTPTS,afade=in:d=0.5,afade=out:st=$((secs-4)):d=4"
-# hv-0002: a MOOD=sunny take at 7.2 onsets/s felt "too dramatic"; the soft take kept was 2.25/s.
-# Refuse busy takes (BUSY_OK=1 keeps one): render another seed instead.
-if [[ -x $ACE_PY ]]; then
-  rate=$("$ACE_PY" -c 'import sys, librosa
-y, sr = librosa.load(sys.argv[1], sr=22050, mono=True)
-print(f"{len(librosa.onset.onset_detect(y=y, sr=sr)) / (len(y) / sr):.2f}")' "$out" 2>/dev/null)
-  echo "music: $rate onsets/s (max 3)" >&2
-  if [[ -z ${BUSY_OK:-} ]] && python3 -c "import sys; sys.exit(float(sys.argv[1]) <= 3)" "$rate"; then
-    echo "music: too busy for a healing video; try another seed" >&2; exit 3
-  fi
+# Refuse takes that are busy (> 2.5 onsets/s), bright (centroid > 650 Hz) or swell (> 6 dB): calm.py.
+# BUSY_OK=1 keeps one anyway; otherwise render the next seed.
+if [[ -x $ACE_PY && -z ${BUSY_OK:-} ]]; then
+  "$ACE_PY" -W ignore "$SKILL_DIR/scripts/calm.py" "$out" || exit 3
 fi
 echo "$out"
