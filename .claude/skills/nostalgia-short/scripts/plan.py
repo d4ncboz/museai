@@ -54,6 +54,7 @@ def render(plan, work, only):
     clips = Path(work).expanduser().resolve() / "clips"
     clips.mkdir(parents=True, exist_ok=True)
     look = (SKILL / "prompt" / "look.txt").read_text()
+    jobs = []
     for s in plan["shots"]:
         if only and s["id"] not in only:
             continue
