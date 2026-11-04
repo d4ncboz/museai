@@ -580,6 +580,17 @@ def test_posting_dream_playlists(client, admin, settings):
     assert "=== YouTube playlist ===" in posting._captions_text("dream-star-fisher.mp4", {"caption": "hi"})
 
 
+def test_posting_healing_playlists():
+    from museai.api.routes import posting
+
+    cases = {"healing-irish-rain-ode.mp4": "Rain", "healing-danish-first-snow.mp4": "Rain",
+             "healing-taiwan-tea-house-ode.mp4": "Tea", "healing-swiss-hot-cocoa.mp4": "Tea",
+             "healing-mekong-birds-ode.mp4": "Nature", "healing-provence-herbs.mp4": "Nature",
+             "healing-finnish-rye-bread.mp4": "Slow Living", "healing-lakeside-soup.mp4": "Slow Living"}
+    for name, playlist in cases.items():
+        assert posting._playlist(name, {}).startswith(playlist), name
+
+
 def test_campaign_progress(client, admin, settings, monkeypatch):
     from datetime import date
 

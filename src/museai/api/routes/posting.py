@@ -115,6 +115,14 @@ DREAM_PLAYLISTS = (
     ("Weather & Season Dream Jobs ☁️", r"cloud|rain|snow|fog|weather|tide|sunrise|sunlight|autumn|season|umbrella|bubble"),
 )
 DREAM_CRAFTS = "Cozy Dream Jobs ☕"
+# Healing playlists, same rule from the healing-<slug> file name; the rest are slow cooking and home days.
+# Titles carry the words viewers search ("rain", "tea", "slow living").
+HEALING_PLAYLISTS = (
+    ("Rain, Snow & Misty Days 🌧️", r"rain|snow|mist|fog|storm|wind|autumn|winter"),
+    ("Tea & Quiet Mornings 🍵", r"tea|cocoa|coffee|lemonade|elderflower|morning"),
+    ("Nature Walks & Birdsong 🌿", r"ode|bird|river|forest|meadow|walk|garden|herb|sun"),
+)
+HEALING_HOME = "Slow Living Kitchen & Home 🍞"
 TRAVEL_NAME = re.compile(r"^(zoom|reel|scenic|scenery|drop|travel|nostalgia|gown|product)[-_ ]"
                          r"|\b(zoominview|scenic-drop-reel)\b", re.IGNORECASE)
 # Two videos a day per channel (user rule 2026-10-29). Each kind of content is watched at its own
@@ -249,11 +257,13 @@ def _channel(name: str, entry: dict) -> str:
 
 
 def _playlist(name: str, entry: dict) -> str | None:
-    """The YouTube playlist a video goes in (Dream life only)."""
-    if _channel(name, entry) != "dream":
+    """The YouTube playlist a video goes in (Dream life and Healing)."""
+    channel = _channel(name, entry)
+    if channel not in ("dream", "healing"):
         return None
-    slug = re.sub(r"^dream[-_ ]+(life[-_ ]+)?", "", Path(name).stem.lower())
-    return next((title for title, rule in DREAM_PLAYLISTS if re.search(rule, slug)), DREAM_CRAFTS)
+    lists, rest = (DREAM_PLAYLISTS, DREAM_CRAFTS) if channel == "dream" else (HEALING_PLAYLISTS, HEALING_HOME)
+    slug = re.sub(r"^(dream|healing)[-_ ]+((life|video)[-_ ]+)?", "", Path(name).stem.lower())
+    return next((title for title, rule in lists if re.search(rule, slug)), rest)
 
 
 def _kind(name: str) -> str:
@@ -614,7 +624,8 @@ async def list_posts(svc: Services = Depends(get_services)) -> dict:
         "videos": sorted((_view(p, state.get(_key(p.name), {}), svc) for p in videos),
                          key=lambda v: v["slot"] or "~"),
         "calendar": _calendar(state, {_key(p.name): p.name for p in videos}, now),
-        "playlists": {"dream": [title for title, _ in DREAM_PLAYLISTS] + [DREAM_CRAFTS]},
+        "playlists": {"dream": [title for title, _ in DREAM_PLAYLISTS] + [DREAM_CRAFTS],
+                      "healing": [title for title, _ in HEALING_PLAYLISTS] + [HEALING_HOME]},
     }
 
 
