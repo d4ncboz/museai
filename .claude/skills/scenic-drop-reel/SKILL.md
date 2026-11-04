@@ -37,12 +37,13 @@ Paths are relative to this folder (`.claude/skills/scenic-drop-reel/`). Renderin
    - The plan lists per shot: beats, render `duration`, camera `move`, `light`, transition; plus `seconds`, `intro`, `text`, `music`, `fast`.
    - **Length is random** within 10-18 s: slow holds 12-18 s, mid and one-beat bursts 10-16/18 s; the shot count follows (at least 3 rendered shots + the reprise). A template's `"length": [min, max]` overrides the range; `--length 20` or `--n 6` forces it only when the user asks.
 2. **Plan the shots** (`len(plan.shots)`): real, recognisable subjects of the place, each a different subject type, alternating wide/close, the most striking, instantly recognisable view FIRST (the hook), the second-best before the reprise. Write the hook text now (`--title`, see above). For a single place, shoot it from different angles/details (`one-place-angles`). For `number`/`label`/`time` text templates also write the per-shot labels.
-3. **Render all shots at once**, each in its own background call:
+3. **Render through one queue**, one shot at a time (muse-video "Server": never every shot in its own background call): one line per shot in `jobs.txt`, then ONE background call:
    ```bash
    DURATION=<shot.duration> LIGHT="<shot.light>" scripts/shot "PLACE: Positano, Amalfi Coast, Italy: pastel houses stacked down the cliff to the beach. DRONE: <shot.move>, village centred." ~/Movies/museai/reel-<slug>/s1.mp4
+   ../muse-video/scripts/render-queue ~/Movies/museai/reel-<slug>/jobs.txt
    ```
-   Add `FAST=1` when `plan.fast` is true (FPV templates). 9:16, `shot.duration` s (6-10, long enough for a held window), `prompt/drone.txt` with `{LIGHT}`/`{PACE}` filled in. Wait with `pgrep -f "bash scripts/shot"`. Upstream 502/503 → retry later.
-4. **Music** (in parallel with the renders):
+   Add `FAST=1` when `plan.fast` is true (FPV templates). 9:16, `shot.duration` s (6-10, long enough for a held window), `prompt/drone.txt` with `{LIGHT}`/`{PACE}` filled in. The queue log says which shot failed; re-queue only those. Upstream 502/503 → retry later.
+4. **Music** (the last line of the same queue, or after it):
    ```bash
    uv run --no-project ../muse-video/scripts/music.py --plan plan.json --out ~/Movies/museai/reel-<slug>/track.m4a
    ```

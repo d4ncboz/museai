@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Usage: shot "brief" out.mp4
 # Renders one drone shot for the reel through muse-video (STYLE=travel, 9:16, 6 s) with
-# ../prompt/drone.txt appended to the brief. Run one per shot in the background: shots are
-# independent, so they render in parallel on all free accounts.
+# ../prompt/drone.txt appended to the brief. One line per shot in a jobs file for
+# ../../muse-video/scripts/render-queue (one at a time; never every shot in its own background call).
 # LIGHT="Golden hour, ..." sets the light (pick.py prints it per shot; default sunny summer day).
 # FAST=1 for FPV templates: fast but perfectly even flight instead of the slow glide.
 # Env passed through to muse-video: IMAGE=first_frame.png RETAKE=1 SIZE= DURATION=

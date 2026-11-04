@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Usage: render plan.json [segment numbers...]     (default: every segment)
-# Renders each segment of a plan.py plan through muse-video in parallel (independent shots; a cut
+# Renders each segment of a plan.py plan through muse-video one at a time (render-queue; a cut
 # separates them), 9:16 or 16:9 per the plan, segment 1 from the reference photo when there is one.
 # seg<N>.txt already holds the travel block (without its music line), so QUALITY=0.
-# Also starts the soundtrack (muse-video music.py) in parallel unless track.m4a exists: instrumental,
+# The soundtrack (muse-video music.py) is the queue's last job unless track.m4a exists: instrumental,
 # or sung by ACE-Step when the plan picked a vocal style (needs ACE-Step: scenic-drop-reel "Music engines").
 set -euo pipefail
 HERE=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
@@ -13,7 +13,6 @@ work=$(dirname "$plan")
 val() { python3 -c "import json,sys; p=json.load(open('$plan')); print(eval(sys.argv[1]))" "$1"; }
 n=$(val 'len(p["segments"])')
 lyrics=$(val 'p.get("lyrics", "")')
-sing=(); [ -n "$lyrics" ] && sing=(--lyrics "$lyrics")
 ace=${ACE_STEP_HOME:-$HOME/.local/share/ace-step}/venv/bin/python
 # MusicGen cannot sing: it would turn the vocal tags into mush, so stop before any render starts
 if [ -n "$lyrics" ] && [ ! -f "$work/track.m4a" ] && [ ! -x "$ace" ]; then
@@ -21,18 +20,16 @@ if [ -n "$lyrics" ] && [ ! -f "$work/track.m4a" ] && [ ! -x "$ace" ]; then
 fi
 segs=${*:-$(seq 1 "$n")}
 aspect=$(val 'p["aspect"]')
+jobs="$work/jobs.txt"; : > "$jobs"
 for i in $segs; do
   dur=$(val "p['segments'][$i-1]['render']")
   photo=$(val "p['segments'][$i-1]['photo'] or ''")
-  ( IMAGE=$photo QUALITY=0 SIZE=$aspect DURATION=$dur OUT_NAME=seg$i.mp4 NO_OPEN=1 RETAKE=1 \
-      "$MV/muse-video" -f "$work/seg$i.txt" "$work" > "$work/seg$i.log" 2>&1 \
-    && echo "seg$i done" || echo "seg$i FAILED (see seg$i.log)" ) &
+  echo "IMAGE=$photo QUALITY=0 SIZE=$aspect DURATION=$dur OUT_NAME=seg$i.mp4 NO_OPEN=1 RETAKE=1 '$MV/muse-video' -f '$work/seg$i.txt' '$work'" >> "$jobs"
 done
 if [ ! -f "$work/track.m4a" ]; then
   secs=$(val 'p["seconds"]'); bpm=$(val 'p["bpm"]')
   beats=$(python3 -c "import math; print(math.ceil($secs*$bpm/60)+4)")
-  ( uv run --no-project "$MV/music.py" --style "$(val 'p["music_style"]')" --bpm "$bpm" \
-      --body-beats "$beats" ${sing[@]+"${sing[@]}"} --out "$work/track.m4a" > "$work/music.log" 2>&1 \
-    && echo "music done" || echo "music FAILED (see music.log)" ) &
+  lyr=""; [ -n "$lyrics" ] && lyr=" --lyrics $(printf %q "$lyrics")"
+  echo "OUT_NAME=music.m4a uv run --no-project '$MV/music.py' --style $(printf %q "$(val 'p["music_style"]')") --bpm $bpm --body-beats $beats$lyr --out '$work/track.m4a'" >> "$jobs"
 fi
-wait
+cd "$work" && "$MV/render-queue" "$jobs"

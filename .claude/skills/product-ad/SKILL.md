@@ -38,7 +38,7 @@ Safe zone (TikTok / Reels / Shorts UI): text between y=280 and y=1500, x < 940. 
      --lyrics "[chorus] la la la, your name on a string ..." --bpm 118 --intro-beats 0 --body-beats 40 --out WORK/track.m4a
    ```
    Catchy = a sung hook: a short "la la la" / "oh oh" chorus about the product, a whistle or ukulele melody, claps. An instrumental bed of plucks sounded generic (snowfeng v1). No riser intro: the hook needs energy on second 0. Match the product: cute/handmade → bubblegum pop, ukulele, whistle; beauty → soft R&B vocals; tech → punchy electronic with a vocal chop; luxury → slow piano + strings. Listen before composing; a weak chorus → re-render with another `--seed`.
-3. **Hero shots** (in parallel with 2, one background call each):
+3. **Hero shots** (one line each in `jobs.txt`, run by `../muse-video/scripts/render-queue` in one background call, one at a time; never one background call each):
    ```bash
    scripts/hero WORK/photos/4.jpg WORK/hero ad-<slug>-hero-blue 0.52 5
    ```

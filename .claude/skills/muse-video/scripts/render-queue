@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+"""Run render jobs from a queue, a few at a time, instead of launching every shot at once.
+
+  render-queue [-j N] jobs.txt        # one shell command per line (# comments and blank lines skipped)
+  render-queue [-j N] - < jobs.txt    # same, from stdin
+  render-queue [-j N] -- cmd args...  # one job (handy in a loop)
+
+Each line is a complete command, e.g. `IMAGE=s1.png scripts/shot "brief" clips/s1.mp4`, run with bash.
+At most N run at once (N = -j, else $JOBS, else 1): the next starts when one finishes, so the whole
+queue needs one background call and the Mac never runs every muse tab, ffmpeg check and poll loop at
+once (user rule 2026-11-04: one at a time per ready muse account, never a burst). Each job's output
+goes to <out>.log when its line names an `OUT_NAME=`/last `.mp4` argument, else to queue-<n>.log in the
+current folder. Exit 0 when every job passed; a failed job is reported and the rest still run.
+"""
+import os
+import re
+import shlex
+import subprocess
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
+
+
+def main(argv):
+    jobs_n = int(os.environ.get("JOBS", "1"))
+    args = list(argv)
+    if args[:1] == ["-j"]:
+        jobs_n = int(args[1])
+        args = args[2:]
+    if args[:1] == ["--"]:
+        lines = [" ".join(shlex.quote(a) for a in args[1:])]
+    elif not args or args[0] == "-":
+        lines = sys.stdin.read().splitlines()
+    else:
+        lines = Path(args[0]).read_text().splitlines()
+    lines = [ln.strip() for ln in lines if ln.strip() and not ln.lstrip().startswith("#")]
+    if not lines:
+        sys.exit("render-queue: no jobs")
+    jobs_n = max(1, jobs_n)
+
+    def log_for(i, line):
+        m = re.search(r"OUT_NAME=(\S+)", line) or re.search(r"(\S+\.mp4)\b(?!.*\.mp4)", line)
+        stem = Path(m.group(1).strip("'\"")).with_suffix("") if m else Path(f"queue-{i}")
+        return Path(f"{stem}.log")
+
+    def say(msg):
+        print(f"{datetime.now():%H:%M:%S} queue: {msg}", flush=True)
+
+    pending = list(enumerate(lines, 1))
+    running, failed, done = {}, [], 0
+    say(f"{len(pending)} jobs, {jobs_n} at a time")
+    while pending or running:
+        while pending and len(running) < jobs_n:
+            i, line = pending.pop(0)
+            log = log_for(i, line)
+            log.parent.mkdir(parents=True, exist_ok=True)
+            p = subprocess.Popen(["bash", "-c", line], stdout=open(log, "w"), stderr=subprocess.STDOUT)
+            running[p] = (i, line, log)
+            say(f"start {i}/{len(lines)}: {line[:90]}{'…' if len(line) > 90 else ''} -> {log}")
+        finished = [p for p in running if p.poll() is not None]
+        for p in finished:
+            i, line, log = running.pop(p)
+            done += 1
+            if p.returncode == 0:
+                say(f"done {i}/{len(lines)} ({done} finished, {len(pending)} waiting)")
+            else:
+                failed.append((i, line, log))
+                say(f"FAILED {i}/{len(lines)} exit {p.returncode}, see {log} ({len(pending)} waiting)")
+        if not finished:
+            time.sleep(2)
+    if failed:
+        say(f"{len(failed)} of {len(lines)} failed:")
+        for i, line, log in failed:
+            print(f"  {i}: {line[:120]}  ({log})")
+        sys.exit(1)
+    say(f"all {len(lines)} done")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

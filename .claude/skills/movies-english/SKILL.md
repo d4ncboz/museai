@@ -31,7 +31,7 @@ only what is specific to the format.
    lined/matte/dark lips, plastic or airbrushed skin, a contrasty or saturated picture, a famous-looking
    face, wrong wardrobe, text in the frame, a speaker facing away. Close-ups of one
    person share one still per episode: that is what keeps the face the same across cuts.
-3. `$WORK/render.sh` in the background: every shot renders in parallel, one muse call each, through
+3. `$WORK/render.sh` in the background: the shots render one at a time (`render-queue`), one muse call each, through
    `../muse-video/scripts/muse-video` (quality block appended). Check each clip with
    `../muse-video/scripts/check_clip.sh`; re-render a failing shot once with `RETAKE=1`.
 4. `uv run --no-project --python 3.12 --with faster-whisper --with 'av<14' --with pillow python scripts/finish.py $WORK $WORK/final.mp4`

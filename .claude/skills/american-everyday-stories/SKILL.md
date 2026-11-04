@@ -125,7 +125,7 @@ file) and summarise; production notes stay out of the dialogue.
   per render, so the film is dubbed; see below).
 
 ## Render and assemble
-1. Server up (muse-video "Server"). `WORK/render.sh` renders every shot in parallel, one call each,
+1. Server up (muse-video "Server"). `WORK/render.sh` renders the shots one at a time (`render-queue`), one call each,
    `OUT_NAME=aes-epNN-<ID>.mp4`, retries built in; run it in the background. muse-video appends its
    quality block (lip sync, listener, pace) after this skill's look block.
 2. **Check each clip** (`../muse-video/scripts/check_clip.sh clip.mp4`): wrong face, outfit or period

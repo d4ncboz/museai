@@ -44,7 +44,7 @@ You are the director: an elite landscape cinematographer and documentary editor.
    - Moves that need them: `--foreground` (low-angle, parallax, crane), `--cover` (aerial reveal), `--over` (glide), `--side`, `--sun`. Without them plan.py uses generic rocks / ridge / valley: fill them in for a better shot.
    - Overrides only when the user names one: `--technique --structure --shots --hook --light --music`. `--list` shows the library.
    - **Read `episode.md`**, fix anything that does not fit the real place (a role that asks for flowers on a glacier, a hook the photo cannot show) by re-running with the right flags, not by hand-editing the prompts. Show the user the six-part brief (title, concept, reference image, plan, ready-to-paste prompt, tip) with the preview; when the user only asked for the prompt, stop here and give them `episode.md`.
-3. **Render** (one background call; all segments in parallel, plus the soundtrack):
+3. **Render** (one background call; the segments one at a time through `render-queue`, the soundtrack last):
    ```bash
    scripts/render ~/Movies/museai/scenic-<slug>/plan.json        # or: plan.json 2   (only segment 2)
    ```

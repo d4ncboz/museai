@@ -1,7 +1,7 @@
 """Check a nostalgia plan and render its shots.
 
   python3 scripts/plan.py check plan.json [--shot 2.3]
-  python3 scripts/plan.py render plan.json WORK [s03 s07 ...]   # every shot (or the ids given), in parallel
+  python3 scripts/plan.py render plan.json WORK [s03 s07 ...]   # every shot (or the ids given), one at a time
 
 plan.json: {"slug", "era", "music", "shots": [{"id", "brief", "en", "zh", "start"?}, ...]}
 check: 30-45 s total, 10-16 shots, one EN + 中文 line per shot short enough for one row,
@@ -11,6 +11,7 @@ writing WORK/clips/<id>.mp4 and <id>.log; RETAKE=1 passes through for a re-rende
 
 import json
 import os
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -46,6 +47,9 @@ def check(plan, shot):
     return not errs
 
 
+KEEP = {"QUALITY", "SIZE", "DURATION", "OUT_NAME", "NO_OPEN", "RETAKE", "IMAGE"}
+
+
 def render(plan, work, only):
     clips = Path(work).expanduser().resolve() / "clips"
     clips.mkdir(parents=True, exist_ok=True)
@@ -62,15 +66,13 @@ def render(plan, work, only):
             OUT_NAME=f"{s['id']}.mp4",
             NO_OPEN="1",
         )
-        log = open(clips / f"{s['id']}.log", "w")
-        subprocess.Popen(
-            [str(MUSE_VIDEO), prompt, str(clips)],
-            env=env,
-            stdout=log,
-            stderr=subprocess.STDOUT,
-            start_new_session=True,
-        )
-        print("render", s["id"])
+        (clips / f"{s['id']}.prompt.txt").write_text(prompt)
+        jobs.append(" ".join(f"{k}={shlex.quote(v)}" for k, v in env.items() if k in KEEP)
+                    + f" {shlex.quote(str(MUSE_VIDEO))} -f {shlex.quote(str(clips / (s['id'] + '.prompt.txt')))} {shlex.quote(str(clips))}")
+        print("queue", s["id"])
+    (clips / "jobs.txt").write_text("\n".join(jobs) + "\n")
+    # one at a time, the next when one finishes (muse-video "Server"): never every shot at once
+    subprocess.run([str(MUSE_VIDEO.parent / "render-queue"), str(clips / "jobs.txt")], cwd=clips, check=False)
 
 
 def main():

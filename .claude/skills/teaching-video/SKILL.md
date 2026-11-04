@@ -85,8 +85,8 @@ Commands assume the uv `--with` lists in each script's docstring.
    breath groups, with this format's FRAMING (9:16: teacher centred, lower 45 % still; 16:9: teacher in the
    left third, right 55 % empty wall) and `prompt/teacher.txt` (lips only on lines, closed in pauses,
    locked camera, no text anywhere).
-5. **Render** each format as its own chain, the two chains in parallel (different first frames, so
-   muse-video's "independent clips go out at once" applies):
+5. **Render** each format as its own chain, one chain after the other (muse-video "Server": one
+   render at a time, never the two chains side by side):
    `QUALITY=0 SIZE=9:16 DURATION=10 IMAGE=still/first_9x16.png OUT_NAME=clip01.mp4 ../muse-video/scripts/muse-video -f 9x16/clip01.txt 9x16/`
    then every next clip with `CONTINUE_FROM=<previous clip>` instead of `IMAGE`. `QUALITY=0` because the
    prompt already carries the teacher style (muse-video's dialogue block would add captions rules).

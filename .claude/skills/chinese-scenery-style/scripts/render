@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Usage: render plan.json [shot numbers...]     (default: every shot)
-# Renders the plan's shots through muse-video in parallel (independent shots, cuts between them),
+# Renders the plan's shots through muse-video one at a time (render-queue; JOBS=N for more),
 # 9:16, each from its shot<N>.txt (style blocks already inside, so QUALITY=0). Shots with the
 # traveller attach the recurring character's face photo (plan "image") as a face reference.
 set -euo pipefail
@@ -10,12 +10,10 @@ plan=$(readlink -f "$1"); shift
 work=$(dirname "$plan")
 val() { python3 -c "import json,sys; p=json.load(open('$plan')); print(eval(sys.argv[1]))" "$1"; }
 n=$(val 'len(p["shots"])')
+jobs="$work/jobs.txt"; : > "$jobs"
 for i in ${*:-$(seq 1 "$n")}; do
   dur=$(val "p['shots'][$i-1]['render']")
   img=$(val "p['shots'][$i-1]['image']")
-  ( IMAGE=$img QUALITY=0 SIZE=9:16 DURATION=$dur OUT_NAME=shot$i.mp4 NO_OPEN=1 RETAKE=1 \
-      "$MV" -f "$work/shot$i.txt" "$work" > "$work/shot$i.log" 2>&1 \
-    && echo "shot$i done" || echo "shot$i FAILED (see shot$i.log)" ) &
-  sleep 2
+  echo "IMAGE=$img QUALITY=0 SIZE=9:16 DURATION=$dur OUT_NAME=shot$i.mp4 NO_OPEN=1 RETAKE=1 '$MV' -f '$work/shot$i.txt' '$work'" >> "$jobs"
 done
-wait
+cd "$work" && "$HERE/../muse-video/scripts/render-queue" "$jobs"

@@ -23,9 +23,10 @@ the slot after it.
   of New York (Central -1 h, Pacific -3 h; `dream-life/scripts/post_time.py` weights the zones by
   population), capped at 21-22 h; 08-10 h the next day in GMT+7. Slot 2, the US morning commute: the
   platforms' 6-9 h peaks, later on weekends; 18-23 h the same day in GMT+7.
-- **Healing** (healing-video, its own account): two slots a day in New York time (user rule
-  2026-11-04). Slot 1 is a bedtime wind-down (ASMR / relaxation content peaks 21-24 h), an hour after
-  the dream evening; 08-10 h in GMT+7. Slot 2 is the same morning commute as Dream's; 18-23 h in GMT+7.
+- **Healing** (healing-video, its own account): two slots a day at the hours when Europe and America
+  are both awake (user rule 2026-11-04). Slot 1 is London's evening wind-down (19-20 h: 14-15 h New
+  York, 11-12 h Los Angeles); 02-03 h in GMT+7. Slot 2 is the US morning (08 h New York = 13 h London
+  lunch); 19-21 h in GMT+7. X and Threads sit an hour earlier on slot 1, in their daytime peak.
 
 ## Chinese lessons (GMT+7, slot 1 · 2 · 3 · 4)
 | | Mon | Tue | Wed | Thu | Fri | Sat | Sun |
@@ -57,15 +58,15 @@ the slot after it.
 | X | 21:00 · 09:00 | 21:00 · 09:00 | 21:00 · 10:00 | 21:00 · 09:00 | 21:00 · 09:00 | 21:00 · 09:00 | 21:00 · 09:00 |
 | Threads | 12:00 · 09:00 | 12:00 · 10:00 | 12:00 · 09:00 | 12:00 · 09:00 | 12:00 · 10:00 | 12:00 · 10:00 | 12:00 · 11:00 |
 
-## Healing (New York, slot 1 bedtime · slot 2 morning)
+## Healing (slot 1 London evening · slot 2 New York morning)
 | | Mon | Tue | Wed | Thu | Fri | Sat | Sun |
 |---|---|---|---|---|---|---|---|
-| YouTube Shorts | 21:00 · 07:00 | 21:00 · 07:00 | 21:00 · 07:00 | 21:00 · 07:00 | 20:00 · 07:00 | 21:00 · 09:00 | 21:00 · 09:00 |
-| TikTok | 21:45 · 06:45 | 21:45 · 05:45 | 21:45 · 05:45 | 21:45 · 05:45 | 21:45 · 06:45 | 20:45 · 08:45 | 20:45 · 08:45 |
-| Facebook Reels | 21:00 · 08:00 | 21:00 · 08:00 | 21:00 · 08:00 | 21:00 · 09:00 | 21:00 · 08:00 | 22:00 · 09:00 | 21:00 · 10:00 |
-| Instagram Reels | 21:00 · 07:00 | 21:00 · 07:00 | 21:00 · 08:00 | 21:00 · 08:00 | 22:00 · 06:00 | 22:00 · 09:00 | 22:00 · 09:00 |
-| X | 21:00 · 09:00 | 21:00 · 09:00 | 21:00 · 10:00 | 21:00 · 09:00 | 21:00 · 09:00 | 21:00 · 09:00 | 21:00 · 09:00 |
-| Threads | 12:00 · 09:00 | 12:00 · 10:00 | 12:00 · 09:00 | 12:00 · 09:00 | 12:00 · 10:00 | 12:00 · 10:00 | 12:00 · 11:00 |
+| YouTube Shorts | 19:00 · 08:00 | 19:00 · 08:00 | 19:00 · 08:00 | 19:00 · 08:00 | 19:00 · 08:00 | 20:00 · 09:00 | 20:00 · 09:00 |
+| TikTok | 18:45 · 07:45 | 18:45 · 07:45 | 18:45 · 07:45 | 18:45 · 07:45 | 18:45 · 07:45 | 19:45 · 08:45 | 19:45 · 08:45 |
+| Facebook Reels | 19:00 · 08:00 | 19:00 · 08:00 | 19:00 · 08:00 | 19:00 · 09:00 | 19:00 · 08:00 | 20:00 · 09:00 | 20:00 · 10:00 |
+| Instagram Reels | 19:00 · 08:00 | 19:00 · 08:00 | 19:00 · 08:00 | 19:00 · 08:00 | 20:00 · 08:00 | 20:00 · 09:00 | 20:00 · 09:00 |
+| X | 18:00 · 09:00 | 18:00 · 09:00 | 18:00 · 10:00 | 18:00 · 09:00 | 18:00 · 09:00 | 18:00 · 09:00 | 18:00 · 09:00 |
+| Threads | 18:00 · 09:00 | 18:00 · 10:00 | 18:00 · 09:00 | 18:00 · 09:00 | 18:00 · 10:00 | 18:00 · 10:00 | 18:00 · 11:00 |
 
 The slot's day and its free / taken / passed state follow YouTube's time.
 

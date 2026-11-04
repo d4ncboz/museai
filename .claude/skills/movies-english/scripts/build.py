@@ -118,8 +118,9 @@ def build(sid, work):
     for d in ("stills", "shots", "clips"):
         (work / d).mkdir(parents=True, exist_ok=True)
     (work / "script.json").write_text(json.dumps(sc, ensure_ascii=False, indent=1))
-    stills, lines = {}, ["#!/usr/bin/env bash", "# render every shot in parallel, one muse call each",
-                         "set -u", f"cd {work}", "MV=${MUSE_VIDEO:-$HOME/Work/museai-main/.claude/skills/muse-video/scripts/muse-video}"]
+    stills, lines = {}, ["#!/usr/bin/env bash", "# render the shots one at a time (render-queue; JOBS=N for more), one muse call each",
+                         "set -u", f"cd {work}", "MV=${MUSE_VIDEO:-$HOME/Work/museai-main/.claude/skills/muse-video/scripts/muse-video}", "export MV"]
+    jobs = []
     for shot in sc["shots"]:
         # "first": a frame you supply (e.g. a reference frame) is the first frame; no still is generated
         k = shot.get("first") or still_key(shot, sc)
@@ -128,10 +129,10 @@ def build(sid, work):
         text, dur = shot_prompt(shot, sc)
         (work / "shots" / f"{shot['id']}.prompt.txt").write_text(text)
         out = f"{sid.lower()}-{shot['id']}.mp4"
-        lines.append(f"( [ -f clips/{out} ] || {{ SIZE=9:16 DURATION={dur} QUALITY=0 IMAGE={shot.get('first') or f'stills/{k}.png'} OUT_NAME={out} "
-                     f"NO_OPEN=1 \"$MV\" -f shots/{shot['id']}.prompt.txt && cp ~/Movies/museai/{out} clips/; }} "
-                     f"> clips/{shot['id']}.log 2>&1; echo \"{shot['id']} $?\" ) &")
-    lines.append("wait")
+        jobs.append(f"[ -f clips/{out} ] || {{ SIZE=9:16 DURATION={dur} QUALITY=0 IMAGE={shot.get('first') or f'stills/{k}.png'} OUT_NAME={out} "
+                    f"NO_OPEN=1 \"$MV\" -f shots/{shot['id']}.prompt.txt && cp ~/Movies/museai/{out} clips/; }}")
+    (work / "jobs.txt").write_text("\n".join(jobs) + "\n")
+    lines.append('"${MV%/muse-video}/render-queue" jobs.txt')
     for k, p in stills.items():
         (work / "stills" / f"{k}.json").write_text(json.dumps(
             {"prompt": p, "n": 2, "size": "1080x1920", "response_format": "b64_json"}))

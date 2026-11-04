@@ -223,7 +223,8 @@ def build(ep_path, work):
     (work / "shots").mkdir(parents=True, exist_ok=True)
     tag = f"aes-ep{ep['episode']:02}"
     render = ["#!/usr/bin/env bash",
-              "# Renders every shot in parallel (the server spreads them over free accounts).",
+              "# Renders the shots one at a time through render-queue (JOBS=N for more; never all at once).",
+              "RQ=\"$HOME/Work/museai-main/.claude/skills/muse-video/scripts/render-queue\"",
               "# A shot with stills/<ID>.png renders from that first frame; without one it renders from text.",
               'MV="$HOME/Work/museai-main/.claude/skills/muse-video/scripts/muse-video"',
               'cd "$(dirname "$0")"; mkdir -p clips']
@@ -233,10 +234,12 @@ def build(ep_path, work):
         (work / "shots" / f"{sid}.lines.txt").write_text(
             "".join(f"{ln['who']}: {ln['en']}\n" for ln in shot.get("lines", [])))
         dur = max(5, int(-(-shot["seconds"] // 1)))
-        render.append(f'( IMAGE=$( [ -f stills/{sid}.png ] && echo "$PWD/stills/{sid}.png" ) SIZE=16:9 DURATION={dur} '
+        render.append(f'IMAGE=$( [ -f stills/{sid}.png ] && echo "$PWD/stills/{sid}.png" ) SIZE=16:9 DURATION={dur} '
                       f'OUT_NAME={tag}-{sid}.mp4 NO_OPEN=1 MUSE_SESSION={tag} "$MV" -f shots/{sid}.prompt.txt '
-                      f'&& cp ~/Movies/museai/{tag}-{sid}.mp4 clips/ ) > clips/{sid}.log 2>&1 &')
-    render.append("wait; ls -l clips/*.mp4")
+                      f'&& cp ~/Movies/museai/{tag}-{sid}.mp4 clips/')
+    jobs, render = render[6:], render[:6]
+    (work / "jobs.txt").write_text("\n".join(jobs) + "\n")
+    render.append('export MV; "$RQ" jobs.txt; ls -l clips/*.mp4')
     (work / "render.sh").write_text("\n".join(render) + "\n")
     os.chmod(work / "render.sh", 0o755)
 

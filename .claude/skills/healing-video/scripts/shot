@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Usage: shot "brief" out.mp4
 # Renders one healing shot through muse-video (9:16, 6 s, QUALITY=0) with ../prompt/healing.txt
-# appended (calm handheld, real gentle motion, ambience only, no music, no text). One call per shot,
-# each in the background: shots are independent, so they render in parallel on all free accounts.
+# appended (calm handheld, real gentle motion, ambience only, no music, no text). One line per shot
+# in a jobs file for ../../muse-video/scripts/render-queue (one shot at a time, the next when one
+# finishes; never every shot in its own background call: that overloads the CPU).
 # Env passed through to muse-video: IMAGE=first_frame.png SIZE= DURATION=
 set -euo pipefail
 SKILL_DIR=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
