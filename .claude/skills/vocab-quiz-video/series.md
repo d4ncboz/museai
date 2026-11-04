@@ -8,7 +8,19 @@ The end-card teaser must name an episode in this table that will really be made.
 |---|---|---|---|---|---|
 | 1 | German | A1 | Travel | A1 Food | made, not posted |
 | 2 | German | A1 | Food | A1 City | made, not posted |
-| 3 | German | A1 | City | | planned |
+| 3 | German | A1 | City | A1 Home | made, not posted |
+| 4 | German | A1 | Home | A1 Furniture | made, not posted |
+| 5 | German | A1 | Furniture | A1 Drinks | made, not posted |
+| 6 | German | A1 | Drinks | A1 Clothes | made, not posted |
+| 7 | German | A1 | Clothes | A1 Family | made, not posted |
+| 8 | German | A1 | Family | A1 Everyday Things | made, not posted |
+| 9 | German | A1 | Everyday Things | A1 Groceries | made, not posted |
+| 10 | German | A1 | Groceries | A1 Nature | made, not posted |
+| 11 | German | A1 | Nature | A1 Getting Around | made, not posted |
+| 12 | German | A1 | Getting Around | A1 Body | made, not posted |
+| 13 | German | A1 | Body | A1 Kitchen | made, not posted |
+| 14 | German | A1 | Kitchen | A1 Jobs | made, not posted |
+| 15 | German | A1 | Jobs | | planned |
 
 ## 2. Design system
 

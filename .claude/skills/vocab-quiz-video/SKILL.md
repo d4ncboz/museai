@@ -24,6 +24,7 @@ Needs: `browser-harness` connected to a Chromium/Chrome that is logged in to mus
 | `log.template.md` | Empty log to copy |
 | `scripts/fill_prompt.py` | Template + language file + episode values → final prompt |
 | `scripts/muse_run.py` | browser-harness script: new side chat, send, wait for the video, download it |
+| `scripts/run_parallel.sh` | Several prompts at once on one browser profile, one background tab each |
 | `scripts/check_video.sh` | Manual use only, not part of the flow: format, ticks, speech-to-text, frame sheet |
 
 ## Episode format (same in every language)
@@ -60,6 +61,7 @@ Why it is built this way (tested on muse.ai, 2026-11-02): one AI clip is ~10 s a
    PROMPT_FILE=/tmp/vocab-german-a1-travel.prompt.txt OUT=videos/german-a1-travel.mp4 REC=german-a1-travel \
      timeout 3000 browser-harness < scripts/muse_run.py
    ```
+   Several videos at once on one browser profile (museai running): `bash .claude/skills/vocab-quiz-video/scripts/run_parallel.sh <profile> <prompt files...>` from the repo root. It launches the profile through `/v1/profiles`, runs each prompt in its own background tab of the profile's one window, 20 s apart, and closes each run's tabs when it ends.
    Run it in the background; it takes about 15-20 min. It prints the chat URL first and muse's final reply at the end, and saves `german-a1-travel.mp4`. Then it renames the chat to the prompt's first line, `Vocab Quiz #<episode> · <date> · <language> <level> <topic>`, so episodes are easy to find in muse.ai's side chat list. Send nothing else in the chat. Old or failed chats: Archive them (thread menu), never Delete.
 6. **Report** to the user: the file path, chat URL, the gate verdict and score, the 6 words, and what still needs their ears/eyes (`series.md` → "By you").
 7. **Log it.** If `log.md` does not exist, copy `log.template.md` to it. Add one row to `log.md` → "Content" and six rows to `log.md` → "Vocabulary" (the words file).
@@ -78,6 +80,9 @@ If muse.ai sends no video or fails, start again in a **new** chat with the same 
 
 - Chats: open `https://muse.ai/thread/new` for every video. Never reuse a chat.
 - The muse.ai sidebar lists other chats with words like "Generating"; wait for a `<video>` longer than 30 s, not for a status word (`muse_run.py` does this).
+- 5 chats at once per account (2026-11-04, 10 videos, one window per run): 8 finished in 15-30 min, but 1 chat per account stayed on "Assistant is typing" with no output until the 45 min timeout, and the browser stalled with 20+ tabs. Retries in new chats worked. Since then runs share the profile's window as background tabs, close their tabs, and `bh-profile` starts Chromium with background throttling off.
+- A background tab never loads `<video>` metadata, so `muse_run.py` does not read the length in the page: when muse.ai stops replying it downloads the new videos newest first and keeps the first one over 30 s (`ffprobe`). Scene clips (~5 s) sit in the chat next to the final video.
+- The chat rename in `muse_run.py` fails in background tabs (the active thread row is not found); rename by hand. Tested 2026-11-04: 2 runs in one window, Kitchen in 7 min, Body in 40 min, both found within 20 s of muse.ai finishing.
 - Videos come back as `blob:` URLs; `muse_run.py` downloads them in 3 MB chunks.
 - A new Chromium start shows "Allow remote debugging?" once; the user clicks Allow.
 - Speech-to-text on a 2.5 s clip can mishear a correct word (v1: "Bahnhofer" for "Bahnhof"); if one word fails, ask the user to listen before re-rendering.

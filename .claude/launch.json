@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "museai",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "PATH=\"$PWD/browser-harness-setup/bin:$PATH\" exec uv run python -m museai"],
+      "port": 18610
+    }
+  ]
+}
