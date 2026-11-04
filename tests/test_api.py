@@ -407,8 +407,8 @@ def test_posting_slots(tmp_path):
 
     from museai.api.routes import posting
 
-    # Thursday 2026-10-29 20:00 GMT+7: today's first YouTube slot (19:00) has passed.
-    now = datetime(2026, 10, 29, 20, 0, tzinfo=posting.TZ)
+    # Thursday 2026-10-29 19:00 GMT+7: today's first YouTube slot (11:30) has passed, the second (20:00) is ahead.
+    now = datetime(2026, 10, 29, 19, 0, tzinfo=posting.TZ)
     times = posting._slot_times("2026-10-31/2")  # Saturday evening, each platform at its own peak
     assert times["youtube"].isoformat() == "2026-10-31T19:00:00+07:00"
     assert times["x"].isoformat() == "2026-10-31T12:00:00+07:00"
@@ -417,8 +417,11 @@ def test_posting_slots(tmp_path):
     assert posting._slot_times("2026-11-01/1")["tiktok"].isoformat() == "2026-11-01T08:45:00+07:00"
     # Travel speaks to English viewers: Monday's London evening, then Monday's New York evening,
     # both on Tuesday in GMT+7.
-    assert posting._slot_times("2026-11-03/1", "travel")["youtube"].isoformat() == "2026-11-03T03:00:00+07:00"
-    assert posting._slot_times("2026-11-03/2", "travel")["tiktok"].isoformat() == "2026-11-03T07:45:00+07:00"
+    assert posting._slot_times("2026-11-03/1", "travel")["youtube"].isoformat() == "2026-11-03T02:00:00+07:00"
+    assert posting._slot_times("2026-11-03/2", "travel")["tiktok"].isoformat() == "2026-11-03T06:45:00+07:00"
+    # X and Threads peak in the morning: London 9:00 and New York 11:00 are Tuesday afternoon and night
+    assert posting._slot_times("2026-11-03/1", "travel")["x"].isoformat() == "2026-11-03T16:00:00+07:00"
+    assert posting._slot_times("2026-11-03/2", "travel")["threads"].isoformat() == "2026-11-03T23:00:00+07:00"
 
     videos = []
     for i, name in enumerate(("a.mp4", "b.mp4", "c.mp4")):
@@ -474,7 +477,7 @@ def test_episodes_post_in_number_order(tmp_path):
 
     from museai.api.routes import posting
 
-    now = datetime(2026, 10, 29, 20, 0, tzinfo=posting.TZ)
+    now = datetime(2026, 10, 29, 19, 0, tzinfo=posting.TZ)  # Thursday: slot 1 (11:30) passed, slot 2 (20:00) ahead
     videos = []
     names = ("Tiếng Trung mỗi ngày 47 - B.mp4", "lesson-bi-so-sanh.mp4", "Tiếng Trung mỗi ngày 46 - A.mp4")
     for i, name in enumerate(names):
@@ -514,9 +517,9 @@ def test_posting_channel_from_file_name():
 def test_posting_dream_two_slots_a_day(client, admin, settings):
     from museai.api.routes import posting
 
-    # New York 21:00 on Monday is Tuesday 09:00 in GMT+7 (winter time); New York 08:00 Tuesday is 20:00
-    assert posting._slot_times("2026-11-03/1", "dream")["instagram"].isoformat() == "2026-11-03T09:00:00+07:00"
-    assert posting._slot_times("2026-11-03/2", "dream")["instagram"].isoformat() == "2026-11-03T20:00:00+07:00"
+    # New York 20:00 on Monday is Tuesday 08:00 in GMT+7 (winter time); New York 07:00 Tuesday is 19:00
+    assert posting._slot_times("2026-11-03/1", "dream")["instagram"].isoformat() == "2026-11-03T08:00:00+07:00"
+    assert posting._slot_times("2026-11-03/2", "dream")["instagram"].isoformat() == "2026-11-03T19:00:00+07:00"
     settings.post_dir.mkdir()
     for name in ("dream-a.mp4", "dream-b.mp4"):
         (settings.post_dir / name).write_bytes(b"v")
@@ -524,7 +527,7 @@ def test_posting_dream_two_slots_a_day(client, admin, settings):
     assert all(len(day["slots"]) == 2 for day in d["calendar"]["dream"])
     # shown in GMT+7, with the audience's own clock beside it
     aud = posting._audience("2026-11-03/1", "dream")
-    assert aud["clock"] == "New York" and aud["times"]["instagram"] == "2026-11-02T21:00:00-05:00"
+    assert aud["clock"] == "New York" and aud["times"]["instagram"] == "2026-11-02T20:00:00-05:00"
     assert d["calendar"]["dream"][0]["slots"][0]["audience"]["clock"] == "New York"
     assert d["calendar"]["chinese"][0]["slots"][0]["audience"] is None
     assert len({v["slot"] for v in d["videos"]}) == 2

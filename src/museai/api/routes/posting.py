@@ -85,8 +85,9 @@ CLOCKS = {"Europe/London": "London", "America/New_York": "New York"}
 # Whose clock each slot's times follow. Chinese lessons have Vietnamese captions for Vietnamese
 # learners: both slots in GMT+7. Travel (and the other English formats) speak to English viewers, who
 # are asleep at Vietnam's peaks: slot 1 at the UK evening, slot 2 at the US East evening. Their audience
-# day is the day before the calendar day, and every travel time is 18:00 or later, so both land on the
-# calendar day in GMT+7 (about 01-03 h and 06-09 h); schedule them in each platform's scheduler.
+# day is the day before the calendar day for an evening time (01-03 h and 06-09 h in GMT+7) and the
+# calendar day itself for a morning one (X, Threads: 16-22 h in GMT+7); schedule them in each platform's
+# scheduler.
 AUDIENCE = {"chinese": (ZoneInfo("Asia/Ho_Chi_Minh"), ZoneInfo("Asia/Ho_Chi_Minh")),
             "travel": (ZoneInfo("Europe/London"), ZoneInfo("America/New_York")),
             "dream": (ZoneInfo("America/New_York"), ZoneInfo("America/New_York")),
@@ -113,43 +114,58 @@ TRAVEL_NAME = re.compile(r"^(zoom|reel|scenic|scenery|drop|travel|nostalgia|gown
                          r"|\b(zoominview|scenic-drop-reel)\b", re.IGNORECASE)
 # Two videos a day per channel (user rule 2026-10-29). Each kind of content is watched at its own
 # moment and each platform peaks at its own hours, so each channel has its own table: per platform,
-# Monday first, "slot 1 slot 2" in that slot's audience clock (AUDIENCE). Revised 2026-11-02; sources
-# and reasoning: .claude/skills/social-captions/references/posting-times.md. In short: YouTube Shorts
-# do worst posted 12-17 h (Friday aside) and best 18-21 h, so no Shorts go out at noon; learners study
-# in short breaks (lunch, commute) and after dinner, weekends in the morning; TikTok gets 15 minutes'
-# head start on its peak; travel is watched as an evening wind-down and planned Sunday evening.
+# Monday first, "slot 1 slot 2" in that slot's audience clock (AUDIENCE). Revised 2026-11-04 from the
+# 2026 Buffer / Sprout / Metricool studies and the Vietnamese golden-hour tables; sources and reasoning:
+# .claude/skills/social-captions/references/posting-times.md. In short: the video platforms (YouTube
+# Shorts, TikTok, Facebook and Instagram Reels) peak 18-23 h, each on its own hour per weekday; X and
+# Threads are daytime platforms (mornings and noon best, evenings worst), so they never mirror the
+# evening reel slots; TikTok gets 15 minutes' head start on its peak (its first test audience arrives
+# with the peak). Chinese slot 1 goes out at lunch on every platform (user rule 2026-11-03), the
+# learners' break, slot 2 at the study hour after dinner.
 TIMES = {
     "chinese": {
-        "youtube":   ["17:00 20:00", "19:00 21:00", "19:00 21:00", "19:00 21:00", "16:00 19:00", "11:00 19:00", "17:00 20:00"],
-        "tiktok":    ["11:45 20:45", "11:45 20:45", "11:45 20:45", "11:45 18:45", "11:45 20:45", "08:45 19:45", "08:45 19:45"],
-        "facebook":  ["11:30 20:30", "11:30 20:30", "11:30 20:30", "11:30 20:30", "11:30 20:30", "09:00 20:30", "09:00 20:30"],
-        "instagram": ["09:00 21:00", "09:00 21:00", "12:00 21:00", "09:00 20:00", "12:00 21:00", "09:00 20:00", "09:00 20:00"],
-        "x":         ["08:00 12:00", "08:00 12:00", "08:00 12:00", "08:00 12:00", "08:00 12:00", "09:00 12:00", "09:00 12:00"],
-        "threads":   ["08:00 12:00", "08:00 12:00", "08:00 12:00", "08:00 12:00", "08:00 12:00", "09:00 12:00", "09:00 12:00"],
+        "youtube":   ["11:30 20:00", "11:30 20:00", "11:30 20:00", "11:30 20:00", "11:30 19:00", "11:00 19:00", "11:00 20:00"],
+        "tiktok":    ["11:45 20:45", "11:45 20:45", "11:45 20:45", "11:45 18:45", "11:45 19:45", "08:45 19:45", "08:45 19:45"],
+        "facebook":  ["11:30 20:00", "11:30 20:00", "11:30 20:00", "11:30 20:30", "11:30 20:00", "09:00 20:00", "09:00 19:30"],
+        "instagram": ["12:00 20:00", "12:00 20:00", "12:00 19:00", "09:00 20:00", "12:00 21:00", "11:00 21:00", "11:00 21:00"],
+        "x":         ["09:00 12:00", "09:00 12:00", "10:00 12:00", "09:00 12:00", "09:00 12:00", "09:00 12:00", "09:00 12:00"],
+        "threads":   ["09:00 12:00", "09:00 11:00", "09:00 12:00", "09:00 11:00", "09:00 11:00", "09:00 11:00", "11:00 13:00"],
     },
+    # slot 1 London, slot 2 New York: the evening wind-down on the reel platforms, the morning on X / Threads
+    # (a London or New York morning is the afternoon or evening of the same calendar day in GMT+7)
     "travel": {
-        "youtube":   ["20:00 20:00", "20:00 20:00", "19:00 19:00", "19:00 19:00", "18:00 18:00", "19:00 19:00", "19:00 19:00"],
-        "tiktok":    ["19:45 19:45", "19:45 19:45", "19:45 19:45", "18:45 18:45", "18:45 18:45", "18:45 18:45", "18:45 18:45"],
-        "facebook":  ["20:00 20:00", "20:00 20:00", "20:00 20:00", "20:00 20:00", "19:00 19:00", "20:00 20:00", "19:00 19:00"],
-        "instagram": ["19:00 19:00", "19:00 19:00", "18:00 18:00", "20:00 20:00", "18:00 18:00", "19:00 19:00", "19:00 19:00"],
-        "x":         ["18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00"],
-        "threads":   ["18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00", "18:00 18:00"],
+        "youtube":   ["19:00 20:00", "19:00 20:00", "19:00 19:00", "19:00 19:00", "18:00 18:00", "19:00 19:00", "19:00 19:00"],
+        "tiktok":    ["17:45 18:45", "17:45 18:45", "17:45 19:45", "18:45 18:45", "17:45 17:45", "17:00 16:45", "17:45 18:45"],
+        "facebook":  ["19:00 21:00", "19:00 19:00", "18:00 18:00", "19:00 20:00", "18:00 18:00", "21:00 22:00", "20:00 20:00"],
+        "instagram": ["19:00 19:00", "19:00 19:00", "18:00 18:00", "19:00 20:00", "21:00 21:00", "21:00 21:00", "21:00 21:00"],
+        "x":         ["09:00 09:00", "09:00 09:00", "10:00 10:00", "09:00 09:00", "09:00 09:00", "09:00 09:00", "09:00 09:00"],
+        "threads":   ["12:00 11:00", "10:00 11:00", "12:00 11:00", "09:00 11:00", "10:00 11:00", "10:00 11:00", "11:00 11:00"],
     },
 }  # fmt: skip
-# New York clock, "evening morning". Slot 1, from the dream-life skill's scripts/post_time.py: the hour whose first two hours
-# fall in the evening peak of most US viewers (Eastern to Pacific, weighted by population); it lands at
-# 08-09 h in GMT+7. Slot 2: the weekday morning commute (Instagram's Thursday 8-9 h peak, X / Threads
-# mornings), later on weekends; it lands at 19-22 h the same day in GMT+7, an easy hour to post by hand.
+# New York clock, "evening morning". Slot 1: the platform's best evening hour plus one, because about
+# half of US viewers live west of New York (Central -1 h, Pacific -3 h; the dream-life skill's
+# scripts/post_time.py weights the zones by population), capped at 21-22 h; it lands at 08-10 h in
+# GMT+7. Slot 2: the weekday morning commute (the platforms' 6-9 h peaks, Instagram's Thursday 8 h),
+# later on weekends; it lands at 18-23 h the same day in GMT+7. X posts at 21 h (Metricool's best X
+# hour; the feed decays within hours, so it posts when viewers are live) and Threads at noon.
 TIMES["dream"] = {
-    "youtube":   ["20:00 08:00", "20:00 08:00", "21:00 08:00", "21:00 08:00", "21:00 08:00", "21:00 10:00", "21:00 10:00"],
-    "tiktok":    ["20:45 07:45", "20:45 07:45", "20:45 07:45", "20:45 07:45", "20:45 07:45", "20:45 09:45", "20:45 09:45"],
-    "facebook":  ["20:00 08:00", "20:00 08:00", "20:00 08:00", "20:00 08:00", "21:00 08:00", "20:00 10:00", "21:00 10:00"],
-    "instagram": ["21:00 08:00", "21:00 08:00", "21:00 08:00", "20:00 08:00", "21:00 08:00", "21:00 10:00", "21:00 10:00"],
-    "x":         ["21:00 08:00", "21:00 08:00", "21:00 08:00", "21:00 08:00", "21:00 08:00", "21:00 10:00", "21:00 10:00"],
-    "threads":   ["21:00 08:00", "21:00 08:00", "21:00 08:00", "21:00 08:00", "21:00 08:00", "21:00 10:00", "21:00 10:00"],
+    "youtube":   ["21:00 07:00", "21:00 07:00", "20:00 07:00", "20:00 07:00", "19:00 07:00", "20:00 09:00", "20:00 09:00"],
+    "tiktok":    ["19:45 06:45", "19:45 05:45", "20:45 05:45", "19:45 05:45", "18:45 06:45", "17:45 08:45", "19:45 08:45"],
+    "facebook":  ["21:00 08:00", "20:00 08:00", "20:00 08:00", "21:00 09:00", "20:00 08:00", "22:00 09:00", "21:00 10:00"],
+    "instagram": ["20:00 07:00", "20:00 07:00", "19:00 08:00", "21:00 08:00", "21:00 06:00", "21:00 09:00", "21:00 09:00"],
+    "x":         ["21:00 09:00", "21:00 09:00", "21:00 10:00", "21:00 09:00", "21:00 09:00", "21:00 09:00", "21:00 09:00"],
+    "threads":   ["12:00 09:00", "12:00 10:00", "12:00 09:00", "12:00 09:00", "12:00 10:00", "12:00 10:00", "12:00 11:00"],
 }  # fmt: skip
-# Healing is watched as the same US evening wind-down: slot 1 of the dream table fits it.
-TIMES["healing"] = TIMES["dream"]
+# Healing is a bedtime wind-down (ASMR / relaxation peaks 21-24 h), one slot a day: an hour later than
+# the dream evening, at the end of the reel platforms' 18-23 h peak; 09-10 h in GMT+7.
+TIMES["healing"] = {
+    "youtube":   ["21:00", "21:00", "21:00", "21:00", "20:00", "21:00", "21:00"],
+    "tiktok":    ["21:45", "21:45", "21:45", "21:45", "21:45", "20:45", "20:45"],
+    "facebook":  ["21:00", "21:00", "21:00", "21:00", "21:00", "22:00", "21:00"],
+    "instagram": ["21:00", "21:00", "21:00", "21:00", "22:00", "22:00", "22:00"],
+    "x":         ["21:00", "21:00", "21:00", "21:00", "21:00", "21:00", "21:00"],
+    "threads":   ["12:00", "12:00", "12:00", "12:00", "12:00", "12:00", "12:00"],
+}  # fmt: skip
 SLOT_KEY = re.compile(r"^(\d{4}-\d{2}-\d{2})/([12])$")
 FOLDER_MARK = ".museai-post"  # marks a folder this module made for one video
 SETTLE = 30  # seconds a video must sit unchanged before it moves (deliver.sh may still be copying it)
