@@ -92,8 +92,11 @@ start() {
   if [[ -z $port ]] || port_taken "$port"; then port=$(new_port); echo "$port" > "$dir/.bh-port"; fi
   if [[ -n $label ]]; then set_label "$dir" "$label"; fi
 
+  # Background tabs run at full speed, so parallel agent runs in one window do not stall.
   setsid "$browser" --user-data-dir="$dir" --remote-debugging-port="$port" \
-    --profile-directory=Default --no-first-run --no-default-browser-check "$url" >"$dir/.bh-browser.log" 2>&1 </dev/null &
+    --profile-directory=Default --no-first-run --no-default-browser-check \
+    --disable-background-timer-throttling --disable-renderer-backgrounding \
+    --disable-backgrounding-occluded-windows "$url" >"$dir/.bh-browser.log" 2>&1 </dev/null &
   for _ in $(seq 1 60); do is_up "$port" && break; sleep 0.25; done
   is_up "$port" || die "browser did not open port $port; see $dir/.bh-browser.log"
   # A daemon left from an earlier browser session holds a dead connection.
