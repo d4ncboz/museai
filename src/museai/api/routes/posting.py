@@ -11,7 +11,7 @@ deliver.sh puts the thumbnails (thumbnail skill) next to the video as ``<stem> -
 ``16x9``; the dashboard shows them to drag into the upload pages, and they go to the Trash with the video.
 
 Each video belongs to a channel (``CHANNELS``: separate accounts, guessed from the file name, changeable
-on the card) and gets a posting slot in that channel: two a day, handed out in delivery order, with a
+on the card) and gets a posting slot in that channel: two a day (Chinese four), handed out in delivery order, with a
 time per platform (``TIMES``, in the channel's audience clock ``AUDIENCE``) to set in each platform's
 scheduler. Times are returned in GMT+7, the user's clock.
 
@@ -69,8 +69,12 @@ THUMBS = {"9x16": "YouTube Shorts, TikTok, Facebook / Instagram Reels cover",
 TZ = ZoneInfo("Asia/Ho_Chi_Minh")  # GMT+7: the user's clock; calendar days and shown times use it
 # Channels post from separate accounts, so each has its own two slots a day: (name, focus per slot).
 CHANNELS = {
-    "chinese": ("Chinese", {1: "Late afternoon / lunch break: bite-sized (stroke order, word of the day)",
-                            2: "Study hour after dinner: conversations, common mistakes, quizzes"}),
+    # four a day (user rule 2026-11-04): two conversations (Everyday Chinese) and two vocabulary quizzes,
+    # alternating (``_assign_slots`` never puts the same kind in two slots in a row)
+    "chinese": ("Chinese", {1: "Morning commute: a first lesson with breakfast",
+                            2: "Lunch break: bite-sized (word of the day, quizzes)",
+                            3: "Study hour after dinner: conversations, common mistakes, quizzes",
+                            4: "Late evening: one more before bed"}),
     "travel": ("Travel", {1: "UK / Europe evening: a quick view",
                           2: "US East evening: full reels and zoom-ins"}),
     # a new account (dream-life skill): two reels a day from 2026-11-02, 10+ hours apart, so each still gets
@@ -89,7 +93,7 @@ CLOCKS = {"Europe/London": "London", "America/New_York": "New York"}
 # day is the day before the calendar day for an evening time (01-03 h and 06-09 h in GMT+7) and the
 # calendar day itself for a morning one (X, Threads: 16-22 h in GMT+7); schedule them in each platform's
 # scheduler.
-AUDIENCE = {"chinese": (ZoneInfo("Asia/Ho_Chi_Minh"), ZoneInfo("Asia/Ho_Chi_Minh")),
+AUDIENCE = {"chinese": (ZoneInfo("Asia/Ho_Chi_Minh"),) * 4,
             "travel": (ZoneInfo("Europe/London"), ZoneInfo("America/New_York")),
             "dream": (ZoneInfo("America/New_York"), ZoneInfo("America/New_York")),
             "healing": (ZoneInfo("America/New_York"), ZoneInfo("America/New_York"))}
@@ -121,16 +125,30 @@ TRAVEL_NAME = re.compile(r"^(zoom|reel|scenic|scenery|drop|travel|nostalgia|gown
 # Shorts, TikTok, Facebook and Instagram Reels) peak 18-23 h, each on its own hour per weekday; X and
 # Threads are daytime platforms (mornings and noon best, evenings worst), so they never mirror the
 # evening reel slots; TikTok gets 15 minutes' head start on its peak (its first test audience arrives
-# with the peak). Chinese slot 1 goes out at lunch on every platform (user rule 2026-11-03), the
-# learners' break, slot 2 at the study hour after dinner.
+# with the peak). Chinese posts four a day (user rule 2026-11-04): slot 1 in the 6-9 h morning window,
+# slot 2 at lunch on every platform (user rule 2026-11-03), the learners' break, slot 3 at the study hour
+# after dinner, slot 4 late in the 18-23 h evening window (Vietnamese golden hours; X and Threads stay
+# in the daytime).
 TIMES = {
     "chinese": {
-        "youtube":   ["11:30 20:00", "11:30 20:00", "11:30 20:00", "11:30 20:00", "11:30 19:00", "11:00 19:00", "11:00 20:00"],
-        "tiktok":    ["11:45 20:45", "11:45 20:45", "11:45 20:45", "11:45 18:45", "11:45 19:45", "08:45 19:45", "08:45 19:45"],
-        "facebook":  ["11:30 20:00", "11:30 20:00", "11:30 20:00", "11:30 20:30", "11:30 20:00", "09:00 20:00", "09:00 19:30"],
-        "instagram": ["12:00 20:00", "12:00 20:00", "12:00 19:00", "09:00 20:00", "12:00 21:00", "11:00 21:00", "11:00 21:00"],
-        "x":         ["09:00 12:00", "09:00 12:00", "10:00 12:00", "09:00 12:00", "09:00 12:00", "09:00 12:00", "09:00 12:00"],
-        "threads":   ["09:00 12:00", "09:00 11:00", "09:00 12:00", "09:00 11:00", "09:00 11:00", "09:00 11:00", "11:00 13:00"],
+        "youtube":   ["07:00 11:30 20:00 22:00", "07:00 11:30 20:00 22:00", "07:00 11:30 20:00 22:00",
+                      "07:00 11:30 20:00 22:00", "07:00 11:30 19:00 21:30", "08:00 11:00 19:00 21:30",
+                      "08:00 11:00 20:00 22:00"],
+        "tiktok":    ["06:45 11:45 20:45 21:45", "06:45 11:45 20:45 21:45", "06:45 11:45 20:45 21:45",
+                      "06:45 11:45 18:45 21:45", "06:45 11:45 19:45 21:45", "08:45 11:45 19:45 21:45",
+                      "08:45 11:45 19:45 21:45"],
+        "facebook":  ["07:00 11:30 20:00 22:00", "07:00 11:30 20:00 22:00", "07:00 11:30 20:00 22:00",
+                      "07:00 11:30 20:30 22:00", "07:00 11:30 20:00 22:00", "09:00 11:30 20:00 22:00",
+                      "09:00 11:30 19:30 21:30"],
+        "instagram": ["07:30 12:00 20:00 22:00", "07:30 12:00 20:00 22:00", "07:30 12:00 19:00 21:30",
+                      "09:00 12:00 20:00 22:00", "07:30 12:00 21:00 22:30", "08:00 11:00 21:00 22:30",
+                      "08:00 11:00 21:00 22:30"],
+        "x":         ["07:30 09:00 12:00 17:00", "07:30 09:00 12:00 17:00", "07:30 10:00 12:00 17:00",
+                      "07:30 09:00 12:00 17:00", "07:30 09:00 12:00 17:00", "07:30 09:00 12:00 17:00",
+                      "07:30 09:00 12:00 17:00"],
+        "threads":   ["07:30 09:00 12:00 15:00", "07:30 09:00 11:00 13:00", "07:30 09:00 12:00 15:00",
+                      "07:30 09:00 11:00 13:00", "07:30 09:00 11:00 13:00", "07:30 09:00 11:00 13:00",
+                      "09:00 11:00 13:00 15:00"],
     },
     # slot 1 London, slot 2 New York: the evening wind-down on the reel platforms, the morning on X / Threads
     # (a London or New York morning is the afternoon or evening of the same calendar day in GMT+7)
@@ -168,7 +186,7 @@ TIMES["healing"] = {
     "x":         ["21:00 09:00", "21:00 09:00", "21:00 10:00", "21:00 09:00", "21:00 09:00", "21:00 09:00", "21:00 09:00"],
     "threads":   ["12:00 09:00", "12:00 10:00", "12:00 09:00", "12:00 09:00", "12:00 10:00", "12:00 10:00", "12:00 11:00"],
 }  # fmt: skip
-SLOT_KEY = re.compile(r"^(\d{4}-\d{2}-\d{2})/([12])$")
+SLOT_KEY = re.compile(r"^(\d{4}-\d{2}-\d{2})/([1-4])$")
 FOLDER_MARK = ".museai-post"  # marks a folder this module made for one video
 SETTLE = 30  # seconds a video must sit unchanged before it moves (deliver.sh may still be copying it)
 # Requests (in threads) and the caption writer all read-modify-write posts.json.
@@ -256,7 +274,7 @@ def _thumbs(path: Path) -> dict[str, Path]:
 
 
 def _slot_times(key: str, channel: str = "chinese") -> dict[str, datetime]:
-    """Posting time per platform (in GMT+7) for a slot key "YYYY-MM-DD/1|2" of ``channel``."""
+    """Posting time per platform (in GMT+7) for a slot key "YYYY-MM-DD/<n>" of ``channel``."""
     day, n = SLOT_KEY.match(key).groups()
     d, n = date.fromisoformat(day), int(n)
     if n not in CHANNELS[channel][1]:
@@ -291,7 +309,8 @@ def _assign_slots(state: dict, videos: list[Path], now: datetime) -> bool:
     those never move. Every other queued video takes a free upcoming slot, in queue order: its current
     slot (a slot the user picks sets its place in line), then delivery. Kinds mix (``_kind``): each free
     slot takes the first video in line of a kind not yet posting that day nor in the slot before, else
-    one not yet posting that day, else the first. So no upcoming slot stays empty while videos wait, a
+    one not in the slot before (four Chinese slots: conversation, quiz, conversation, quiz), else one not
+    yet posting that day, else the first. So no upcoming slot stays empty while videos wait, a
     slot that passed unposted moves up, and a day shows e.g. a healing video and a drone reel.
     Returns True when the state changed."""
     entries = [(p.name, state.setdefault(_key(p.name), {})) for p in sorted(videos, key=lambda p: p.stat().st_mtime)]
@@ -328,7 +347,8 @@ def _assign_slots(state: dict, videos: list[Path], now: datetime) -> bool:
             before = f"{day}/{int(n) - 1}" if n != "1" else \
                 f"{date.fromisoformat(day) - timedelta(days=1)}/{max(CHANNELS[ch][1])}"
             same_day = {k for s, k in taken.items() if s.startswith(day)}
-            name, e = _pick(line, [same_day | {taken.get(before)}, same_day])
+            prev = {taken.get(before)}
+            name, e = _pick(line, [same_day | prev, prev, same_day])
             taken[slot] = _kind(name)
             changed |= e.get("slot") != slot
             e["slot"] = slot
@@ -615,7 +635,7 @@ async def post_thumbnail(name: str, kind: str, svc: Services = Depends(get_servi
 def update_post(name: str, body: dict, svc: Services = Depends(get_services)) -> dict:
     """Set the caption, per-platform ``captions`` (merged in; an empty text drops that platform's
     own caption), the ``channel`` (moving it drops its slot; the next listing books one there), the
-    posting ``slot`` ("YYYY-MM-DD/1|2"; a video of the same channel already there swaps into this
+    posting ``slot`` ("YYYY-MM-DD/<n>"; a video of the same channel already there swaps into this
     one's old slot), mark a platform posted (or not), or ``{"done": true}`` to trash it now.
 
     Marking the last platform posted moves the video to the Trash.

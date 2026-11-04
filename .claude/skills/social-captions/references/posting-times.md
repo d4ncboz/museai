@@ -1,7 +1,7 @@
 # Posting times per platform and content (researched 2026-10-29, revised 2026-11-04)
 
 The dashboard's "Ready to post" schedule (`src/museai/api/routes/posting.py` `TIMES`, `AUDIENCE`) gives
-each video a slot (day + slot 1 or 2, two a day per channel) and each platform its own time for that
+each video a slot (day + slot number: two a day per channel, Chinese four) and each platform its own time for that
 slot. Each channel has its own table, because learning, travel, dream and healing videos are watched at
 different moments by different audiences. Times are set in the audience's local time and shown in GMT+7.
 Each channel's queue fills its free slots back to back; a slot whose video is posted on every platform
@@ -9,8 +9,11 @@ Each channel's queue fills its free slots back to back; a slot whose video is po
 the slot after it.
 
 ## Whose clock
-- **Chinese** (Vietnamese captions, Vietnamese learners): Vietnam, GMT+7, both slots. Slot 1 is the
-  lunch break (user rule 2026-11-03: every platform, YouTube included), slot 2 the study hour after dinner.
+- **Chinese** (Vietnamese captions, Vietnamese learners): Vietnam, GMT+7, four slots a day (user rule
+  2026-11-04): two conversations (Everyday Chinese) and two vocabulary quizzes (hanzi-quiz), in turn.
+  Slot 1 is the 6-9 h morning commute, slot 2 the lunch break (user rule 2026-11-03: every platform,
+  YouTube included), slot 3 the study hour after dinner, slot 4 late in the 18-23 h evening peak. X and
+  Threads stay in the daytime (their evenings are worst).
 - **Travel** and the other English formats (nostalgia, gown, product): English viewers. Slot 1 is in
   London time, slot 2 in New York time. Evening times fall on the audience's day before the calendar day
   (01-04 h and 06-10 h in GMT+7); the X and Threads mornings fall on the calendar day itself (16-23 h in
@@ -24,15 +27,15 @@ the slot after it.
   2026-11-04). Slot 1 is a bedtime wind-down (ASMR / relaxation content peaks 21-24 h), an hour after
   the dream evening; 08-10 h in GMT+7. Slot 2 is the same morning commute as Dream's; 18-23 h in GMT+7.
 
-## Chinese lessons (GMT+7, slot 1 · slot 2)
+## Chinese lessons (GMT+7, slot 1 · 2 · 3 · 4)
 | | Mon | Tue | Wed | Thu | Fri | Sat | Sun |
 |---|---|---|---|---|---|---|---|
-| YouTube Shorts | 11:30 · 20:00 | 11:30 · 20:00 | 11:30 · 20:00 | 11:30 · 20:00 | 11:30 · 19:00 | 11:00 · 19:00 | 11:00 · 20:00 |
-| TikTok | 11:45 · 20:45 | 11:45 · 20:45 | 11:45 · 20:45 | 11:45 · 18:45 | 11:45 · 19:45 | 08:45 · 19:45 | 08:45 · 19:45 |
-| Facebook Reels | 11:30 · 20:00 | 11:30 · 20:00 | 11:30 · 20:00 | 11:30 · 20:30 | 11:30 · 20:00 | 09:00 · 20:00 | 09:00 · 19:30 |
-| Instagram Reels | 12:00 · 20:00 | 12:00 · 20:00 | 12:00 · 19:00 | 09:00 · 20:00 | 12:00 · 21:00 | 11:00 · 21:00 | 11:00 · 21:00 |
-| X | 09:00 · 12:00 | 09:00 · 12:00 | 10:00 · 12:00 | 09:00 · 12:00 | 09:00 · 12:00 | 09:00 · 12:00 | 09:00 · 12:00 |
-| Threads | 09:00 · 12:00 | 09:00 · 11:00 | 09:00 · 12:00 | 09:00 · 11:00 | 09:00 · 11:00 | 09:00 · 11:00 | 11:00 · 13:00 |
+| YouTube Shorts | 07:00 · 11:30 · 20:00 · 22:00 | 07:00 · 11:30 · 20:00 · 22:00 | 07:00 · 11:30 · 20:00 · 22:00 | 07:00 · 11:30 · 20:00 · 22:00 | 07:00 · 11:30 · 19:00 · 21:30 | 08:00 · 11:00 · 19:00 · 21:30 | 08:00 · 11:00 · 20:00 · 22:00 |
+| TikTok | 06:45 · 11:45 · 20:45 · 21:45 | 06:45 · 11:45 · 20:45 · 21:45 | 06:45 · 11:45 · 20:45 · 21:45 | 06:45 · 11:45 · 18:45 · 21:45 | 06:45 · 11:45 · 19:45 · 21:45 | 08:45 · 11:45 · 19:45 · 21:45 | 08:45 · 11:45 · 19:45 · 21:45 |
+| Facebook Reels | 07:00 · 11:30 · 20:00 · 22:00 | 07:00 · 11:30 · 20:00 · 22:00 | 07:00 · 11:30 · 20:00 · 22:00 | 07:00 · 11:30 · 20:30 · 22:00 | 07:00 · 11:30 · 20:00 · 22:00 | 09:00 · 11:30 · 20:00 · 22:00 | 09:00 · 11:30 · 19:30 · 21:30 |
+| Instagram Reels | 07:30 · 12:00 · 20:00 · 22:00 | 07:30 · 12:00 · 20:00 · 22:00 | 07:30 · 12:00 · 19:00 · 21:30 | 09:00 · 12:00 · 20:00 · 22:00 | 07:30 · 12:00 · 21:00 · 22:30 | 08:00 · 11:00 · 21:00 · 22:30 | 08:00 · 11:00 · 21:00 · 22:30 |
+| X | 07:30 · 09:00 · 12:00 · 17:00 | 07:30 · 09:00 · 12:00 · 17:00 | 07:30 · 10:00 · 12:00 · 17:00 | 07:30 · 09:00 · 12:00 · 17:00 | 07:30 · 09:00 · 12:00 · 17:00 | 07:30 · 09:00 · 12:00 · 17:00 | 07:30 · 09:00 · 12:00 · 17:00 |
+| Threads | 07:30 · 09:00 · 12:00 · 15:00 | 07:30 · 09:00 · 11:00 · 13:00 | 07:30 · 09:00 · 12:00 · 15:00 | 07:30 · 09:00 · 11:00 · 13:00 | 07:30 · 09:00 · 11:00 · 13:00 | 07:30 · 09:00 · 11:00 · 13:00 | 09:00 · 11:00 · 13:00 · 15:00 |
 
 ## Travel (slot 1 London · slot 2 New York, both local, audience weekday)
 | | Mon | Tue | Wed | Thu | Fri | Sat | Sun |
