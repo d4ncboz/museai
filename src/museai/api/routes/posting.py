@@ -78,7 +78,8 @@ CHANNELS = {
     "dream": ("Dream life", {1: "US evening wind-down: the strongest dream of the day",
                              2: "US morning commute: the lighter, quicker dream"}),
     # its own account too (user rule 2026-11-02): kitchen and home clips lose travel viewers
-    "healing": ("Healing", {1: "US evening wind-down: one healing video a day"}),
+    "healing": ("Healing", {1: "US bedtime wind-down: the calmest video of the day",
+                            2: "US morning commute: a lighter, brighter one"}),
 }
 # Short name of an audience clock, shown beside the GMT+7 time so the user sees whose evening a slot is.
 CLOCKS = {"Europe/London": "London", "America/New_York": "New York"}
@@ -91,7 +92,7 @@ CLOCKS = {"Europe/London": "London", "America/New_York": "New York"}
 AUDIENCE = {"chinese": (ZoneInfo("Asia/Ho_Chi_Minh"), ZoneInfo("Asia/Ho_Chi_Minh")),
             "travel": (ZoneInfo("Europe/London"), ZoneInfo("America/New_York")),
             "dream": (ZoneInfo("America/New_York"), ZoneInfo("America/New_York")),
-            "healing": (ZoneInfo("America/New_York"),)}
+            "healing": (ZoneInfo("America/New_York"), ZoneInfo("America/New_York"))}
 # The format skills name their files <prefix>-<slug> (muse-video SKILL.md "Format skills"); a renamed file
 # that still names its format ("Kelingking Beach - zoominview.mp4") is travel too. The English formats
 # (nostalgia, gown, ...) post on the Travel accounts: their viewers share its clock. Dream-life and healing
@@ -156,15 +157,16 @@ TIMES["dream"] = {
     "x":         ["21:00 09:00", "21:00 09:00", "21:00 10:00", "21:00 09:00", "21:00 09:00", "21:00 09:00", "21:00 09:00"],
     "threads":   ["12:00 09:00", "12:00 10:00", "12:00 09:00", "12:00 09:00", "12:00 10:00", "12:00 10:00", "12:00 11:00"],
 }  # fmt: skip
-# Healing is a bedtime wind-down (ASMR / relaxation peaks 21-24 h), one slot a day: an hour later than
-# the dream evening, at the end of the reel platforms' 18-23 h peak; 09-10 h in GMT+7.
+# Healing: two a day (user rule 2026-11-04), "evening morning" like Dream. Slot 1 is a bedtime
+# wind-down (ASMR / relaxation peaks 21-24 h): an hour later than the dream evening, at the end of the
+# reel platforms' 18-23 h peak; 09-10 h in GMT+7. Slot 2 is the same morning commute as Dream's.
 TIMES["healing"] = {
-    "youtube":   ["21:00", "21:00", "21:00", "21:00", "20:00", "21:00", "21:00"],
-    "tiktok":    ["21:45", "21:45", "21:45", "21:45", "21:45", "20:45", "20:45"],
-    "facebook":  ["21:00", "21:00", "21:00", "21:00", "21:00", "22:00", "21:00"],
-    "instagram": ["21:00", "21:00", "21:00", "21:00", "22:00", "22:00", "22:00"],
-    "x":         ["21:00", "21:00", "21:00", "21:00", "21:00", "21:00", "21:00"],
-    "threads":   ["12:00", "12:00", "12:00", "12:00", "12:00", "12:00", "12:00"],
+    "youtube":   ["21:00 07:00", "21:00 07:00", "21:00 07:00", "21:00 07:00", "20:00 07:00", "21:00 09:00", "21:00 09:00"],
+    "tiktok":    ["21:45 06:45", "21:45 05:45", "21:45 05:45", "21:45 05:45", "21:45 06:45", "20:45 08:45", "20:45 08:45"],
+    "facebook":  ["21:00 08:00", "21:00 08:00", "21:00 08:00", "21:00 09:00", "21:00 08:00", "22:00 09:00", "21:00 10:00"],
+    "instagram": ["21:00 07:00", "21:00 07:00", "21:00 08:00", "21:00 08:00", "22:00 06:00", "22:00 09:00", "22:00 09:00"],
+    "x":         ["21:00 09:00", "21:00 09:00", "21:00 10:00", "21:00 09:00", "21:00 09:00", "21:00 09:00", "21:00 09:00"],
+    "threads":   ["12:00 09:00", "12:00 10:00", "12:00 09:00", "12:00 09:00", "12:00 10:00", "12:00 10:00", "12:00 11:00"],
 }  # fmt: skip
 SLOT_KEY = re.compile(r"^(\d{4}-\d{2}-\d{2})/([12])$")
 FOLDER_MARK = ".museai-post"  # marks a folder this module made for one video

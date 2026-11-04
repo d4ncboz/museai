@@ -20,8 +20,9 @@ the slot after it.
   of New York (Central -1 h, Pacific -3 h; `dream-life/scripts/post_time.py` weights the zones by
   population), capped at 21-22 h; 08-10 h the next day in GMT+7. Slot 2, the US morning commute: the
   platforms' 6-9 h peaks, later on weekends; 18-23 h the same day in GMT+7.
-- **Healing** (healing-video, its own account): a bedtime wind-down (ASMR / relaxation content peaks
-  21-24 h), one slot a day, an hour after the dream evening; 08-10 h in GMT+7.
+- **Healing** (healing-video, its own account): two slots a day in New York time (user rule
+  2026-11-04). Slot 1 is a bedtime wind-down (ASMR / relaxation content peaks 21-24 h), an hour after
+  the dream evening; 08-10 h in GMT+7. Slot 2 is the same morning commute as Dream's; 18-23 h in GMT+7.
 
 ## Chinese lessons (GMT+7, slot 1 · slot 2)
 | | Mon | Tue | Wed | Thu | Fri | Sat | Sun |
@@ -53,15 +54,15 @@ the slot after it.
 | X | 21:00 · 09:00 | 21:00 · 09:00 | 21:00 · 10:00 | 21:00 · 09:00 | 21:00 · 09:00 | 21:00 · 09:00 | 21:00 · 09:00 |
 | Threads | 12:00 · 09:00 | 12:00 · 10:00 | 12:00 · 09:00 | 12:00 · 09:00 | 12:00 · 10:00 | 12:00 · 10:00 | 12:00 · 11:00 |
 
-## Healing (New York, one slot)
+## Healing (New York, slot 1 bedtime · slot 2 morning)
 | | Mon | Tue | Wed | Thu | Fri | Sat | Sun |
 |---|---|---|---|---|---|---|---|
-| YouTube Shorts | 21:00 | 21:00 | 21:00 | 21:00 | 20:00 | 21:00 | 21:00 |
-| TikTok | 21:45 | 21:45 | 21:45 | 21:45 | 21:45 | 20:45 | 20:45 |
-| Facebook Reels | 21:00 | 21:00 | 21:00 | 21:00 | 21:00 | 22:00 | 21:00 |
-| Instagram Reels | 21:00 | 21:00 | 21:00 | 21:00 | 22:00 | 22:00 | 22:00 |
-| X | 21:00 | 21:00 | 21:00 | 21:00 | 21:00 | 21:00 | 21:00 |
-| Threads | 12:00 | 12:00 | 12:00 | 12:00 | 12:00 | 12:00 | 12:00 |
+| YouTube Shorts | 21:00 · 07:00 | 21:00 · 07:00 | 21:00 · 07:00 | 21:00 · 07:00 | 20:00 · 07:00 | 21:00 · 09:00 | 21:00 · 09:00 |
+| TikTok | 21:45 · 06:45 | 21:45 · 05:45 | 21:45 · 05:45 | 21:45 · 05:45 | 21:45 · 06:45 | 20:45 · 08:45 | 20:45 · 08:45 |
+| Facebook Reels | 21:00 · 08:00 | 21:00 · 08:00 | 21:00 · 08:00 | 21:00 · 09:00 | 21:00 · 08:00 | 22:00 · 09:00 | 21:00 · 10:00 |
+| Instagram Reels | 21:00 · 07:00 | 21:00 · 07:00 | 21:00 · 08:00 | 21:00 · 08:00 | 22:00 · 06:00 | 22:00 · 09:00 | 22:00 · 09:00 |
+| X | 21:00 · 09:00 | 21:00 · 09:00 | 21:00 · 10:00 | 21:00 · 09:00 | 21:00 · 09:00 | 21:00 · 09:00 | 21:00 · 09:00 |
+| Threads | 12:00 · 09:00 | 12:00 · 10:00 | 12:00 · 09:00 | 12:00 · 09:00 | 12:00 · 10:00 | 12:00 · 10:00 | 12:00 · 11:00 |
 
 The slot's day and its free / taken / passed state follow YouTube's time.
 
