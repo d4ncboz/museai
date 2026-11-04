@@ -81,3 +81,8 @@ htmlcov/
 .vscode/
 *.swp
 *.swo
+
+.superpowers/
+browser-harness-setup.zip
+german-vocab-prompt.md
+series-guide.md

@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+# Named browser profiles for browser-harness.
+# Each profile is its own Chromium --user-data-dir with its own debug port, so logins persist
+# across runs and several profiles can run side by side. browser-harness reaches a profile
+# through BU_NAME=<name> and BU_CDP_URL=http://127.0.0.1:<port>.
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: bh-profile <command> [name] [args]
+
+  start <name> [url] [--label TEXT]
+                       Launch the profile's browser (creates the profile on first use);
+                       --label sets Chromium's profile name (shown in the title and picker)
+  run <name> [args]    Start if needed, then run browser-harness against it (stdin is passed on)
+  env <name>           Print the export lines for the profile (eval "$(bh-profile env work)")
+  list                 Show all profiles, their ports and whether they run
+  stop <name>          Stop the profile's browser-harness daemon and browser
+  rm <name>            Stop and delete the profile (asks first)
+
+Env: BH_BROWSER  browser binary (default: chromium, google-chrome, chromium-browser)
+     BH_PROFILES_DIR  where profiles live
+EOF
+}
+
+die() { echo "bh-profile: $*" >&2; exit 1; }
+
+find_browser() {
+  if [[ -n ${BH_BROWSER:-} ]]; then command -v "$BH_BROWSER" || die "BH_BROWSER=$BH_BROWSER not found"; return; fi
+  for b in chromium google-chrome chromium-browser; do command -v "$b" && return; done
+  die "no Chromium or Chrome found; set BH_BROWSER"
+}
+
+browser=$(find_browser)
+# Snap Chromium cannot read hidden folders in $HOME, so its profiles must live under ~/snap.
+if [[ $(readlink -f "$browser") == /snap/* || $browser == /snap/* ]]; then
+  default_root="$HOME/snap/chromium/common/bh-profiles"
+else
+  default_root="${XDG_DATA_HOME:-$HOME/.local/share}/bh-profiles"
+fi
+root="${BH_PROFILES_DIR:-$default_root}"
+
+check_name() {
+  [[ ${1:-} =~ ^[A-Za-z0-9_-]{1,64}$ ]] || die "profile name must match [A-Za-z0-9_-]{1,64}"
+  [[ $1 != default ]] || die "'default' is reserved for your normal browser"
+}
+
+port_of() { cat "$root/$1/.bh-port" 2>/dev/null || true; }
+
+is_up() { [[ -n $1 ]] && curl -fsS -m 1 "http://127.0.0.1:$1/json/version" 2>/dev/null | grep -q webSocketDebuggerUrl; }
+
+port_taken() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
+
+new_port() {
+  local p used
+  used=$(cat "$root"/*/.bh-port 2>/dev/null || true)
+  for ((p = 9300; p < 9400; p++)); do
+    grep -qx "$p" <<<"$used" && continue
+    port_taken "$p" && continue
+    echo "$p"; return
+  done
+  die "no free port in 9300-9399"
+}
+
+# Chromium keeps the profile name in Local State and Default/Preferences and rewrites both on
+# exit, so the name is set while the browser is closed. New profiles get minimal files that
+# Chromium fills in on first start.
+set_label() {
+  local dir=$1 label=$2 f tmp
+  mkdir -p "$dir/Default"
+  f="$dir/Local State"; [[ -s $f ]] || echo '{}' > "$f"
+  tmp=$(mktemp "$dir/.bh-XXXX")
+  jq --arg n "$label" '.profile.info_cache.Default += {name: $n, is_using_default_name: false}' "$f" > "$tmp" && mv "$tmp" "$f"
+  f="$dir/Default/Preferences"; [[ -s $f ]] || echo '{}' > "$f"
+  tmp=$(mktemp "$dir/.bh-XXXX")
+  jq --arg n "$label" '.profile += {name: $n, using_default_name: false}' "$f" > "$tmp" && mv "$tmp" "$f"
+}
+
+start() {
+  local name=$1 url=about:blank label="" dir port
+  shift
+  while (($#)); do
+    case $1 in
+      --label) label=${2:-}; shift 2 || die "--label needs a value" ;;
+      *) url=$1; shift ;;
+    esac
+  done
+  dir="$root/$name"
+  mkdir -p "$dir"
+  port=$(port_of "$name")
+  if is_up "$port"; then echo "Profile $name already runs on port $port" >&2; return; fi
+  if [[ -z $port ]] || port_taken "$port"; then port=$(new_port); echo "$port" > "$dir/.bh-port"; fi
+  if [[ -n $label ]]; then set_label "$dir" "$label"; fi
+
+  setsid "$browser" --user-data-dir="$dir" --remote-debugging-port="$port" \
+    --profile-directory=Default --no-first-run --no-default-browser-check "$url" >"$dir/.bh-browser.log" 2>&1 </dev/null &
+  for _ in $(seq 1 60); do is_up "$port" && break; sleep 0.25; done
+  is_up "$port" || die "browser did not open port $port; see $dir/.bh-browser.log"
+  # A daemon left from an earlier browser session holds a dead connection.
+  BU_NAME=$name browser-harness --reload >/dev/null 2>&1 || true
+  echo "Profile $name runs on port $port" >&2
+}
+
+print_env() { printf 'export BU_NAME=%s BU_CDP_URL=http://127.0.0.1:%s\n' "$1" "$(port_of "$1")"; }
+
+stop() {
+  local name=$1 port
+  port=$(port_of "$name")
+  if is_up "$port"; then
+    BU_NAME=$name BU_CDP_URL="http://127.0.0.1:$port" browser-harness <<<'cdp("Browser.close")' >/dev/null 2>&1 || true
+    for _ in $(seq 1 40); do is_up "$port" || break; sleep 0.25; done
+  fi
+  BU_NAME=$name browser-harness --reload >/dev/null 2>&1 || true
+  if is_up "$port"; then die "$name still runs on port $port"; fi
+  echo "Stopped $name"
+}
+
+list() {
+  [[ -d $root ]] || { echo "No profiles yet (folder: $root)"; return; }
+  printf '%-20s %-6s %s\n' NAME PORT STATE
+  local d name port
+  for d in "$root"/*/; do
+    [[ -d $d ]] || continue
+    name=$(basename "$d"); port=$(port_of "$name")
+    printf '%-20s %-6s %s\n' "$name" "${port:--}" "$(is_up "$port" && echo running || echo stopped)"
+  done
+}
+
+cmd=${1:-}; shift || true
+case $cmd in
+  start) check_name "${1:-}"; start "$@" ;;
+  run)   check_name "${1:-}"; name=$1; shift; start "$name"
+         BU_NAME=$name BU_CDP_URL="http://127.0.0.1:$(port_of "$name")" exec browser-harness "$@" ;;
+  env)   check_name "${1:-}"; [[ -d $root/$1 ]] || die "no profile $1"; print_env "$1" ;;
+  list)  list ;;
+  stop)  check_name "${1:-}"; stop "$1" ;;
+  rm)    check_name "${1:-}"; [[ -d $root/$1 ]] || die "no profile $1"
+         read -r -p "Delete profile $1 and its logins ($root/$1)? [y/N] " a || a=""
+         [[ $a =~ ^[Yy]$ ]] || { echo "Kept $1"; exit 0; }
+         stop "$1"; rm -rf -- "${root:?}/$1"; echo "Deleted $1" ;;
+  ""|-h|--help) usage ;;
+  *) usage >&2; exit 1 ;;
+esac
