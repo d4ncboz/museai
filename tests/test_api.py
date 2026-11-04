@@ -384,7 +384,7 @@ def test_posting_queue_mixes_kinds_per_day(tmp_path):
 
     # Delivered in a run of one kind, the travel queue still shows two kinds a day: a nostalgia video next
     # to a drone reel or a gown run, never two nostalgia videos the same day.
-    now = datetime(2026, 11, 8, 12, 0, tzinfo=posting.TZ)
+    now = datetime(2026, 11, 8, 21, 0, tzinfo=posting.TZ)
     names = ("nostalgia-a.mp4", "nostalgia-b.mp4", "nostalgia-c.mp4", "reel-d.mp4", "gown-e.mp4", "zoom-f.mp4")
     videos = []
     for i, name in enumerate(names):
@@ -441,13 +441,11 @@ def test_posting_slots(tmp_path):
     # No YouTube Short goes out at noon (its weakest hours); a learner's Sunday starts in the morning.
     assert all(posting._slot_times(f"2026-11-0{d}/2")["youtube"].hour not in range(12, 16) for d in range(2, 9))
     assert posting._slot_times("2026-11-01/1")["tiktok"].isoformat() == "2026-11-01T08:45:00+07:00"
-    # Travel speaks to English viewers: Monday's London evening, then Monday's New York evening,
-    # both on Tuesday in GMT+7.
-    assert posting._slot_times("2026-11-03/1", "travel")["youtube"].isoformat() == "2026-11-03T02:00:00+07:00"
-    assert posting._slot_times("2026-11-03/2", "travel")["tiktok"].isoformat() == "2026-11-03T06:45:00+07:00"
-    # X and Threads peak in the morning: London 9:00 and New York 11:00 are Tuesday afternoon and night
-    assert posting._slot_times("2026-11-03/1", "travel")["x"].isoformat() == "2026-11-03T16:00:00+07:00"
-    assert posting._slot_times("2026-11-03/2", "travel")["threads"].isoformat() == "2026-11-03T23:00:00+07:00"
+    # Travel speaks to the whole world: 09:00 and 20:00 GMT+7 on every platform, TikTok 15 minutes ahead.
+    assert posting._slot_times("2026-11-03/1", "travel")["youtube"].isoformat() == "2026-11-03T09:00:00+07:00"
+    assert posting._slot_times("2026-11-03/2", "travel")["tiktok"].isoformat() == "2026-11-03T19:45:00+07:00"
+    assert posting._slot_times("2026-11-03/2", "travel")["threads"].isoformat() == "2026-11-03T20:00:00+07:00"
+    assert posting._audience("2026-11-03/1", "travel") is None
 
     videos = []
     for i, name in enumerate(("a.mp4", "b.mp4", "c.mp4")):
@@ -462,14 +460,14 @@ def test_posting_slots(tmp_path):
     cal = posting._calendar(state, {n: n for n in ("a.mp4", "b.mp4", "c.mp4")}, now)["chinese"]
     assert len(cal) == 7 and cal[0]["slots"][2]["video"] == "b.mp4" and cal[0]["slots"][1]["video"] is None
 
-    # Travel posts from other accounts on its own clock: today's 02:00 and 06:00 slots have passed, so
-    # it books tomorrow's first one, even though Chinese has that slot taken.
+    # Travel posts from other accounts on its own clock: today's 09:00 slot has passed, so it books
+    # today's 20:00 one.
     (p := tmp_path / "zoom-madeira.mp4").write_bytes(b"v")
     os.utime(p, (2000, 2000))
     assert posting._assign_slots(state, [*videos, p], now)
-    assert state["zoom-madeira.mp4"]["slot"] == "2026-10-30/1"
+    assert state["zoom-madeira.mp4"]["slot"] == "2026-10-29/2"
     cal = posting._calendar(state, {n: n for n in state}, now)
-    assert cal["travel"][1]["slots"][0]["video"] == "zoom-madeira.mp4"
+    assert cal["travel"][0]["slots"][1]["video"] == "zoom-madeira.mp4"
     assert cal["chinese"][0]["slots"][2]["video"] == "b.mp4"
 
     # A new Chinese video takes the next free Chinese slot, not one only Travel has free.

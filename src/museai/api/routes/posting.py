@@ -75,8 +75,9 @@ CHANNELS = {
                             2: "Lunch break: bite-sized (word of the day, quizzes)",
                             3: "Study hour after dinner: conversations, common mistakes, quizzes",
                             4: "Late evening: one more before bed"}),
-    "travel": ("Travel", {1: "UK / Europe evening: a quick view",
-                          2: "US East evening: full reels and zoom-ins"}),
+    # world-wide audience (user rule 2026-11-04): each slot at an hour when most of the world is awake
+    "travel": ("Travel", {1: "Americas evening, East Asia and Australia morning",
+                          2: "Europe midday, US East morning, Asia evening"}),
     # a new account (dream-life skill): two reels a day from 2026-11-02, 10+ hours apart, so each still gets
     # its own seed-audience test and the account fills the 90-day Shorts-views window faster
     "dream": ("Dream life", {1: "US evening wind-down: the strongest dream of the day",
@@ -88,13 +89,12 @@ CHANNELS = {
 # Short name of an audience clock, shown beside the GMT+7 time so the user sees whose evening a slot is.
 CLOCKS = {"Europe/London": "London", "America/New_York": "New York"}
 # Whose clock each slot's times follow. Chinese lessons have Vietnamese captions for Vietnamese
-# learners: both slots in GMT+7. Travel (and the other English formats) speak to English viewers, who
-# are asleep at Vietnam's peaks: slot 1 at the UK evening, slot 2 at the US East evening. Their audience
-# day is the day before the calendar day for an evening time (01-03 h and 06-09 h in GMT+7) and the
-# calendar day itself for a morning one (X, Threads: 16-22 h in GMT+7); schedule them in each platform's
-# scheduler.
+# learners: both slots in GMT+7. Travel speaks to the whole world, so its times are set in GMT+7 at the
+# hours the most regions overlap awake (TIMES["travel"]). Dream and healing speak to English viewers, who
+# are asleep at Vietnam's peaks: their audience day is the day before the calendar day for an evening
+# time and the calendar day itself for a morning one; schedule them in each platform's scheduler.
 AUDIENCE = {"chinese": (ZoneInfo("Asia/Ho_Chi_Minh"),) * 4,
-            "travel": (ZoneInfo("Europe/London"), ZoneInfo("America/New_York")),
+            "travel": (ZoneInfo("Asia/Ho_Chi_Minh"),) * 2,
             "dream": (ZoneInfo("America/New_York"), ZoneInfo("America/New_York")),
             "healing": (ZoneInfo("Europe/London"), ZoneInfo("America/New_York"))}
 # The format skills name their files <prefix>-<slug> (muse-video SKILL.md "Format skills"); a renamed file
@@ -158,15 +158,18 @@ TIMES = {
                       "07:30 09:00 11:00 13:00", "07:30 09:00 11:00 13:00", "07:30 09:00 11:00 13:00",
                       "09:00 11:00 13:00 15:00"],
     },
-    # slot 1 London, slot 2 New York: the evening wind-down on the reel platforms, the morning on X / Threads
-    # (a London or New York morning is the afternoon or evening of the same calendar day in GMT+7)
+    # GMT+7, world-wide (user rule 2026-11-04: reach every region, not only the US). Slot 1, 09:00 (02 UTC):
+    # New York 21 h, Los Angeles 18 h, São Paulo 23 h, Tokyo 11 h, Sydney 13 h, Vietnam 9 h; only Europe
+    # sleeps. Slot 2, 20:00 (13 UTC): London 13 h, Berlin 14 h, New York 08 h, India 18:30, Vietnam 20 h,
+    # Tokyo 22 h; only the US West sleeps. Every platform posts then (one clock for all), TikTok 15 minutes
+    # ahead so its first test audience arrives with the hour.
     "travel": {
-        "youtube":   ["19:00 20:00", "19:00 20:00", "19:00 19:00", "19:00 19:00", "18:00 18:00", "19:00 19:00", "19:00 19:00"],
-        "tiktok":    ["17:45 18:45", "17:45 18:45", "17:45 19:45", "18:45 18:45", "17:45 17:45", "17:00 16:45", "17:45 18:45"],
-        "facebook":  ["19:00 21:00", "19:00 19:00", "18:00 18:00", "19:00 20:00", "18:00 18:00", "21:00 22:00", "20:00 20:00"],
-        "instagram": ["19:00 19:00", "19:00 19:00", "18:00 18:00", "19:00 20:00", "21:00 21:00", "21:00 21:00", "21:00 21:00"],
-        "x":         ["09:00 09:00", "09:00 09:00", "10:00 10:00", "09:00 09:00", "09:00 09:00", "09:00 09:00", "09:00 09:00"],
-        "threads":   ["12:00 11:00", "10:00 11:00", "12:00 11:00", "09:00 11:00", "10:00 11:00", "10:00 11:00", "11:00 11:00"],
+        "youtube":   ["09:00 20:00"] * 7,
+        "tiktok":    ["08:45 19:45"] * 7,
+        "facebook":  ["09:00 20:00"] * 7,
+        "instagram": ["09:00 20:00"] * 7,
+        "x":         ["09:00 20:00"] * 7,
+        "threads":   ["09:00 20:00"] * 7,
     },
 }  # fmt: skip
 # New York clock, "evening morning". Slot 1: the platform's best evening hour plus one, because about
