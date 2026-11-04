@@ -42,6 +42,17 @@ only what is specific to the format.
    question), thumbnails (`../thumbnail/`), `FINAL=1 ../muse-video/scripts/deliver.sh`, add the id to
    `posted.json`.
 
+## Reference cast (the exact people of a reference reel)
+When the user asks for the exact reference people, use frames of that reel instead of stills:
+1. Pull clean frames (no subtitle on them; `delogo` over the handle) of each person, one per framing,
+   into `~/Movies/museai/refcast/<reel>/`. Never commit them: they are someone else's footage.
+2. Copy the library script to `$WORK/episode.json`, set its `setting` to the reel's own place, add
+   `look_as` (`{"VIV": "the young woman in the cream boucle jacket"}`: how to spot each person in the
+   frame), and give every shot a `first` frame. Muse keeps the face only in that frame's own scene; it
+   refused the same girl in a new setting, so the story must stay in the reel's place.
+3. `python3 scripts/build.py $WORK/episode.json $WORK` (no stills), then steps 3-5 above.
+4. Tell the user once that publishing someone else's face and footage risks takedowns.
+
 ## Writing more scripts
 Follow `references/script-format.md` and the rhythm in `references/reference-study.md`; new ids continue
 after the last batch; `python3 scripts/check.py` must pass (no phrase reused). Keep the comedy visual and

@@ -30,6 +30,8 @@ FRAMING = {
 
 
 def load_script(sid):
+    if sid.endswith(".json"):  # a one-off script file, e.g. a reference-cast episode
+        return json.loads(Path(sid).read_text())
     for f in sorted((SKILL / "library").glob("batch_*.json")):
         for s in json.loads(f.read_text()):
             if s["id"] == sid:
@@ -37,7 +39,10 @@ def load_script(sid):
     sys.exit(f"{sid} not in library/")
 
 
-def person(key, sc, state=""):
+def person(key, sc, state="", first=False):
+    # "look_as" names the person in a supplied first frame; their cast.json face would fight that frame
+    if first and key in sc.get("look_as", {}):
+        return f"{sc['look_as'][key]}, exactly as in the attached first frame: same face, hair and outfit."
     c = CAST[key]
     wk = sc.get("wardrobe", {}).get(key) or next(iter(c["wardrobe"]))
     state = state.get(key, "") if isinstance(state, dict) else state
@@ -74,13 +79,14 @@ def still_prompt(shot, sc):
 
 def shot_prompt(shot, sc):
     dur = max(4, math.ceil(shot["sec"]) + 1)
-    people = "\n".join(f"- {CAST[k]['name'].split()[0]}: {person(k, sc, shot.get('state', ''))} "
+    first = bool(shot.get("first"))
+    people = "\n".join(f"- {CAST[k]['name'].split()[0]}: {person(k, sc, shot.get('state', ''), first)} "
                        f"Voice: {CAST[k]['voice']}." for k in shot["cast"])
     p = [f"NO TEXT ON SCREEN. One continuous {dur}-second shot of a short film. The attached image is the exact "
          f"first frame: keep every face, hairstyle, outfit, the framing and the camera position.",
          f"CAST (keep faces, hair, outfits and voices identical for the whole clip):\n{people}",
          f"SETTING: {sc['setting']}.",
-         f"CAMERA: {FRAMING[shot['framing']]}. Steady, locked, eye-level; ONE CONTINUOUS TAKE, no cuts, no zoom.",
+         f"CAMERA: {'Exactly the framing and camera position of the first frame' if first else FRAMING[shot['framing']]}. Steady, locked, eye-level; ONE CONTINUOUS TAKE, no cuts, no zoom.",
          f"ACTION: {shot['action']}"]
     ln = shot.get("line")
     if ln:
@@ -103,6 +109,7 @@ def shot_prompt(shot, sc):
 
 def build(sid, work):
     sc, work = load_script(sid), Path(work)
+    sid = sc["id"]
     for d in ("stills", "shots", "clips"):
         (work / d).mkdir(parents=True, exist_ok=True)
     (work / "script.json").write_text(json.dumps(sc, ensure_ascii=False, indent=1))
