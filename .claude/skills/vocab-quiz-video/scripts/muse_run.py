@@ -84,20 +84,19 @@ BUSY = (
 SRCS = "[...document.querySelectorAll('video')].map(v=>v.currentSrc||v.src||v.querySelector('source')?.src).filter(Boolean)"
 start, checked, idle_since = time.time(), set(), None
 while True:
-    busy = js(BUSY)
-    fresh = [s for s in js(SRCS) if s not in checked]
+    # Check new videos as soon as they appear: muse.ai can keep its Stop button after the
+    # final reply. Scene clips sit next to the final video, so check every new one, newest first.
     found = False
-    if not busy and fresh and time.time() - start > 60:
-        # Scene clips sit next to the final video, so check every new one, newest first.
-        for src in reversed(fresh):
-            checked.add(src)
-            download(src, out)
-            if seconds(out) > 30:
-                found = True
-                break
-            print(f"video is {seconds(out):.0f} s (a clip), still waiting", flush=True)
+    for src in reversed([s for s in js(SRCS) if s not in checked]):
+        checked.add(src)
+        download(src, out)
+        if seconds(out) > 30:
+            found = True
+            break
+        print(f"video is {seconds(out):.0f} s (a clip), still waiting", flush=True)
     if found:
         break
+    busy = js(BUSY)
     idle_since = None if busy else (idle_since or time.time())
     if idle_since and time.time() - idle_since > 900 and time.time() - start > 60:
         raise SystemExit("muse.ai stopped replying 15 min ago without a video over 30 s")
@@ -105,6 +104,10 @@ while True:
         raise SystemExit("timeout: no video after 45 min")
     time.sleep(20)
 print(f"video ready after {int(time.time() - start)} s ({seconds(out):.1f} s long)", flush=True)
+for _ in range(12):  # up to 2 min for muse.ai to finish its reply (the word list)
+    if not js(BUSY):
+        break
+    time.sleep(10)
 
 text = js("document.body.innerText")
 i = text.rfind(prompt.splitlines()[-1]) + len(prompt.splitlines()[-1])
