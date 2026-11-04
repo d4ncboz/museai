@@ -27,7 +27,8 @@ already mid-action (a scream, a counter exchange, a pillow fight); no establishi
 ## Picture
 - Bright, soft, airy late-1990s rom-com: soft diffused front light, low contrast, gently muted warm
   pastel colour (cream, blush pink, camel, soft red), creamy whites, a slightly soft picture (720p, no
-  crisp micro-detail). Mean RGB 88/72/65, 130/109/96, 100/84/81; shadows ~20/15/10; mids R-B 25-42.
+  crisp micro-detail). Warm golden skin and amber backgrounds, real blacks (not milky lifted
+  shadows), warm highlights, never neutral white. Mean RGB 88/72/65, 130/109/96, 100/84/81; shadows ~20/15/10; mids R-B 25-42.
 - Faces: very young (19-21) and model-beautiful: the bakery girl (the user's minimum bar) has warm
   light-olive skin, dark eyes with soft liner, matte brick-red lips and a big smooth swept-back
   shoulder-length blowout. Men boyish and handsome, natural grins.
