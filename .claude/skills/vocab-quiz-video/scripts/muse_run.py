@@ -28,16 +28,27 @@ for _ in range(3):
 else:
     raise SystemExit(f"not a new chat: {page_info()['url']}")
 
-box = next(
-    n
-    for n in cdp("Accessibility.getFullAXTree")["nodes"]
-    if n.get("role", {}).get("value") == "textbox" and n.get("name", {}).get("value") == "Message"
-)
-q = cdp("DOM.getBoxModel", backendNodeId=box["backendDOMNodeId"])["model"]["content"]
-click_at_xy(sum(q[0::2]) / 4, sum(q[1::2]) / 4)
-cdp("Input.insertText", text=prompt)
-time.sleep(1)
-typed = js("(document.activeElement.value ?? document.activeElement.innerText)")
+# Focus the box through CDP as well as clicking: with several runs in one window the click
+# alone sometimes leaves focus elsewhere and nothing is typed.
+typed = ""
+for _ in range(3):
+    time.sleep(2)
+    box = next(
+        n
+        for n in cdp("Accessibility.getFullAXTree")["nodes"]
+        if n.get("role", {}).get("value") == "textbox"
+        and n.get("name", {}).get("value") == "Message"
+    )
+    cdp("DOM.focus", backendNodeId=box["backendDOMNodeId"])
+    q = cdp("DOM.getBoxModel", backendNodeId=box["backendDOMNodeId"])["model"]["content"]
+    click_at_xy(sum(q[0::2]) / 4, sum(q[1::2]) / 4)
+    press_key("ctrl+a")
+    press_key("Delete")
+    cdp("Input.insertText", text=prompt)
+    time.sleep(1)
+    typed = js("(document.activeElement.value ?? document.activeElement.innerText)") or ""
+    if len(typed) == len(prompt):
+        break
 assert len(typed) == len(prompt), f"prompt not typed fully: {len(typed)} of {len(prompt)}"
 press_key("Enter")
 time.sleep(5)
@@ -82,6 +93,16 @@ BUSY = (
     "||[...document.querySelectorAll('button')].some(b=>(b.getAttribute('aria-label')||'').trim()==='Stop')"
 )
 SRCS = "[...document.querySelectorAll('video')].map(v=>v.currentSrc||v.src||v.querySelector('source')?.src).filter(Boolean)"
+ACCOUNT_SIGNS = [
+    "Allow once",
+    "Always allow this site",
+    "need your approval",
+    "try again later",
+    "limit has reset",
+    "usage limit",
+    "Log in",
+    "Sign in",
+]
 start, checked, idle_since = time.time(), set(), None
 while True:
     # Check new videos as soon as they appear: muse.ai can keep its Stop button after the
@@ -96,6 +117,14 @@ while True:
         print(f"video is {seconds(out):.0f} s (a clip), still waiting", flush=True)
     if found:
         break
+    # Account problems show up inside the chat, not as an error: stop at once so the caller
+    # can stop using the account (seen 2026-11-05: an approval prompt and a usage limit).
+    page = js("document.body.innerText") or ""
+    i = page.rfind(prompt.splitlines()[-1])
+    reply = page[i:] if i >= 0 else page
+    for sign in ACCOUNT_SIGNS:
+        if sign.lower() in reply.lower():
+            raise SystemExit(f"ACCOUNT PROBLEM: muse.ai shows '{sign}'")
     busy = js(BUSY)
     idle_since = None if busy else (idle_since or time.time())
     if idle_since and time.time() - idle_since > 900 and time.time() - start > 60:

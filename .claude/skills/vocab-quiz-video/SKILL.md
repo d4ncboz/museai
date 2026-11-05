@@ -85,6 +85,7 @@ If muse.ai sends no video or fails, start again in a **new** chat with the same 
 - A background tab never loads `<video>` metadata, so `muse_run.py` does not read the length in the page: when muse.ai stops replying it downloads the new videos newest first and keeps the first one over 30 s (`ffprobe`). Scene clips (~5 s) sit in the chat next to the final video.
 - muse.ai can keep its Stop button after the final reply, so `muse_run.py` checks new videos as soon as they appear instead of waiting for muse.ai to go idle.
 - A chat reopened in a background tab that was never shown renders no messages (only "Show in library"); activate the tab to read an old chat. New runs are not affected.
+- Account problems appear inside the chat, not as errors (2026-11-05, 3 accounts × 5 chats): one account asked to approve access to speech.platform.bing.com ("Allow once / Always allow this site"), another said "Please try again later… when the limit has reset". `muse_run.py` now exits with `ACCOUNT PROBLEM: …` as soon as such text shows; stop using that account and tell the user. Never click the approval for them.
 - The chat rename in `muse_run.py` fails in background tabs (the active thread row is not found); rename by hand. Tested 2026-11-04: 2 runs in one window, Kitchen in 7 min, Body in 40 min, both found within 20 s of muse.ai finishing.
 - Videos come back as `blob:` URLs; `muse_run.py` downloads them in 3 MB chunks.
 - A new Chromium start shows "Allow remote debugging?" once; the user clicks Allow.

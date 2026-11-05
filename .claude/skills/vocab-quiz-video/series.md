@@ -20,7 +20,67 @@ The end-card teaser must name an episode in this table that will really be made.
 | 12 | German | A1 | Getting Around | A1 Body | made, not posted |
 | 13 | German | A1 | Body | A1 Kitchen | made, not posted |
 | 14 | German | A1 | Kitchen | A1 Jobs | made, not posted |
-| 15 | German | A1 | Jobs | | planned |
+| 15 | German | A1 | Jobs | A1 School | made, not posted |
+| 16 | German | A1 | School | A1 Animals | made, not posted |
+| 17 | German | A1 | Animals | A1 Bathroom | made, not posted |
+| 18 | German | A1 | Bathroom | A1 Breakfast | made, not posted |
+| 19 | German | A1 | Breakfast | A1 Fruit | made, not posted |
+| 20 | German | A1 | Fruit | A2 Vegetables | made, not posted |
+| 21 | German | A2 | Vegetables | A1 Office | made, not posted |
+| 22 | German | A1 | Office | A1 Shopping | made, not posted |
+| 23 | German | A1 | Shopping | A1 Places in Town | made, not posted |
+| 24 | German | A1 | Places in Town | A1 Hobbies | made, not posted |
+| 25 | German | A1 | Hobbies | A1 Weather | made, not posted |
+| 26 | German | A1 | Weather | A2 Body | made, not posted |
+| 27 | German | A2 | Body | A2 Clothes | made, not posted |
+| 28 | German | A2 | Clothes | A2 Kitchen | made, not posted |
+| 29 | German | A2 | Kitchen | A2 Home | made, not posted |
+| 30 | German | A2 | Home | A2 Nature | made, not posted |
+| 31 | German | A2 | Nature | B1 Farm Animals | made, not posted |
+| 32 | German | B1 | Farm Animals | A2 Café | made, not posted |
+| 33 | German | A2 | Café | A2 Meals | made, not posted |
+| 34 | German | A2 | Meals | A2 Traffic | made, not posted |
+| 35 | German | A2 | Traffic | A2 Hotel | made, not posted |
+| 36 | German | A2 | Hotel | A2 Health | made, not posted |
+| 37 | German | A2 | Health | A2 Bedroom | made, not posted |
+| 38 | German | A2 | Bedroom | A2 Tools | made, not posted |
+| 39 | German | A2 | Tools | A2 Electronics | made, not posted |
+| 40 | German | A2 | Electronics | A2 Garden | made, not posted |
+| 41 | German | A2 | Garden | B1 Beach | made, not posted |
+| 42 | German | B1 | Beach | B1 Winter | made, not posted |
+| 43 | German | B1 | Winter | B1 Music | made, not posted |
+| 44 | German | B1 | Music | B1 Small Animals | made, not posted |
+| 45 | German | B1 | Small Animals | A2 Zoo | made, not posted |
+| 46 | German | A2 | Zoo | B1 Birds | made, not posted |
+| 47 | German | B1 | Birds | A2 Baking | made, not posted |
+| 48 | German | A2 | Baking | A2 Celebrations | made, not posted |
+| 49 | German | A2 | Celebrations | B1 Countryside | made, not posted |
+| 50 | German | B1 | Countryside | B1 Old Town | made, not posted |
+| 51 | German | B1 | Old Town | A2 Shops | made, not posted |
+| 52 | German | A2 | Shops | A2 Accessories | made, not posted |
+| 53 | German | A2 | Accessories | A2 Car | made, not posted |
+| 54 | German | A2 | Car | A2 Sports | made, not posted |
+| 55 | German | A2 | Sports | B1 Restaurant | made, not posted |
+| 56 | German | B1 | Restaurant | A2 Clothes and Shoes | made, not posted |
+| 57 | German | A2 | Clothes and Shoes | A2 Body Parts | made, not posted |
+| 58 | German | A2 | Body Parts | B1 Sky | made, not posted |
+| 59 | German | B1 | Sky | B1 Landscape | made, not posted |
+| 60 | German | B1 | Landscape | A2 More Vegetables | made, not posted |
+| 61 | German | A2 | More Vegetables | A2 Fruit | made, not posted |
+| 62 | German | A2 | Fruit | B1 Sweets | made, not posted |
+| 63 | German | B1 | Sweets | A2 Stationery | made, not posted |
+| 64 | German | A2 | Stationery | A2 Bathroom | made, not posted |
+| 65 | German | A2 | Bathroom | A2 Housework | made, not posted |
+| 66 | German | A2 | Housework | A2 Trees and Plants | made, not posted |
+| 67 | German | A2 | Trees and Plants | B1 Vehicles | made, not posted |
+| 68 | German | B1 | Vehicles | A2 Jobs | made, not posted |
+| 69 | German | A2 | Jobs | A2 Buildings | made, not posted |
+| 70 | German | A2 | Buildings | A2 Toys | made, not posted |
+| 71 | German | A2 | Toys | B1 Sea Life | made, not posted |
+| 72 | German | B1 | Sea Life | B1 Home Tech | made, not posted |
+| 73 | German | B1 | Home Tech | A2 Crafts | made, not posted |
+| 74 | German | A2 | Crafts | A2 Weather | made, not posted |
+| 75 | German | A2 | Weather | | planned |
 
 ## 2. Design system
 
