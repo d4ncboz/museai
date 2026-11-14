@@ -1,0 +1,18 @@
+{
+ "key": "SAM",
+ "version": 1,
+ "name": "Sam Brooks",
+ "age": 25,
+ "sex": "M",
+ "origin": "English",
+ "build": "lean, 5 ft 11 in",
+ "identity": "a 25-year-old English man with a long oval face and a soft jaw: fair skin with light freckles across the nose and cheeks, light-hazel eyes, natural light-brown brows, a straight slim nose, a light reddish-brown stubble along the jaw. Short chestnut-brown hair, a little wavy and slightly messy on top, shorter at the sides. A thin dark-brown leather cord bracelet on his LEFT wrist. No glasses, no rings.",
+ "voice": "quiet, warm English voice",
+ "base_wardrobe": "a navy-blue wool crew-neck jumper over a white T-shirt",
+ "used_by": [
+  "healing-story"
+ ],
+ "views": {
+  "hero": "hero.jpg"
+ }
+}
