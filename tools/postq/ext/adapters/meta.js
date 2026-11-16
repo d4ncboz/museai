@@ -158,8 +158,14 @@
   }
   // Facebook / Instagram caption tabs (Customise on); they switch on pointer events only.
   async function captionTab(name) {
-    const t = [...document.querySelectorAll('[role=tab]')].find((x) => visible(x) && text(x) === name);
-    if (!t) throw new Error(`no ${name} caption tab`);
+    // The tabs render a moment after "Customise post" is switched on: wait for them before giving up.
+    const find = () => [...document.querySelectorAll('[role=tab]')].find((x) => visible(x) && text(x) === name);
+    let t = find();
+    for (let i = 0; i < 40 && !t; i++) { await sleep(150); t = find(); }
+    if (!t) {
+      const tabs = [...new Set([...document.querySelectorAll('[role=tab]')].filter(visible).map((x) => text(x)))];
+      throw new Error(`no ${name} caption tab; visible tabs: ${tabs.join(' | ') || 'none'}`);
+    }
     if (t.getAttribute('aria-selected') !== 'true') press(t);
     for (let i = 0; i < 20 && t.getAttribute('aria-selected') !== 'true'; i++) await sleep(150);
     if (t.getAttribute('aria-selected') !== 'true') throw new Error(`${name} caption tab did not open`);
