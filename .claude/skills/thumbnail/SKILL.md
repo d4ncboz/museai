@@ -81,11 +81,12 @@ sheet, 2 MB JPEG writer) is `scripts/core.py`.
 What makes a cover get tapped (YouTube / TikTok creator guidance, high-CTR channels): one sharp,
 expressive face or one clear subject, big; 3-5 words of high-contrast text; nothing busy; readable at
 phone-grid size. What makes it look cheap, and the scripts never do:
-- **No blur, no ghost copies.** A frame of the other aspect is cropped (travel) or set beside a solid
-  panel (`chinese` 16:9), never on a blurred, dimmed copy of itself.
+- **No ghost copies.** A frame of the other aspect is cropped (travel) or set beside a solid
+  panel (`chinese` 16:9). The one blur: the `chinese` 9:16 text panel under the picture is the same
+  frame blurred and dimmed (the owner rejected a black panel as dull; the blur also hides captions).
 - **No text on a face.** Text sits in the free band above the heads or under the chins, at least 60 px
   from every face box, shrunk (to 55 %) before it may touch one; when no band holds it, the picture goes
-  on top and the text on a solid panel below (9:16), or on the left panel (16:9).
+  on top and the text on the blurred panel below (9:16), or on the left panel (16:9).
 - **No dark wash over people.** Contrast comes from the red box, the outline and the drop shadow on the
   text, not from darkening the picture under it.
 - Every face of the frame stays inside the 16:9 window; the window widens rather than crop a person.
@@ -110,7 +111,7 @@ text readable, frame not mid-blink or mid-transition. Re-run with `--at` from th
   mid-word, smiling, toward the lens, sharp).
 - `--skip 17.2-20.2,...`: never pick these spans (vocab cards, cuts, text cards).
 - `--cut 0.6`: the video has burned-in captions from 60 % of the height down; the 9:16 then shows the
-  picture above them with the text on a solid panel below. Better: run on the cut **before** captions are
+  picture above them with the text on the blurred panel below. Better: run on the cut **before** captions are
   burned in, then no `--cut` and the picture stays full bleed.
 
 **travel** (the raw shots in plan order, not the reel: its intro text, dips and transitions would be picked):

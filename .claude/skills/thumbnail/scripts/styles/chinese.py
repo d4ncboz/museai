@@ -8,7 +8,6 @@ import sys
 
 from core import (
     CENTRE,
-    PANEL,
     SAFE,
     YELLOW,
     badge,
@@ -23,7 +22,7 @@ from core import (
     picks_sheet,
     to_pil,
 )
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
 
 
 def add_args(p):
@@ -39,8 +38,9 @@ def add_args(p):
 
 def vertical(frame, boxes, args):
     """Full bleed with the text in the free band above the heads or under the chins; when neither holds
-    it (or burned-in captions are cut off), the picture on top and the text on a solid panel below.
-    Nothing is blurred or darkened, no text within 60 px of a face."""
+    it (or burned-in captions are cut off), the picture on top and the text below it on the same frame,
+    blurred and dimmed: the scene's colours carry on and the burned-in captions are unreadable.
+    No text within 60 px of a face."""
     im = grade(frame.resize((1080, 1920), Image.LANCZOS))
     s = frame.width / 1080
     face_top = min(b[1] / s for b in boxes) if boxes else 600
@@ -62,13 +62,21 @@ def vertical(frame, boxes, args):
     c = SAFE[3] - 60 - blk.height  # picture height
     y0 = int(min(max(face_bottom + 200 - c, 0), floor - c))
     pic = im.crop((0, y0, 1080, y0 + c))
-    out = Image.new("RGB", (1080, 1920), PANEL)
+    out = backdrop(im)
     out.paste(pic, (0, 0))
     ImageDraw.Draw(out).rectangle((0, c, 1080, c + 12), fill=YELLOW)
     y = min(c + 12 + (1920 - c - 12 - blk.height) // 2, SAFE[3] - blk.height)  # mid-panel, clear of the feed UI
     out.paste(blk, (CENTRE[0], y), blk)
     badge(out, args.badge, 540, SAFE[1] - 20)
     return out
+
+
+def backdrop(im):
+    """The whole frame, blurred past reading any caption and dimmed so the white and yellow text pops."""
+    bg = im.resize((270, 480), Image.LANCZOS).filter(ImageFilter.GaussianBlur(12))
+    bg = bg.resize((1080, 1920), Image.LANCZOS).filter(ImageFilter.GaussianBlur(8))
+    bg = ImageEnhance.Color(bg).enhance(1.25)
+    return ImageEnhance.Brightness(bg).enhance(0.62)
 
 
 def make(args):
