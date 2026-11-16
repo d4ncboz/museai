@@ -412,6 +412,7 @@ def _view(path: Path, entry: dict, svc: Services) -> dict:
     return {"name": path.name, "size": st.st_size, "mtime": st.st_mtime,
             "caption": entry.get("caption", ""), "captions": entry.get("captions", {}),
             "auto_captions": svc.captions.status(_key(path.name)),
+            "folder": str(path.parent) if (path.parent / FOLDER_MARK).is_file() else None,  # postq reads no Desktop itself
             "posted": entry.get("posted", {}), "slot": key, "channel": _channel(path.name, entry),
             "playlist": _playlist(path.name, entry),
             "thumbnails": [{"kind": k, "use": THUMBS[k], "v": int(t.stat().st_mtime)}  # v: new URL when replaced

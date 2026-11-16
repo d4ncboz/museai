@@ -15,7 +15,7 @@ def _video(tmp_path, name, **kw):
     d.mkdir()
     (d / ".museai-post").write_text("")
     (d / name).write_bytes(b"x")
-    return {"name": name, "slot": "2026-11-16T18:30", "channel": "healing", "posted": {}, "schedule": {}, **kw}
+    return {"name": name, "folder": str(d), "slot": "2026-11-16T18:30", "channel": "healing", "posted": {}, "schedule": {}, **kw}
 
 
 def _run(monkeypatch, tmp_path, videos, platforms):
@@ -44,5 +44,5 @@ def test_meta_waits_until_inside_28_days(monkeypatch, tmp_path):
 
 def test_fully_posted_or_unknown_video_queues_nothing(monkeypatch, tmp_path):
     v = _video(tmp_path, "a.mp4", posted={"youtube": True, "facebook": True, "instagram": True})
-    lone = {**_video(tmp_path, "b.mp4"), "name": "ghost.mp4"}
+    lone = {**_video(tmp_path, "b.mp4"), "name": "ghost.mp4", "folder": None}
     assert _run(monkeypatch, tmp_path, [v, lone], ["youtube", "facebook", "instagram"]) == []

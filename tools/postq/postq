@@ -887,18 +887,10 @@ def sync_dashboard(now=None, fetch=None):
         d = fetch() if fetch else json.load(urllib.request.urlopen(f"{MUSEAI_BASE}/dashboard/posts", timeout=10))
     except Exception:
         return []
-    root = Path(d.get("folder") or "~/Desktop").expanduser()
     allowed = {c["id"]: {BOX_PLATFORM.get(b) for b in c.get("platforms", [])} for c in d.get("channels", [])}
-    folders = {}
-    if root.is_dir():
-        for f in root.iterdir():
-            if f.is_dir() and (f / ".museai-post").is_file():
-                for v in f.iterdir():
-                    if v.suffix.lower() in VIDEO_SUFFIXES:
-                        folders[v.name] = f
     done = []
     for v in d.get("videos", []):
-        f = folders.get(v["name"])
+        f = Path(v["folder"]) if v.get("folder") else None  # the dashboard names the folder: launchd's python may not read ~/Desktop
         if not f or not v.get("slot"):
             continue
         posted = v.get("posted") or {}
