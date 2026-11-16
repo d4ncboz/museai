@@ -870,9 +870,73 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
+SYNC_EVERY = 60  # seconds between dashboard syncs while the queue server runs
+META_AHEAD = timedelta(days=28) - timedelta(minutes=10)  # Business Suite schedules at most 28 days out
+BOX_PLATFORM = {"youtube": "youtube", "facebook": "meta", "instagram": "meta", "x": "x", "tiktok": "tiktok"}
+
+
+def sync_dashboard(now=None, fetch=None):
+    """Queue every video the dashboard still lists as open that has no queue item yet.
+
+    The dashboard (folders with a .museai-post marker) is the source of truth: an open platform
+    on a video gets its queue item here, `enqueue` dedupes by source + platform. Platforms outside
+    the channel's own list (Healing: no X/TikTok/Threads) are never queued. Meta slots beyond the
+    28-day window wait and enter the queue by themselves once inside it. Returns episode folders queued."""
+    now = now or datetime.now(timezone.utc)
+    try:
+        d = fetch() if fetch else json.load(urllib.request.urlopen(f"{MUSEAI_BASE}/dashboard/posts", timeout=10))
+    except Exception:
+        return []
+    root = Path(d.get("folder") or "~/Desktop").expanduser()
+    allowed = {c["id"]: {BOX_PLATFORM.get(b) for b in c.get("platforms", [])} for c in d.get("channels", [])}
+    folders = {}
+    if root.is_dir():
+        for f in root.iterdir():
+            if f.is_dir() and (f / ".museai-post").is_file():
+                for v in f.iterdir():
+                    if v.suffix.lower() in VIDEO_SUFFIXES:
+                        folders[v.name] = f
+    done = []
+    for v in d.get("videos", []):
+        f = folders.get(v["name"])
+        if not f or not v.get("slot"):
+            continue
+        posted = v.get("posted") or {}
+        ok = allowed.get(v.get("channel"))
+        want = []
+        for box, plat in BOX_PLATFORM.items():
+            if posted.get(box) or plat in want or (ok is not None and plat not in ok):
+                continue
+            if plat == "meta":
+                at = (v.get("schedule") or {}).get("facebook") or (v.get("schedule") or {}).get("instagram")
+                if at and datetime.fromisoformat(at) - now > META_AHEAD:
+                    continue
+            want.append(plat)
+        if want:
+            try:
+                cmd_episode(argparse.Namespace(dir=str(f), platforms=want, at=None, related=None, dry_run=False,
+                                               auto=False, now=False, no_render=True))
+                done.append(f.name)
+            except SystemExit:
+                pass  # a platform's limit or an already queued item: the others still went through
+            except Exception as e:
+                print(f"sync {f.name}: {e}", file=sys.stderr, flush=True)
+    return done
+
+
+def sync_loop():
+    while True:
+        try:
+            sync_dashboard()
+        except Exception as e:
+            print(f"sync: {e}", file=sys.stderr, flush=True)
+        time.sleep(SYNC_EVERY)
+
+
 def cmd_serve(_):
     ROOT.mkdir(parents=True, exist_ok=True)
     print(f"postq serving {ROOT} on http://127.0.0.1:{PORT}", flush=True)
+    threading.Thread(target=sync_loop, daemon=True).start()
     ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
 
 
