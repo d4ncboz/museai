@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 import shutil
 import uuid
 from dataclasses import dataclass
@@ -21,6 +22,8 @@ from ..drivers.base import ChatRequest
 from ..errors import InvalidRequest
 from .gateway import Gateway
 
+# What `claude -p` prints when the plan runs out ("Claude AI usage limit reached", "You've hit your limit · resets 5pm").
+OUT_OF_TOKENS = re.compile(r"usage limit|hit your (?:usage )?limit|limit reached|out of (?:extra )?usage|credit balance is too low", re.I)
 Turn = tuple[str, str]  # ("user" | "assistant", text)
 SYSTEM = "You are Muse Hands, a concise assistant answering in a Telegram chat on a phone."
 REPO = Path(__file__).resolve().parents[3]
@@ -49,10 +52,10 @@ def available(s: Settings) -> list[Provider]:
         found.append(Provider("chatgpt", "ChatGPT", s.openai_model))
     if s.anthropic_api_key:
         found.append(Provider("claude", "Claude", s.anthropic_model))
+    if shutil.which(s.claude_bin):  # before Codex: the default agent; Codex only takes over at a usage limit
+        found.append(Provider("claude-code", "Claude Code", s.claude_model or "default", agent=True))
     if shutil.which(s.codex_bin):
         found.append(Provider("codex", "Codex", s.codex_model or "default", agent=True))
-    if shutil.which(s.claude_bin):
-        found.append(Provider("claude-code", "Claude Code", s.claude_model or "default", agent=True))
     found.append(Provider("muse", "Muse", "muse-chat"))
     return found
 
@@ -93,7 +96,17 @@ class ChatBots:
         elif provider.id == "codex":
             text = await self._codex(provider, history)
         elif provider.id == "claude-code":
-            text = await self._claude(provider, history)
+            try:
+                text = await self._claude(provider, history)
+                limited = bool(OUT_OF_TOKENS.search(text[:300]))
+            except InvalidRequest as exc:
+                if not OUT_OF_TOKENS.search(exc.message):
+                    raise
+                limited, text = True, exc.message
+            codex = next((p for p in self.providers() if p.id == "codex"), None)
+            if limited and codex:  # Claude is out of tokens: Codex answers this message
+                text = await self._codex(codex, history)
+                return codex, f"(Claude Code is at its usage limit, Codex answered)\n{text.strip()}"
         elif provider.id == "claude":
             text = await self._anthropic(provider, history)
         else:

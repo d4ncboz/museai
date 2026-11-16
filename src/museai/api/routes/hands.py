@@ -16,6 +16,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import hashlib
+import json
 import logging
 import mimetypes
 import os
@@ -80,7 +81,9 @@ def overview(svc: Services) -> dict:
         rows.append({"name": path.name, "id": _short(path.name), "title": title.split("\n")[0],
                      "channel_id": posting._channel(path.name, entry),
                      "channel": posting.CHANNELS[posting._channel(path.name, entry)][0],
-                     "slot": entry.get("slot"), "planned": planned, "platforms": platforms})
+                     "slot": entry.get("slot"), "planned": planned, "platforms": platforms,
+                     "posted": sorted(entry.get("posted", {})),
+                     "folder": str(path.parent) if (path.parent / posting.FOLDER_MARK).is_file() else ""})
     rows.sort(key=lambda r: r["slot"] or "~")
     return {"paused": paused_all, "folder": str(svc.settings.post_dir), "videos": rows}
 
@@ -109,6 +112,44 @@ def trigger(svc: Services, name: str, platform: str) -> str:
     if autopost.load_config(svc)["paused"]:
         return f"{platform} queued, but auto-posting is paused (Pause all): resume it first"
     return f"{platform} posting within {int(svc.settings.autopost_interval)} s"
+
+
+POSTQ = Path(__file__).resolve().parents[4] / "tools" / "postq" / "postq"
+
+
+def postq_episode(folder: str, platform: str) -> str:
+    """Queue one platform of an episode folder in the postq Chrome extension and post it without a click
+    right away, not at its captions.txt slot (``postq episode DIR --platforms P --auto --now``);
+    returns a one-line result for the phone."""
+    if not folder:
+        return "not an episode folder: post it from the dashboard"
+    # Queued before (e.g. by `postq episodes` without --auto): the tap approves that item instead,
+    # so the extension posts it now; postq never queues a second copy.
+    if queued := postq_pending(folder, platform):
+        cmd, ok = [str(POSTQ), "approve", "--now", *queued], f"{platform}: approved, the extension posts it now"
+    else:
+        cmd, ok = ([str(POSTQ), "episode", folder, "--platforms", platform, "--auto", "--now"],
+                   f"{platform}: queued, the extension posts it now")
+    try:
+        run = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+    except subprocess.TimeoutExpired:
+        return f"{platform}: postq timed out"
+    out = (run.stdout.strip() or run.stderr.strip() or f"exit {run.returncode}").splitlines()
+    if run.returncode == 0 and run.stdout.strip() and not out[-1].startswith("skipped"):
+        return ok
+    return f"{platform}: {out[-1][:150]}"
+
+
+def postq_pending(folder: str, platform: str) -> list[str]:
+    """Ids of postq items still waiting for ``platform`` whose video comes from ``folder``."""
+    root = Path(os.environ.get("POSTQ_DIR", Path.home() / ".local" / "state" / "postq" / "queue"))
+    ids = []
+    for p in root.glob("*.json"):
+        with contextlib.suppress(OSError, ValueError):
+            item = json.loads(p.read_text())
+            if item.get("platform") == platform and Path(item.get("source") or "/").parent == Path(folder):
+                ids.append(item["id"])
+    return sorted(ids)
 
 
 @router.get("/dashboard/hands", include_in_schema=False)
@@ -316,6 +357,20 @@ class Bot:
             data = await asyncio.to_thread(overview, self.svc)
             text, markup = handsboard.channel(data, cid2, cfg)
             await self.edit(chat, message, text, markup)
+        elif kind == "px":
+            # postq can take minutes and Telegram drops a tap not answered within ~15 s: answer now,
+            # run postq in the background, then report and redraw the channel
+            vid, cid2, pid = rest.split(":")
+            v = next((v for v in data["videos"] if v["id"] == vid), None)
+            if not v:
+                answer = "video is gone"
+            else:
+                icon, label, _ = handsboard.POSTQ_PLATFORMS.get(pid, ("", pid, []))
+                await self.call("answerCallbackQuery", callback_query_id=cb["id"], text=f"{icon} {label}: sending to postq…")
+                task = asyncio.create_task(self.postq_tap(chat, message, v, cid2, pid))
+                self.running.add(task)
+                task.add_done_callback(self.running.discard)
+                return
         elif kind == "delq":
             text, markup = handsboard.confirm_delete(data, cid, platform)
             await self.edit(chat, message, text, markup)
@@ -349,7 +404,18 @@ class Bot:
                 await self.edit(chat, message, text, markup)
         else:
             await self.dashboard(chat, message)
-        await self.call("answerCallbackQuery", callback_query_id=cb["id"], text=answer)
+        with contextlib.suppress(httpx.HTTPStatusError):  # "query is too old" after a slow step
+            await self.call("answerCallbackQuery", callback_query_id=cb["id"], text=answer[:190])
+
+    async def postq_tap(self, chat: int, message: int, video: dict, cid: str, pid: str) -> None:
+        try:
+            result = await asyncio.to_thread(postq_episode, video["folder"], pid)
+        except Exception as exc:  # noqa: BLE001 - tell the phone, keep polling
+            result = f"{pid}: {exc}"
+        log.info("postq %s %s: %s", pid, video["name"], result)
+        await self.call("sendMessage", chat_id=chat, text=f"{(video['title'] or video['name'])[:80]}\n{result}")
+        text, markup = handsboard.channel(await asyncio.to_thread(overview, self.svc), cid, handsboard.config(self.svc))
+        await self.edit(chat, message, text, markup)
 
     async def pick_model(self, chat: int, message: int | None = None) -> None:
         now = self.ai.current()
@@ -454,7 +520,10 @@ class Bot:
                 return
             kind, _, rest = cb["data"].partition(":")
             answer = ""
-            if kind in ("status", "ch", "apprq", "appr", "delq", "delc", "pk", "pp"):
+            if kind == "noop":
+                await self.call("answerCallbackQuery", callback_query_id=cb["id"])
+                return
+            if kind in ("status", "ch", "apprq", "appr", "delq", "delc", "pk", "pp", "px"):
                 await self.board_tap(chat, cb, kind, rest)
                 return
             if kind == "model":

@@ -51,7 +51,7 @@ COVERS_DIR = Path(os.environ.get("POSTQ_COVERS_DIR", Path.home() / "Desktop" / "
 PLATFORMS = {
     "youtube": {"title": 100, "caption": 5000, "tags": 500, "schedule": (timedelta(minutes=15), timedelta(days=365)),
                 "forbidden": "<>"},
-    "meta": {"title": 255, "title_line": True, "caption": 2200, "tags": 0, "schedule": (timedelta(minutes=20), timedelta(days=29)),
+    "meta": {"title": 255, "title_line": True, "caption": 2200, "tags": 0, "schedule": (timedelta(minutes=20), timedelta(days=29) - timedelta(hours=1)),
              "targets": {"facebook", "instagram"}},
     # TikTok Studio web (checked 2026-11): description counter 4000, date picker open 30 days ahead.
     "tiktok": {"title": 150, "title_line": True, "caption": 4000, "tags": 0,
@@ -287,6 +287,7 @@ def enqueue(a):
         "made_for_kids": a.made_for_kids,
         "dry_run": a.dry_run,
         "auto": a.auto and not auto_blocked(),
+        "rush": bool(getattr(a, "now", False)),  # --now: the extension starts it at once, past the Meta gap
         "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
     }
     (ROOT / f"{item_id}.json").write_text(json.dumps(item, indent=2, ensure_ascii=False))
@@ -583,7 +584,7 @@ def cmd_episode(a):
             continue
         if platform in ("x", "tiktok") and "YouTube Shorts" in sections:
             day, hhmm = sections["YouTube Shorts"][:2]  # X and TikTok go out in the series' YouTube slot
-        at = a.at or episode_when(day, hhmm, series["tz"])
+        at = None if getattr(a, "now", False) else a.at or episode_when(day, hhmm, series["tz"])
         if platform == "meta":
             # One Business Suite post for both; Instagram gets its own caption when it differs.
             p = plan.setdefault("meta", {"targets": [], "caption": body, "at": at})
@@ -688,6 +689,8 @@ def cmd_approve(a):
                 continue
             tmp = p.with_suffix(".tmp")
             extra = {"video_id": a.video} if a.video else {}
+            if a.now:
+                extra |= {"schedule_at": None, "rush": True}  # post on approve, not at its slot nor after the Meta gap
             tmp.write_text(json.dumps(json.loads(p.read_text()) | {"auto": True, "last_error": None} | extra,
                                       indent=2, ensure_ascii=False))
             tmp.replace(p)
@@ -905,6 +908,7 @@ def main():
     ep.add_argument("--related", help='youtube related video: "Tập 36" or a full title (default: the series\' rule)')
     ep.add_argument("--dry-run", action="store_true")
     ep.add_argument("--auto", action="store_true")
+    ep.add_argument("--now", action="store_true", help="post right away, ignore the captions.txt time")
     ep.add_argument("--no-render", action="store_true", help="no thumbnail in the folder: queue without one "
                     "instead of rendering it with muse")
     eps = sub.add_parser("episodes", help="queue every episode folder of a series (e.g. all Chinese ones on the Desktop)")
@@ -914,6 +918,7 @@ def main():
         eps._add_action(act)
     ap_ = sub.add_parser("approve")
     ap_.add_argument("ids", nargs="+")
+    ap_.add_argument("--now", action="store_true", help="post right away instead of at its scheduled time")
     ap_.add_argument("--video", help="already uploaded as this YouTube video id: schedule and check it, no new upload")
     sub.add_parser("list")
     sub.add_parser("results")

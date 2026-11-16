@@ -63,7 +63,10 @@ def _when(iso: str | None) -> str:
 
 
 STATE = {"posted": "✅", "scheduled": "🕒", "retry": "🔁", "error": "❌", "missed": "⚠️", "needs_account": "🔌",
-         "posting": "⏳", "paused": "⏸", "waiting": "✍️"}
+         "posting": "⏳", "paused": "⏸", "waiting": "✍️", "manual": "⬜"}
+# postq platforms (tools/postq): button icon, label, and the dashboard "posted" boxes it ticks
+POSTQ_PLATFORMS = {"youtube": ("▶️", "YT", ["youtube"]), "tiktok": ("🎵", "TT", ["tiktok"]),
+                   "meta": ("Ⓜ️", "Meta", ["facebook", "instagram"]), "x": ("𝕏", "X", ["x"])}
 PER_PAGE = 8  # videos per message: Telegram caps a message at 4096 characters and a keyboard at 100 buttons
 
 
@@ -96,24 +99,16 @@ def channel(data: dict, cid: str, cfg: dict, page: int = 0) -> tuple[str, Keyboa
                         (posting.CHANNELS.get(cid, (cid,))[0], []))
     pages = max(1, -(-len(videos) // PER_PAGE))
     page = min(max(page, 0), pages - 1)
-    lines = [f"{name} · {len(videos)} video{'s' * (len(videos) != 1)}" + (f" · page {page + 1}/{pages}" if pages > 1 else "")]
+    lines = [f"{name} · {len(videos)} video{'s' * (len(videos) != 1)}" + (f" · page {page + 1}/{pages}" if pages > 1 else ""),
+             "Tap a platform to post it there (postq extension) · posted ones disappear"]
     keyboard = []
     for i, v in enumerate(videos[page * PER_PAGE:(page + 1) * PER_PAGE], page * PER_PAGE + 1):
-        todo = pending(v, cfg["platforms"])
-        marks = " ".join(f"{cfg['icons'][p['id']]}{STATE.get(p['state'], '•')}" for p in v["platforms"]
-                         if p["id"] in cfg["platforms"] and p["state"] != "manual")
-        when = next((_when(p["time"]) for p in todo if p["time"]), "")
-        lines.append(f"\n{i}. {(v['title'] or v['name'])[:60]}")
-        lines.append("   " + (marks or "✋ nothing to auto-post") + (f" · {when}" if when else ""))
-        if bad := next((p for p in todo if p["error"]), None):
-            lines.append(f"   ⚠️ {bad['error'][:70]}")
-        if todo and not v["planned"]:
-            lines.append("   ✋ not auto-planned: plan it on the dashboard")
-        row = []
-        if todo and v["planned"]:
-            row.append({"text": f"▶ Post {i}", "callback_data": f"pk:{v['id']}:{cid}"})
-        row.append({"text": f"🗑 Delete {i}", "callback_data": f"delq:{v['id']}:{cid}"})
-        keyboard.append(row)
+        row = [{"text": f"{icon} {i}", "callback_data": f"px:{v['id']}:{cid}:{pid}"}
+               for pid, (icon, _, boxes) in POSTQ_PLATFORMS.items() if not set(boxes) <= set(v.get("posted", []))]
+        if row:  # title row, then its platform buttons right below it (a message can't hold buttons in its text)
+            keyboard.append([{"text": f"{i}. {(v['title'] or v['name'])[:60]}", "callback_data": "noop"}])
+            row.append({"text": f"🗑 {i}", "callback_data": f"delq:{v['id']}:{cid}"})
+            keyboard.append(row)
     if not videos:
         lines.append("\n📭 No videos.")
     if pages > 1:
@@ -151,7 +146,7 @@ def picked(data: dict, vid: str, mask: int, cfg: dict) -> tuple[str, list[str]]:
     v = next((v for v in data["videos"] if v["id"] == vid), None)
     if not v:
         return "", []
-    todo = {p["id"] for p in pending(v, cfg["platforms"]) if p["state"] != "posting"}
+    todo = {p["id"] for p in v["platforms"] if p["state"] not in ("posted", "posting")}
     return v["name"], [pid for i, pid in enumerate(cfg["platforms"]) if mask >> i & 1 and pid in todo]
 
 

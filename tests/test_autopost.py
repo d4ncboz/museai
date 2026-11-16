@@ -6,6 +6,7 @@ import asyncio
 import json
 import os
 import time
+import types
 from datetime import datetime, timedelta
 
 import httpx
@@ -535,11 +536,21 @@ def test_hands_status_dashboard_and_approve(client, admin, settings, monkeypatch
     tap("ch:chinese")  # the posts: Post + Delete per video, post-all across platforms below
     chan = last_edit()
     chan_buttons = btns(chan)
-    vid = next(b.split(":")[1] for b in chan_buttons if b.startswith("pk:"))
-    assert chan_buttons[:2] == [f"pk:{vid}:chinese", f"delq:{vid}:chinese"]
+    vid = next(b.split(":")[1] for b in chan_buttons if b.startswith("px:"))
+    assert chan_buttons[:6] == ["noop"] + [f"px:{vid}:chinese:{p}" for p in ("youtube", "tiktok", "meta", "x")] + [f"delq:{vid}:chinese"]
+    queued = []
+    monkeypatch.setattr(hands, "postq_episode", lambda folder, p: queued.append(p) or f"{p} queued in postq")
+    async def tap_and_wait(data):  # px answers at once and runs postq in the background
+        await bot.handle({"callback_query": {"id": "c", "data": data, "message": {"chat": {"id": 42}, "message_id": 5}}})
+        await asyncio.gather(*bot.running)
+
+    asyncio.run(tap_and_wait(f"px:{vid}:chinese:meta"))  # one tap: postq posts it through the extension
+    answers = [j.get("text", "") for m, j in sent if m == "answerCallbackQuery"]
+    assert queued == ["meta"] and "sending to postq" in answers[-1]
+    assert any("meta queued in postq" in j.get("text", "") for m, j in sent if m == "sendMessage")
     assert "apprq:chinese:all" in chan_buttons and "apprq:chinese:youtube" in chan_buttons
     assert all(len(b.encode()) <= 64 for b in chan_buttons)
-    tap(f"pk:{vid}:chinese")  # platform picker: every platform left is selected
+    tap(f"pk:{vid}:chinese")  # platform picker (still reachable): every platform left is selected
     pick = btns(last_edit())
     assert pick[0].startswith(f"pk:{vid}:chinese:") and pick[-2].startswith(f"pp:{vid}:chinese:")
     tap(pick[0])  # untick the first platform
@@ -674,3 +685,45 @@ def test_hands_codex_delegates_and_sends_media(client, settings, tmp_path):
     assert [m for m, *_ in sent] == ["sendMessage", "sendVideo", "sendMessage"]
     assert sent[1][2]["video"][0] == "clip.mp4" and sent[2][1]["text"].startswith("rendered")
     assert "MEDIA" not in sent[2][1]["text"]
+
+
+def test_postq_tap_approves_an_already_queued_item(tmp_path, monkeypatch):
+    from museai.api.routes import hands
+
+    folder = tmp_path / "Healing 01 · ep"
+    folder.mkdir()
+    queue = tmp_path / "queue"
+    queue.mkdir()
+    (queue / "a1.json").write_text(json.dumps({"id": "a1", "platform": "meta", "source": str(folder / "v.mp4")}))
+    (queue / "b2.json").write_text(json.dumps({"id": "b2", "platform": "x", "source": str(folder / "v.mp4")}))
+    monkeypatch.setenv("POSTQ_DIR", str(queue))
+    runs = []
+    monkeypatch.setattr(hands.subprocess, "run", lambda cmd, **_: runs.append(cmd[1:]) or
+                        types.SimpleNamespace(returncode=0, stdout="approved a1\n", stderr=""))
+    assert hands.postq_episode(str(folder), "meta") == "meta: approved, the extension posts it now"
+    assert hands.postq_episode(str(folder), "tiktok") == "tiktok: queued, the extension posts it now"
+    assert runs == [["approve", "--now", "a1"], ["episode", str(folder), "--platforms", "tiktok", "--auto", "--now"]]
+
+
+def test_hands_claude_code_hands_over_to_codex_only_at_its_usage_limit(client, settings, tmp_path):
+    from museai.api.routes import hands
+
+    fake_cx, _ = fake_codex(tmp_path, "from codex")
+    claude = tmp_path / "claude"
+    claude.write_text("#!/bin/sh\necho \"$MODE\"\n[ \"$MODE\" = ok ] || exit 1\n")
+    claude.chmod(0o755)
+    settings.claude_bin, settings.codex_bin = str(claude), str(fake_cx)
+    settings.openai_api_key = settings.anthropic_api_key = ""
+    bots = hands.ChatBots(settings, client.app.state.services.gateway)
+    assert bots.current().id == "claude-code"  # the default agent
+    os.environ["MODE"] = "ok"
+    try:
+        assert asyncio.run(bots.reply([("user", "hi")])) [0].id == "claude-code"
+        os.environ["MODE"] = "Claude AI usage limit reached|1763290800"
+        provider, text = asyncio.run(bots.reply([("user", "hi")]))
+        assert provider.id == "codex" and text.endswith("from codex")
+        os.environ["MODE"] = "some other failure"
+        with pytest.raises(hands.InvalidRequest):
+            asyncio.run(bots.reply([("user", "hi")]))
+    finally:
+        os.environ.pop("MODE", None)

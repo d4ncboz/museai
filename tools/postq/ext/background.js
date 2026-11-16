@@ -79,6 +79,10 @@ async function autoPost(items) {
   const isPrio = (i) => priorityChannel && i.channel === priorityChannel;
   // A held lane (Meta gap) is waited out; a long pause (block page) lets the next platform go.
   const waitOk = (p) => (laneNext[p] || 0) - now < 15 * 60000;
+  // A rush item (a "post now" tap) starts at once: past the Meta gap and the platform being drained.
+  for (const item of items.filter((i) => i.rush && LANES[i.platform] && ready(i, i.platform))) {
+    if (!laneBusy[item.platform]) start(item, item.platform); // an idle lane only: no account switch mid-run
+  }
   const busy = Object.keys(LANES).find((p) => (laneBusy[p] || 0) > 0);
   if (busy) curPlatform = busy;
   else if (!curPlatform || !items.some((i) => ready(i, curPlatform)) || !waitOk(curPlatform)) {
@@ -100,19 +104,23 @@ async function autoPost(items) {
     const acct = [...ytActive.values()][0] ?? pool[0]?.account ?? (queue.some((i) => i.account === last) ? last : undefined);
     const item = queue.find((i) => acct === undefined || i.account === acct);
     if (!item) break;
-    laneBusy[platform] = (laneBusy[platform] || 0) + 1;
-    starting.add(item.id);
-    ytActive.set(item.id, item.account);
-    lastAcct[platform] = item.account;
-    const gap = GAP_MS[platform];
-    if (gap) holdLane(platform, gap[0] + Math.random() * (gap[1] - gap[0]));
-    approve(item, {})
-      .catch((e) => {
-        log('auto failed', item.id, e.message);
-        if (/Already being posted/.test(e.message)) skipUntil.set(item.id, Date.now() + 120000);
-      })
-      .finally(() => { laneBusy[platform] -= 1; starting.delete(item.id); ytActive.delete(item.id); });
+    start(item, platform);
   }
+}
+
+function start(item, platform) {
+  laneBusy[platform] = (laneBusy[platform] || 0) + 1;
+  starting.add(item.id);
+  ytActive.set(item.id, item.account);
+  lastAcct[platform] = item.account;
+  const gap = GAP_MS[platform];
+  if (gap) holdLane(platform, gap[0] + Math.random() * (gap[1] - gap[0]));
+  approve(item, {})
+    .catch((e) => {
+      log('auto failed', item.id, e.message);
+      if (/Already being posted/.test(e.message)) skipUntil.set(item.id, Date.now() + 120000);
+    })
+    .finally(() => { laneBusy[platform] -= 1; starting.delete(item.id); ytActive.delete(item.id); });
 }
 
 const starting = new Set();
@@ -418,15 +426,18 @@ function titled(title, caption) {
 }
 
 // One Business Suite Reel for the Page and/or its Instagram account (item.targets).
-// Business Suite takes a scheduled post only 20 min to 29 days ahead. A slot past or too far is moved
-// into that window (soon after now / the latest allowed), so the item still goes out.
+// Business Suite takes a scheduled post only 20 min to 29 days ahead. A past slot goes out soon after
+// now; a slot too far ahead is never moved (2026-11: clamping it to now+28 d saved reels at the run
+// time of day, e.g. 16:38 for a 19:00 slot): the item waits until its slot is inside the window.
 const META_MIN_MS = 25 * 60000;
-const META_MAX_MS = 28 * 86400000;
+const META_MAX_MS = 29 * 86400000 - 30 * 60000;
 function metaWhen(when) {
   if (!when) return when;
   const now = Date.now();
   if (when < now + META_MIN_MS) return now + META_MIN_MS;
-  if (when > now + META_MAX_MS) return now + META_MAX_MS;
+  if (when > now + META_MAX_MS) {
+    throw new Error(`slot is more than 29 days ahead (Business Suite's limit): run it again after ${new Date(when - META_MAX_MS).toISOString().slice(0, 16)}Z`);
+  }
   return when;
 }
 
@@ -439,11 +450,20 @@ async function metaFlow(stored, pg) {
   const q = `asset_id=${a.asset_id}&business_id=${a.business_id}`;
   const when = item.schedule_at ? Date.parse(item.schedule_at) : null;
   const list = `${BS}/posts/${when ? 'scheduled' : 'published'}_posts?${q}`;
+  if (!item.video_id) metaWhen(when); // a slot too far ahead stops here, before any upload
 
   // Never a second post: a submitted item, or one whose caption is already in the list, is only checked;
   // a reel already at this slot for a target (one saved without its caption looks like nobody's) stops it.
   if (!item.dry_run) {
     await say('Opening Business Suite…');
+    // The other list too: a reel scheduled earlier (or already gone out) is this item, at whatever time.
+    const other = `${BS}/posts/${when ? 'published' : 'scheduled'}_posts?${q}`;
+    await pg.go(other, `${BS}/posts/`);
+    const elsewhere = (await pg.step('findScheduled', [item.caption, item.caption_ig])).filter((r) => r.match);
+    if (elsewhere.length) {
+      await say(`Already ${when ? 'posted' : 'scheduled'} (${elsewhere.length} row(s)) · checking it`);
+      return checkMetaList(item, pg, other, null, 'resumed', elsewhere);
+    }
     await pg.go(list, `${BS}/posts/`);
     const rows = await pg.step('findScheduled', [item.caption, item.caption_ig]);
     const found = rows.filter((r) => r.match);
@@ -520,10 +540,12 @@ async function metaFlow(stored, pg) {
   const sent = await pg.step('submit');
   await say(`${sent.confirm} · checking the ${when ? 'Scheduled' : 'Published'} list`);
   await pg.go(list, `${BS}/posts/`);
-  return checkMetaList(item, pg, list, when, note);
+  return checkMetaList(item, pg, list, at, note);
 }
 
 // Only the saved post counts: each target has a row with the caption, the time and a thumbnail.
+// `when` = the time typed into the composer. A row at another time is still this item's post: it is
+// done (never a second reel) and the log says the time differs, so the item leaves the queue.
 async function checkMetaList(item, pg, list, when, note, rows) {
   let found = rows;
   // Few, slow reloads: a resumed check whose rows are missing will not find them by reloading
@@ -540,11 +562,11 @@ async function checkMetaList(item, pg, list, when, note, rows) {
   for (const t of item.targets) {
     const row = found.find((r) => r.platform === t);
     if (!row) throw new Error(`no ${t} row with this caption in ${list}${item.video_id ? ' (item is marked submitted, so it is never posted again; if nothing went out, clear its video_id)' : ''}`);
-    if (when && row.date !== listTime(when, item.tz)) throw new Error(`${t} is scheduled ${row.date}, wanted ${listTime(when, item.tz)}`);
     if (!row.thumb) throw new Error(`${t} row has no thumbnail`);
-    checks.push(`${t} ${row.date || 'posted'} ✓ thumbnail ✓`);
+    const off = when && row.date !== listTime(when, item.tz) ? ` ⚠ slot was ${listTime(when, item.tz)}` : '';
+    checks.push(`${t} ${row.date || 'posted'}${off} ✓ thumbnail ✓`);
   }
-  return { status: when ? 'scheduled' : 'posted', url: list, log: [note, ...checks].join(' · ') };
+  return { status: /published_posts/.test(list) ? 'posted' : 'scheduled', url: list, log: [note, ...checks].join(' · ') };
 }
 
 const TT_CONTENT = 'https://www.tiktok.com/tiktokstudio/content';
