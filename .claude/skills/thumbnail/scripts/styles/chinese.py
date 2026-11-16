@@ -6,10 +6,11 @@ badge. No faces at all: the most vivid, sharp frame.
 """
 import sys
 
+import cv2
+import numpy as np
 from core import (
     CENTRE,
     SAFE,
-    YELLOW,
     badge,
     block,
     block_fit,
@@ -22,7 +23,7 @@ from core import (
     picks_sheet,
     to_pil,
 )
-from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
+from PIL import Image
 
 
 def add_args(p):
@@ -36,47 +37,51 @@ def add_args(p):
                    help="burned-in captions start at this fraction of the height (e.g. 0.6): never shown")
 
 
+def erase_captions(frame, cut):
+    """Paint the burned-in captions (bright or coloured letters with a dark outline, from ``cut`` of the
+    height down to 85 %) out of the frame from the pixels around them. A white apron or a sky has no
+    dark outline, so it stays."""
+    img = cv2.cvtColor(np.array(frame), cv2.COLOR_RGB2BGR)
+    h = img.shape[0]
+    y0, y1 = int(cut * h) - 10, int(0.85 * h)
+    band = img[y0:y1]
+    hsv = cv2.cvtColor(band, cv2.COLOR_BGR2HSV)
+    gray = cv2.cvtColor(band, cv2.COLOR_BGR2GRAY)
+    letters = ((gray > 175) | ((hsv[..., 1] > 120) & (hsv[..., 2] > 170))).astype(np.uint8)
+    outline = cv2.dilate((gray < 60).astype(np.uint8), np.ones((5, 5), np.uint8))
+    mask = cv2.dilate(letters & outline, np.ones((15, 15), np.uint8))
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((15, 15), np.uint8))
+    img[y0:y1] = cv2.inpaint(band, mask * 255, 9, cv2.INPAINT_TELEA)
+    return Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+
+
 def vertical(frame, boxes, args):
-    """Full bleed with the text in the free band above the heads or under the chins; when neither holds
-    it (or burned-in captions are cut off), the picture on top and the text below it on the same frame,
-    blurred and dimmed: the scene's colours carry on and the burned-in captions are unreadable.
-    No text within 60 px of a face."""
+    """Full bleed, the text in the free band above the heads or under the chins. Burned-in captions
+    (``--cut``) are painted out first and the text goes over where they were. No panel, no blur, no
+    dark wash; no text within 60 px of a face."""
+    if args.cut:
+        frame = erase_captions(frame, args.cut)
     im = grade(frame.resize((1080, 1920), Image.LANCZOS))
     s = frame.width / 1080
     face_top = min(b[1] / s for b in boxes) if boxes else 600
     face_bottom = max(b[3] / s for b in boxes) if boxes else 1000
     w = CENTRE[1] - CENTRE[0]
     top = SAFE[1] + 110  # under the badge
-    if not args.cut:
-        bands = [(SAFE[3] - (face_bottom + 60), "below"), (face_top - 60 - top, "above")]
-        for room, where in sorted(bands, reverse=True):
-            blk = block_fit(args, w, room)
-            if blk:
-                y = SAFE[3] - blk.height if where == "below" else top
-                im.paste(blk, (CENTRE[0], int(y)), blk)
-                badge(im, args.badge, 540, SAFE[1] - 20)
-                return im
-    # panel: a window of the picture round the faces (above the burned-in captions), the text below it
-    floor = int(args.cut * 1920) if args.cut else 1920
-    blk = block_fit(args, w, SAFE[3] - 1000) or block(args, w, 0.55)
-    c = SAFE[3] - 60 - blk.height  # picture height
-    y0 = int(min(max(face_bottom + 200 - c, 0), floor - c))
-    pic = im.crop((0, y0, 1080, y0 + c))
-    out = backdrop(im)
-    out.paste(pic, (0, 0))
-    ImageDraw.Draw(out).rectangle((0, c, 1080, c + 12), fill=YELLOW)
-    y = min(c + 12 + (1920 - c - 12 - blk.height) // 2, SAFE[3] - blk.height)  # mid-panel, clear of the feed UI
-    out.paste(blk, (CENTRE[0], y), blk)
-    badge(out, args.badge, 540, SAFE[1] - 20)
-    return out
-
-
-def backdrop(im):
-    """The whole frame, blurred past reading any caption and dimmed so the white and yellow text pops."""
-    bg = im.resize((270, 480), Image.LANCZOS).filter(ImageFilter.GaussianBlur(12))
-    bg = bg.resize((1080, 1920), Image.LANCZOS).filter(ImageFilter.GaussianBlur(8))
-    bg = ImageEnhance.Color(bg).enhance(1.25)
-    return ImageEnhance.Brightness(bg).enhance(0.62)
+    low = max(face_bottom + 60, args.cut * 1920 - 80) if args.cut else face_bottom + 60
+    bands = [(SAFE[3] - low, "below"), (face_top - 60 - top, "above")]
+    if args.cut:
+        bands = bands[:1]  # the text covers where the captions were
+    for room, where in sorted(bands, reverse=True):
+        blk = block_fit(args, w, room)
+        if blk:
+            y = low + (room - blk.height) // 2 if where == "below" else top
+            im.paste(blk, (CENTRE[0], int(y)), blk)
+            break
+    else:
+        blk = block(args, w, 0.55)
+        im.paste(blk, (CENTRE[0], SAFE[3] - blk.height), blk)
+    badge(im, args.badge, 540, SAFE[1] - 20)
+    return im
 
 
 def make(args):
