@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "post-approve",
-  "version": "0.22",
+  "version": "0.23",
   "description": "Approve queued social posts (postq) and publish them with your own logged-in session: YouTube, Meta (Facebook + Instagram), TikTok, X.",
   "permissions": [
     "alarms",

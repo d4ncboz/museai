@@ -295,13 +295,33 @@ def enqueue(a):
     return item_id
 
 
+_ITEMS = {}  # path -> (mtime_ns, size, item); read-only callers share the dicts
+
+
+def read_item(p):
+    """Parsed item JSON, re-read only when the file changed: opening a file costs ~7 ms on this Mac
+    (endpoint scanner), so re-reading ~800 items on every popup poll took 2-13 s and the list never opened."""
+    st = p.stat()
+    hit = _ITEMS.get(p)
+    if hit and hit[:2] == (st.st_mtime_ns, st.st_size):
+        return hit[2]
+    item = json.loads(p.read_text())
+    _ITEMS[p] = (st.st_mtime_ns, st.st_size, item)
+    return item
+
+
 def pending():
     # Studio switches channel for the whole login, so YouTube posts one channel at a time: the
     # channel of the last finished YouTube post stays first until it is done. Business Suite and X
     # pick the account per post (no switch cost), so they go between, earliest slot first.
-    items = [json.loads(p.read_text()) for p in ROOT.glob("*.json")]
+    items = []
+    for p in ROOT.glob("*.json"):
+        try:
+            items.append(read_item(p))
+        except (OSError, ValueError):  # archived or half-written between glob and read: next poll has it
+            continue
     yt_done = sorted((d for d in (ROOT / "done").glob("*.json")), key=lambda p: p.stat().st_mtime)
-    cur = next((a for a in (json.loads(p.read_text()) for p in reversed(yt_done))
+    cur = next((a for a in (read_item(p) for p in reversed(yt_done))
                 if a.get("platform") == "youtube"), {}).get("account")
 
     def key(i):
@@ -763,7 +783,7 @@ class Handler(BaseHTTPRequestHandler):
             ids = {}
             for p in [*ROOT.glob("*.json"), *DONE.glob("*.json")]:
                 try:
-                    d = json.loads(p.read_text())
+                    d = read_item(p)
                 except (OSError, ValueError):
                     continue
                 if d.get("platform") != "youtube":

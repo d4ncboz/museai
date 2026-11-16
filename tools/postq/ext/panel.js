@@ -253,7 +253,11 @@ async function followDashboard(items) {
     .map((i) => ({ ...i, schedule_at: dash(i).schedule[i.platform === 'meta' ? 'facebook' : i.platform] || i.schedule_at }));
 }
 let orderSig = '';
+let polling = false;
 async function poll() {
+  // A slow queue server must not stack polls (every 5 s) on top of each other.
+  if (polling) return;
+  polling = true;
   try {
     const items = await followDashboard(await (await fetch(`${QUEUE}/api/items`)).json());
     // An item whose approval was withdrawn (auto cleared in the queue) must not stay a stuck 'approved' card.
@@ -275,6 +279,8 @@ async function poll() {
     showProgress();
   } catch {
     if (!cards.size) renderEmpty('Queue server not reachable. Run: postq serve');
+  } finally {
+    polling = false;
   }
 }
 
@@ -411,5 +417,6 @@ $id('dups').onclick = async () => {
 };
 chrome.storage.onChanged.addListener((ch, area) => area === 'session' && ch.dups && renderDups());
 
+renderEmpty('Loading the queue…');
 filterLoaded.then(poll);
 setInterval(poll, 5000);
