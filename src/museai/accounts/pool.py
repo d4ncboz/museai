@@ -19,7 +19,7 @@ from collections.abc import AsyncIterator, Iterable
 from contextlib import asynccontextmanager
 from typing import Protocol
 
-from ..errors import NoAccountAvailable, UpstreamAuthError, UpstreamQuotaError
+from ..errors import NoAccountAvailable, UpstreamAuthError, UpstreamQuotaError, VideoLimitReached
 from .model import Account, AccountStatus
 from .store import AccountStore
 
@@ -97,6 +97,7 @@ class AccountPool:
         max_concurrency: int = 1,
         cooldown: float = 120.0,
         quota_cooldown: float = 3600.0,
+        video_limit_cooldown: float = 3600.0,
         acquire_timeout: float = 60.0,
     ) -> None:
         self.store = store
@@ -104,12 +105,13 @@ class AccountPool:
         self.max_concurrency = max(1, max_concurrency)
         self.cooldown = cooldown
         self.quota_cooldown = quota_cooldown
+        self.video_limit_cooldown = video_limit_cooldown
         self.acquire_timeout = acquire_timeout
         self._accounts: dict[str, Account] = {}
         self._inflight: dict[str, int] = defaultdict(int)
         # Fair share: leases held per owner (client session) and who waits for one.
         self._owner_load: dict[str, int] = defaultdict(int)
-        self._waiters: dict[int, tuple[str | None, tuple[str, ...]]] = {}
+        self._waiters: dict[int, tuple[str | None, tuple[str, ...], bool]] = {}
         self._seq = itertools.count()
         self._cond = asyncio.Condition()
 
@@ -151,9 +153,12 @@ class AccountPool:
         }
 
     # ---- scheduling ----
-    def _candidates(self, exclude: Iterable[str]) -> tuple[list[Account], bool, float | None]:
+    def _candidates(
+        self, exclude: Iterable[str], video: bool = False
+    ) -> tuple[list[Account], bool, float | None]:
         """Returns (free candidates, whether any usable account is merely busy, and the
-        earliest time a cooling account comes back, if any)."""
+        earliest time a cooling account comes back, if any). For a video job an account at
+        its video limit counts as cooling until ``video_blocked_until``."""
         now = time.time()
         excluded = set(exclude)
         free, busy, next_ready = [], False, None
@@ -163,6 +168,9 @@ class AccountPool:
             if not acc.is_available(now):
                 if acc.enabled and acc.status == AccountStatus.COOLING:
                     next_ready = min(next_ready or acc.cooldown_until, acc.cooldown_until)
+                continue
+            if video and acc.video_blocked(now):
+                next_ready = min(next_ready or acc.video_blocked_until, acc.video_blocked_until)
                 continue
             if self._inflight[acc.id] >= self.max_concurrency:
                 busy = True
@@ -179,8 +187,8 @@ class AccountPool:
         first, among waiters that can use one. An owner alone takes every free account."""
         mine = self._turn_key(seq)
         return not any(
-            self._turn_key(other) < mine and self._candidates(exclude)[0]
-            for other, (_, exclude) in self._waiters.items()
+            self._turn_key(other) < mine and self._candidates(exclude, video)[0]
+            for other, (_, exclude, video) in self._waiters.items()
             if other != seq
         )
 
@@ -192,6 +200,7 @@ class AccountPool:
         timeout: float | None = None,
         owner: str | None = None,
         avoid: Iterable[str] = (),
+        video: bool = False,
     ) -> Account:
         """Wait for a free account. ``timeout`` defaults to ``acquire_timeout``; ``math.inf``
         waits as long as it takes. Busy and cooling accounts are waited for; only a pool
@@ -202,9 +211,9 @@ class AccountPool:
         deadline = time.monotonic() + (self.acquire_timeout if timeout is None else timeout)
         seq = next(self._seq)
         async with self._cond:
-            self._waiters[seq] = (owner, exclude)
+            self._waiters[seq] = (owner, exclude, video)
             try:
-                return await self._wait_turn(seq, exclude, hint, deadline, owner, avoid)
+                return await self._wait_turn(seq, exclude, hint, deadline, owner, avoid, video)
             finally:
                 del self._waiters[seq]
                 # Waiters this one stood in front of may take a free account now.
@@ -212,10 +221,10 @@ class AccountPool:
 
     async def _wait_turn(
         self, seq: int, exclude: tuple[str, ...], hint: str | None, deadline: float,
-        owner: str | None, avoid: frozenset[str] = frozenset(),
+        owner: str | None, avoid: frozenset[str] = frozenset(), video: bool = False,
     ) -> Account:
         while True:
-            free, busy, next_ready = self._candidates(exclude)
+            free, busy, next_ready = self._candidates(exclude, video)
             if free and self._my_turn(seq):
                 acc = self.strategy.choose([a for a in free if a.id not in avoid] or free, hint)
                 self._inflight[acc.id] += 1
@@ -268,6 +277,12 @@ class AccountPool:
         if isinstance(error, UpstreamAuthError):
             acc.status = AccountStatus.INVALID
             log.warning("account %s marked invalid: %s", acc.id, error)
+        elif isinstance(error, VideoLimitReached):
+            # Only videos are blocked: the account keeps taking chat and image jobs.
+            acc.video_blocked_until = time.time() + self.video_limit_cooldown
+            acc.quota_hits = [*acc.quota_hits, time.time()][-QUOTA_HISTORY:]
+            log.warning("account %s at its video limit, no video jobs for %.0f s",
+                        acc.id, self.video_limit_cooldown)
         elif isinstance(error, UpstreamQuotaError):
             acc.status = AccountStatus.COOLING
             acc.cooldown_until = time.time() + self.quota_cooldown
@@ -286,9 +301,10 @@ class AccountPool:
         timeout: float | None = None,
         owner: str | None = None,
         avoid: Iterable[str] = (),
+        video: bool = False,
     ) -> AsyncIterator[Lease]:
         acc = await self.acquire(exclude=exclude, hint=hint, timeout=timeout, owner=owner,
-                                 avoid=avoid)
+                                 avoid=avoid, video=video)
         lease = Lease(acc, owner)
         try:
             yield lease

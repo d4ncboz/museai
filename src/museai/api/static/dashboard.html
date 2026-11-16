@@ -409,6 +409,8 @@ function accState(acc, busy) {
     return /quota/i.test(acc.last_error || "")
       ? ["p-bad", `Out of usage until ${fmtClock(until / 1000)}`]
       : ["p-run", `Paused until ${fmtClock(until / 1000)}`];
+  if (acc.video_blocked_until * 1000 > Date.now())
+    return ["p-bad", `Video limit until ${fmtClock(acc.video_blocked_until)}`];
   return busy ? ["p-run", "Rendering"] : ["p-ok", "Ready"];
 }
 

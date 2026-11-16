@@ -13,7 +13,7 @@ from typing import TypeVar
 from ..accounts.model import Account, AccountStatus
 from ..accounts.pool import AccountPool, Lease
 from ..drivers.base import ChatRequest, ImageRequest, MediaResult, MuseDriver, VideoRequest
-from ..errors import GenerationTimeout, UpstreamError, VideoLimitReached
+from ..errors import GenerationTimeout, UpstreamError, UpstreamQuotaError, VideoLimitReached
 
 log = logging.getLogger(__name__)
 T = TypeVar("T")
@@ -34,7 +34,6 @@ class Gateway:
         media_queue_timeout: float | None = None,
         video_deadline: float = math.inf,
         stuck_video_cooldown: float = 0.0,
-        video_limit_cooldown: float = 0.0,
     ) -> None:
         self.pool = pool
         self.driver = driver
@@ -47,9 +46,6 @@ class Gateway:
         # An account whose render timed out gets no new video job for this long while another
         # account can take it: one stuck account once timed out five clips in a row, 12 min each.
         self.stuck_video_cooldown = stuck_video_cooldown
-        # Same skip for an account that replied with its 24-hour video limit: with no quota
-        # cooldown, every new video job would otherwise lose a minute on it before failing over.
-        self.video_limit_cooldown = video_limit_cooldown
         self._stuck_until: dict[str, float] = {}
         # What each account is doing right now (chat, image, video), for the dashboard cards:
         # tasks only record videos, so an account busy with an image used to look idle.
@@ -65,7 +61,8 @@ class Gateway:
             yield Lease(_ANONYMOUS)
             return
         async with self.pool.lease(exclude=exclude, hint=hint, timeout=timeout,
-                                   owner=owner, avoid=avoid or ()) as lease:
+                                   owner=owner, avoid=avoid or (),
+                                   video=kind == "video") as lease:
             job = {"kind": kind, "prompt": prompt[:200], "since": time.time()}
             jobs = self.jobs.setdefault(lease.account.id, [])
             jobs.append(job)
@@ -85,8 +82,15 @@ class Gateway:
             for a in accounts
         )
 
+    def _blocks_account(self, exc: UpstreamError, kind: str) -> bool:
+        """Whether releasing the lease with ``exc`` keeps ``kind`` jobs off the account for a
+        while: out of quota (cooling), or at its video limit for a video job."""
+        if isinstance(exc, VideoLimitReached):
+            return kind == "video" and self.pool.video_limit_cooldown > 0
+        return isinstance(exc, UpstreamQuotaError) and self.pool.quota_cooldown > 0
+
     def _stuck_accounts(self) -> list[str]:
-        """Accounts whose last render timed out or hit the video limit. The pool takes them only
+        """Accounts whose last render timed out. The pool takes them only
         when no other account has a free slot, so a job never waits for a busy healthy account
         while a stuck one sits idle."""
         now = time.monotonic()
@@ -127,7 +131,8 @@ class Gateway:
         time_left: Callable[[], float] = lambda: math.inf,
     ) -> T:
         tried: list[str] = []
-        for attempt in range(self.max_failover + 1):
+        attempt = 0
+        while True:
             avoid = self._stuck_accounts() if kind == "video" else []
             async with self._lease(tried, hint, queue_timeout, owner, kind, prompt,
                                    avoid) as lease:
@@ -137,13 +142,17 @@ class Gateway:
                     return await fn(lease.account)
                 except UpstreamError as exc:
                     lease.fail(exc)
+                    if self._blocks_account(exc, kind):
+                        # Out of quota or at the video limit: releasing the lease blocks the
+                        # account, so the job moves to a ready one. Not a failure of the job:
+                        # with every account blocked it waits for the first to come back.
+                        log.warning("%s: %s is out of quota (%s), moving the job to another account",
+                                    kind, lease.account.id, exc)
+                        continue
                     tried.append(lease.account.id)
                     if kind == "video" and isinstance(exc, GenerationTimeout):
                         self._stuck_until[lease.account.id] = (
                             time.monotonic() + self.stuck_video_cooldown)
-                    elif kind == "video" and isinstance(exc, VideoLimitReached):
-                        self._stuck_until[lease.account.id] = (
-                            time.monotonic() + self.video_limit_cooldown)
                     if not self._should_retry(exc, attempt, tried):
                         raise
                     if time_left() < MIN_VIDEO_ATTEMPT:
@@ -151,7 +160,7 @@ class Gateway:
                                     kind, lease.account.id, exc)
                         raise
                     log.warning("call failed on %s (%s), failing over", lease.account.id, exc)
-        raise AssertionError("unreachable")
+                    attempt += 1
 
     async def generate_image(self, req: ImageRequest) -> list[MediaResult]:
         return await self._run(

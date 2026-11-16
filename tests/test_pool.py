@@ -236,11 +236,78 @@ async def test_new_video_job_skips_account_at_its_video_limit(tmp_path):
             return await MockDriver.generate_video(self, account, req)
 
     driver = Limited({"a0"})
-    gw = Gateway(pool, driver, max_failover=2, video_limit_cooldown=3600)
+    gw = Gateway(pool, driver, max_failover=2)
     for _ in range(3):
         assert (await gw.generate_video(VideoRequest(prompt="p", model="m"))).data
     # a0 hit its limit once; later jobs went straight to a1 instead of trying a0 first.
     assert [acc for acc, _ in driver.calls] == ["a0"]
+
+
+class _LimitedDriver(MockDriver):
+    """Replies with the video limit on the accounts in ``limited``; records every video call."""
+
+    def __init__(self, limited):
+        super().__init__()
+        self.limited = set(limited)
+        self.calls: list[str] = []
+
+    async def generate_video(self, account, req):
+        self.calls.append(account.id)
+        if account.id in self.limited:
+            raise VideoLimitReached("24-hour video limit")
+        return await super().generate_video(account, req)
+
+
+async def test_video_limit_moves_job_to_ready_account_without_using_failovers(tmp_path):
+    pool = await _pool(tmp_path, n=3, strategy="round_robin")
+    driver = _LimitedDriver({"a0", "a1"})
+    gw = Gateway(pool, driver, max_failover=0)
+    for _ in range(2):
+        assert (await gw.generate_video(VideoRequest(prompt="p", model="m"))).data
+    # Each blocked account was tried once at most, then never again.
+    assert driver.calls[-1] == "a2" and sorted(set(driver.calls)) == ["a0", "a1", "a2"]
+    assert len(driver.calls) == 4
+    driver.calls.clear()
+    for _ in range(2):
+        assert (await gw.generate_video(VideoRequest(prompt="p", model="m"))).data
+    assert driver.calls == ["a2", "a2"]
+    assert pool.get("a0").video_blocked() and pool.get("a0").status == AccountStatus.ACTIVE
+
+
+async def test_video_limit_keeps_chat_on_the_account(tmp_path):
+    pool = await _pool(tmp_path, n=1)
+    gw = Gateway(pool, _LimitedDriver({"a0"}), max_failover=0, media_queue_timeout=0.2)
+    with pytest.raises(NoAccountAvailable):
+        await gw.generate_video(VideoRequest(prompt="p", model="m"))
+    assert await gw.chat_complete(ChatRequest(prompt="hi", model="m"))
+
+
+async def test_video_job_waits_when_every_account_is_at_its_limit(tmp_path):
+    pool = await _pool(tmp_path, n=2, video_limit_cooldown=0.3)
+    driver = _LimitedDriver({"a0", "a1"})
+    gw = Gateway(pool, driver, max_failover=0, media_queue_timeout=5)
+    job = asyncio.create_task(gw.generate_video(VideoRequest(prompt="p", model="m")))
+    await asyncio.sleep(0.1)
+    assert sorted(driver.calls) == ["a0", "a1"] and not job.done()
+    driver.limited.clear()  # the 24-hour window rolls over
+    assert (await asyncio.wait_for(job, 3)).data
+
+
+async def test_quota_error_cools_account_and_moves_job(tmp_path):
+    pool = await _pool(tmp_path, n=2, strategy="round_robin")
+
+    class OutOfUsage(_LimitedDriver):
+        async def generate_video(self, account, req):
+            self.calls.append(account.id)
+            if account.id == "a0":
+                raise UpstreamQuotaError("out of usage")
+            return await MockDriver.generate_video(self, account, req)
+
+    driver = OutOfUsage(set())
+    gw = Gateway(pool, driver, max_failover=0)
+    assert (await gw.generate_video(VideoRequest(prompt="p", model="m"))).data
+    assert driver.calls == ["a0", "a1"]
+    assert pool.get("a0").status == AccountStatus.COOLING
 
 
 async def test_video_job_render_time_is_capped_across_failovers(tmp_path, monkeypatch):

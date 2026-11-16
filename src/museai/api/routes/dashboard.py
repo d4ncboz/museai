@@ -98,6 +98,7 @@ async def upload_cookies(account_id: str, request: Request,
         raise InvalidRequest(f"export is missing session cookies: {', '.join(missing)}")
     acc.cookies, acc.cookie_expires = cookies, expires
     acc.status, acc.cooldown_until, acc.last_error = AccountStatus.ACTIVE, 0.0, None
+    acc.video_blocked_until = 0.0
     await svc.pool.upsert(acc)
     # Also drops the account's open tab, so the next job uses the new cookies.
     check = await renew_account(svc.pool, svc.driver, account_id)

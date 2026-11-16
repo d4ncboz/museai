@@ -37,6 +37,11 @@ class Account(BaseModel):
     last_error: str | None = None
     success_count: int = 0
     fail_count: int = 0
+    video_blocked_until: float = Field(
+        default=0.0,
+        description="No video job goes to this account before this time: muse.ai replied with its "
+        "24-hour video limit. Chat and images still run on it.",
+    )
     quota_hits: list[float] = Field(
         default_factory=list, description="When muse.ai last said 'Out of usage' (newest last)"
     )
@@ -51,6 +56,9 @@ class Account(BaseModel):
         if self.status == AccountStatus.COOLING:
             return (now or _now()) >= self.cooldown_until
         return True
+
+    def video_blocked(self, now: float | None = None) -> bool:
+        return self.video_blocked_until > (now or _now())
 
     def public(self) -> dict[str, Any]:
         """Serialisable view with cookie values masked."""
