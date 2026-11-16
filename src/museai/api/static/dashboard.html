@@ -666,6 +666,8 @@ document.querySelector(".nav").addEventListener("click", (e) => {
 let posts = { platforms: [], videos: [] }, postsSig = "";
 // Channel tab (Chinese / Travel / Dream / Healing): filters the schedule and the cards; remembered per browser.
 let chan = (() => { try { return localStorage.getItem("postChannel") || "chinese"; } catch { return "chinese"; } })();
+const chanPlats = (v) => { const ch = (posts.channels || []).find((c) => c.id === v.channel);
+  return posts.platforms.filter((p) => !ch?.platforms || ch.platforms.includes(p.id)); };
 const chanVideos = () => posts.videos.filter((v) => v.channel === chan);
 const postUrl = (name, rest = "") => `/dashboard/posts/${encodeURIComponent(name)}${rest}`;
 
@@ -690,7 +692,7 @@ function renderPosts() {
       <div class="post-body">
         <div class="post-top">
           <span class="post-name" title="${esc(v.name)}">${esc(v.name)}</span>
-          ${pill(n ? ["p-run", `${n}/${posts.platforms.length} posted`] : ["p-idle", "Not posted"])}
+          ${pill(n ? ["p-run", `${n}/${chanPlats(v).length} posted`] : ["p-idle", "Not posted"])}
           <button class="linkish" data-reveal title="Show the video in Finder, to drag into the upload page">Show file</button>
           <button class="linkish" data-done title="Move to the Trash without posting everywhere">Delete</button>
         </div>
@@ -700,7 +702,7 @@ function renderPosts() {
         ${(v.thumbnails || []).length ? `<div class="thumbs">${v.thumbnails.map((t) =>
           `<a href="${esc(postUrl(v.name, "/thumbnail/" + t.kind) + "?v=" + t.v)}" target="_blank" rel="noopener" title="Open full size: ${esc(t.kind)}: ${esc(t.use)}">
              <img src="${esc(postUrl(v.name, "/thumbnail/" + t.kind) + "?v=" + t.v)}" alt="${esc(t.kind)} thumbnail" loading="lazy"><small>${esc(t.kind)}</small></a>`).join("")}</div>` : ""}
-        <div class="cap-tabs">${[...posts.platforms.map((p) => [p.id, p.name.split(" ")[0]]), ["all", "Shared"]].map(([id, label]) =>
+        <div class="cap-tabs">${[...chanPlats(v).map((p) => [p.id, p.name.split(" ")[0]]), ["all", "Shared"]].map(([id, label]) =>
           `<button data-captab="${esc(id)}" ${id === "all" ? `title="Fallback for platforms without their own caption"` : ""}>${esc(label)}</button>`).join("")}</div>
         ${v.auto_captions === "writing" ? `<div class="autocap">Writing the missing captions with muse…</div>`
           : v.auto_captions === "failed" ? `<div class="autocap bad">Auto captions failed: retrying in 30 min, or type them here.</div>` : ""}
@@ -712,7 +714,7 @@ function renderPosts() {
           <button data-share title="Copy the caption, then share the video to TikTok, Instagram, YouTube, X, Threads or Photos">${shareFiles.has(v.name) ? "Share video" : "Get video"}</button>
           <button data-copycap title="Copy the caption">Copy caption</button>
         </div>` : ""}
-        <div class="plats">${posts.platforms.map((p) => `
+        <div class="plats">${chanPlats(v).map((p) => `
           <label class="plat ${v.posted[p.id] ? "done" : ""} ${late(v.schedule[p.id]) ? "late" : ""}"
                  title="Schedule on ${esc(p.name)} for ${esc(whenLong(v.schedule[p.id]))}${v.audience ? ` = ${esc(audLabel(v.audience.clock, v.audience.times[p.id]))}` : ""}; tick once posted">
             <input type="checkbox" data-posted="${esc(p.id)}" ${v.posted[p.id] ? "checked" : ""}>
@@ -831,7 +833,7 @@ function slotHead(v) {
 // YouTube's is "title\n\ndescription"; X counts emoji, CJK and Vietnamese letters as 2.
 const capTab = new Map();
 // Open on the first platform with its own caption; the shared one only when none has.
-const curTab = (v) => capTab.get(v.name) || posts.platforms.map((p) => p.id).find((p) => v.captions[p]) || "all";
+const curTab = (v) => capTab.get(v.name) || chanPlats(v).map((p) => p.id).find((p) => v.captions[p]) || "all";
 const video = (card) => posts.videos.find((v) => v.name === card.dataset.name);
 const captionFor = (v, p) => (p !== "all" && v.captions[p]) || v.caption;
 const ytSplit = (text) => { const [title, ...rest] = text.split("\n"); return [title.trim(), rest.join("\n").trim()]; };

@@ -146,7 +146,9 @@ TIMES = {
     # change a Short's long-term reach: the opening shot and retention matter more.
     "travel": {p: ["07:00 19:00"] * 7 for p in ("youtube", "tiktok", "facebook", "instagram", "x", "threads")},
 }  # fmt: skip
-TIMES["dream"] = TIMES["healing"] = TIMES["english"] = TIMES["travel"]
+TIMES["dream"] = TIMES["english"] = TIMES["travel"]
+# Healing posts only to YouTube, Facebook and Instagram (user rule 2026-11-16): no X, TikTok or Threads.
+TIMES["healing"] = {p: t for p, t in TIMES["travel"].items() if p in ("youtube", "facebook", "instagram")}
 SLOT_KEY = re.compile(r"^(\d{4}-\d{2}-\d{2})/([1-4])$")
 FOLDER_MARK = ".museai-post"  # marks a folder this module made for one video
 SETTLE = 30  # seconds a video must sit unchanged before it moves (deliver.sh may still be copying it)
@@ -599,7 +601,7 @@ async def list_posts(svc: Services = Depends(get_services)) -> dict:
     return {
         "folder": str(folder),
         "timezone": "GMT+7",
-        "channels": [{"id": k, "name": n, "focus": f} for k, (n, f) in CHANNELS.items()],
+        "channels": [{"id": k, "name": n, "focus": f, "platforms": list(TIMES[k])} for k, (n, f) in CHANNELS.items()],
         "platforms": [{"id": k, "name": n, "url": u, "limit": lim}
                       for k, (n, u, lim) in PLATFORMS.items()],
         # Cards in posting order: the next slot first.
@@ -681,7 +683,7 @@ def _update(svc: Services, path: Path, body: dict) -> dict:
             posted[platform] = time.time()
         else:
             posted.pop(platform, None)
-    done = body.get("done") or set(entry.get("posted", {})) >= set(PLATFORMS)
+    done = body.get("done") or set(entry.get("posted", {})) >= set(TIMES[_channel(name, entry)])
     if done:
         if (path.parent / FOLDER_MARK).is_file():
             _trash(path.parent)
