@@ -10,6 +10,7 @@ one entry per DELIVERED video (idea id or custom idea, title, home, season, task
   python3 scripts/ideas.py record custom --title "..." --home "..." --season ... --task ... --video ...
   python3 scripts/ideas.py list [--last 20]
   python3 scripts/ideas.py stats
+  python3 scripts/ideas.py hook      # the hook format used longest ago (SKILL.md "Hook formats")
 
 next: the first unused ideas (bank order) that also differ from the last 10 videos in home and task and
 from the last 3 in animal and caption, so a run of posts never looks samey. "--season now" = the month's
@@ -77,6 +78,32 @@ OUTFITS = [
 ]
 
 
+# Hook formats (SKILL.md "Hook formats", studied 2026-11-16): the STRUCTURE of the first seconds rotates
+# like the style, so two videos in a row never open the same way even when their subjects differ.
+HOOKS = {
+    "sound-first": "shot 1 is a close-up of one action whose sound is heard as it happens, started mid-action",
+    "result-first": "shot 1 is the finished, striking result held 1-1.5 s; then how it was made; the last shot "
+                    "shows the result in its place in the home",
+    "same-frame": "every shot keeps the exact same locked-off framing and only time changes it (bare to bloom, "
+                  "empty to laid, morning to dusk); render shot 1, then IMAGE=<its first frame> for the rest",
+    "one-take": "one continuous satisfying process from start to finish (pouring a pattern, icing, folding), "
+                "the payoff only in the last 1.5 s; 2-3 shots at most",
+    "twist": "shot 1 shows a familiar thing made in an unexpected shape or size (a bowl of dried citrus slices, "
+             "bread twisted like a branch); then how",
+    "with-me": "an invitation montage ('harvest with me'): one item per ~1 s shot, each with a tiny lower-case "
+               "label naming it",
+}
+
+
+def hook_of(h):
+    return h.get("hook") or "sound-first"
+
+
+def next_hook(hist):
+    last = [hook_of(h) for h in hist][::-1]
+    return max(HOOKS, key=lambda k: last.index(k) if k in last else 99)
+
+
 def with_outfit(idea):
     import random
     old = idea.get("outfit")
@@ -112,11 +139,13 @@ def main():
             p.add_argument("id", help="hv-NNNN or 'custom'")
             p.add_argument("--video", required=True)
             p.add_argument("--shots", help="JSON list of the shot briefs actually used")
+            p.add_argument("--hook", choices=list(HOOKS), help="hook format used (default: the idea's, else sound-first)")
         for f in ("title", "home", "season", "task", "animal", "caption"):
             p.add_argument(f"--{f}")
     sub.add_parser("list").add_argument("--last", type=int, default=20)
     sub.add_parser("stats")
     sub.add_parser("style")
+    sub.add_parser("hook")
     a = ap.parse_args()
 
     bank = [i for b in BANKS for i in load(b, [])]
@@ -144,6 +173,9 @@ def main():
         if not out:
             sys.exit("no fresh idea matches; loosen the filters or add homes/tasks to gen_ideas.py")
         out = [with_outfit(dict(i)) for i in out]
+        hook = next_hook(hist)
+        for i in out:
+            i["hook"], i["hook_rule"] = hook, HOOKS[hook]
         print(json.dumps(out if a.n > 1 else out[0], ensure_ascii=False, indent=1))
     elif a.cmd == "show":
         print(json.dumps(by_id.get(a.id) or sys.exit(f"no idea {a.id}"), ensure_ascii=False, indent=1))
@@ -164,6 +196,7 @@ def main():
         if code == 1:
             print(f"warning: recording a duplicate ({why})", file=sys.stderr)
         entry = {k: idea.get(k) for k in ("id", "title", "home", "season", "task", "animal", "caption", "style")}
+        entry["hook"] = a.hook or idea.get("hook") or "sound-first"
         entry["shots"] = json.loads(Path(a.shots).read_text()) if a.shots else idea.get("shots", [])
         entry["video"] = str(Path(a.video).expanduser().resolve())
         entry["date"] = datetime.date.today().isoformat()
@@ -183,6 +216,8 @@ def main():
             return h.get("style") or (cap[6:] if cap.startswith("style:") else "classic")
         last = [style_of(h) for h in hist][::-1]
         print(max(STYLES, key=lambda st: last.index(st) if st in last else 99))
+    elif a.cmd == "hook":
+        print(next_hook(hist))
     elif a.cmd == "stats":
         used = {h["id"] for h in hist if h.get("id")}
         print(f"{len(hist)} videos delivered, {len(used)}/{len(bank)} bank ideas used, "
