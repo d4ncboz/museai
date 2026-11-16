@@ -204,18 +204,20 @@ function renderFilter() {
   const names = [...new Set([...cards.values()].map((c) => c.item.account).filter(Boolean))]
     .sort((x, y) => x.length - y.length);
   brands = names.filter((n, i) => !names.slice(0, i).some((b) => n.startsWith(b + ' ')));
+  // Channels and counts follow the platform filter: Meta on a channel with no Meta posts was an empty list.
+  const onPlat = [...cards.values()].filter((c) => !platSel.value || c.item.platform === platSel.value);
   const count = {};
-  for (const c of cards.values()) { const k = brandOf(c.item.account); count[k] = (count[k] || 0) + 1; }
+  for (const c of onPlat) { const k = brandOf(c.item.account); count[k] = (count[k] || 0) + 1; }
   const accounts = Object.keys(count).filter(Boolean).sort();
-  const want = ['', ...accounts].map((a) => `${a}|${a ? count[a] : cards.size}`).join();
+  const want = ['', ...accounts].map((a) => `${a}|${a ? count[a] : onPlat.length}`).join();
   if (chanSel.dataset.sig !== want) {
     const cur = saved.chan ?? chanSel.value;
     if (saved.chan === '') chanPicked = true;
     saved.chan = null;
-    chanSel.replaceChildren(new Option(`All channels (${cards.size})`, ''),
+    chanSel.replaceChildren(new Option(`All channels (${onPlat.length})`, ''),
       ...accounts.map((a) => new Option(`${a} (${count[a]})`, a)));
     // Opens on ONE channel (the Dream series first), never "All": the user picks All on purpose.
-    const first = [...cards.values()].find((c) => c.item.channel === 'dream') || [...cards.values()][0];
+    const first = onPlat.find((c) => c.item.channel === 'dream') || onPlat[0];
     const dflt = first ? brandOf(first.item.account) : '';
     chanSel.value = chanPicked && cur === '' ? '' : accounts.includes(cur) ? cur : (accounts.includes(dflt) ? dflt : '');
     chanSel.dataset.sig = want;

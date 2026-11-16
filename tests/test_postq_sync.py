@@ -46,3 +46,33 @@ def test_fully_posted_or_unknown_video_queues_nothing(monkeypatch, tmp_path):
     v = _video(tmp_path, "a.mp4", posted={"youtube": True, "facebook": True, "instagram": True})
     lone = {**_video(tmp_path, "b.mp4"), "name": "ghost.mp4", "folder": None}
     assert _run(monkeypatch, tmp_path, [v, lone], ["youtube", "facebook", "instagram"]) == []
+
+
+def _queued(root, iid, source, platform="youtube", **kw):
+    item = {"id": iid, "platform": platform, "account": "A", "source": str(source),
+            "video": {"file": f"{iid}-video.mp4"}, "cover": None, **kw}
+    (root / f"{iid}.json").write_text(postq.json.dumps(item))
+    (root / f"{iid}-video.mp4").write_bytes(b"x")
+
+
+def test_renamed_folder_retires_the_old_item(monkeypatch, tmp_path):
+    root = tmp_path / "queue"
+    root.mkdir()
+    monkeypatch.setattr(postq, "ROOT", root)
+    monkeypatch.setattr(postq, "DONE", root / "done")
+    new = tmp_path / "Chinese 06 · Tue 24-11 12h00 · Ep 3" / "Ep 3.mp4"
+    new.parent.mkdir()
+    new.write_bytes(b"x")
+    kept = tmp_path / "Chinese 07 · other" / "Ep 3.mp4"  # still on disk: a different folder, not a rename
+    kept.parent.mkdir()
+    kept.write_bytes(b"x")
+    gone = tmp_path / "Chinese 10 · Thu 26-11 12h00 · Ep 3" / "Ep 3.mp4"
+    _queued(root, "old", gone)
+    _queued(root, "meta", gone, platform="meta")
+    _queued(root, "uploading", gone, video_id="v1")
+    _queued(root, "other", kept)
+    assert postq.retire_renamed(str(new), "youtube", "A") == ["old"]
+    done = postq.json.loads((root / "done" / "old.json").read_text())
+    assert done["status"] == "superseded" and done["superseded_by"] == str(new)
+    assert (root / "done" / "old-video.mp4").is_file()
+    assert sorted(p.stem for p in root.glob("*.json")) == ["meta", "other", "uploading"]

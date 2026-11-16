@@ -245,6 +245,37 @@ def stage(src, item_id, role, suffixes):
     return {"file": name, "name": src.name, "size": src.stat().st_size}
 
 
+def retire_renamed(source, platform, account):
+    """Archive pending items of this video whose folder was renamed since they were queued.
+
+    Renumbering or rescheduling a Desktop folder changes the source path, so the next sync queued
+    the same video again and the old item stayed. An item counts as the same video when platform,
+    account and file name match and its old path is gone. Items already uploading (claimed or with
+    a video_id) stay. Returns the ids moved to done/ with status "superseded"."""
+    name = Path(source).name
+    gone = []
+    with queue_lock():
+        for p in ROOT.glob("*.json"):
+            try:
+                i = json.loads(p.read_text())
+            except (OSError, ValueError):
+                continue
+            old = i.get("source") or ""
+            if (old == source or Path(old).name != name or i.get("platform") != platform
+                    or i.get("account") != account or Path(old).exists()
+                    or i.get("video_id") or p.with_suffix(".claim").is_file()):
+                continue
+            DONE.mkdir(exist_ok=True)
+            (DONE / p.name).write_text(json.dumps(i | {"status": "superseded", "superseded_by": source},
+                                                  indent=2, ensure_ascii=False))
+            p.unlink()
+            for media in (i.get("video"), i.get("cover")):
+                if media and (ROOT / media["file"]).is_file():
+                    (ROOT / media["file"]).replace(DONE / media["file"])
+            gone.append(i["id"])
+    return gone
+
+
 def enqueue(a):
     caption = sys.stdin.read().rstrip("\n") if a.caption == "-" else (a.caption or "")
     tags = [t.strip() for t in (a.tags or "").split(",") if t.strip()]
@@ -253,6 +284,7 @@ def enqueue(a):
     if errors:
         sys.exit("\n".join(errors))
     source = str(Path(a.file).expanduser().resolve())
+    retire_renamed(source, a.platform, a.account)
     if any(i.get("source") == source and i["platform"] == a.platform for i in pending()):
         sys.exit(f"already queued for {a.platform}: {source}")
     # Posted before (the dashboard tick can lag or miss): never a second copy on the same account.
