@@ -65,6 +65,7 @@ def main() -> None:
     ap.add_argument("--key-file", type=Path, default=ROOT / "data/api_key")
     ap.add_argument("--interval", type=float, default=15)
     ap.add_argument("--max-retries", type=int, default=3)
+    ap.add_argument("--ignore-overload", action="store_true", help="keep the full target even when the Mac is overloaded")
     args = ap.parse_args()
     args.spool.mkdir(parents=True, exist_ok=True)
     key = args.key_file.read_text().strip()
@@ -84,7 +85,7 @@ def main() -> None:
         submitting = sum(time.time() - t < 45 for _, t in procs)
         ready = sum(a["status"] == "active" and a.get("enabled", True) for a in data["accounts"])
         goal = args.target
-        if data.get("system", {}).get("level") == "overloaded":
+        if not args.ignore_overload and data.get("system", {}).get("level") == "overloaded":
             goal = max(ready, 1)
         failed = [v for v in data["videos"] if v["status"] == "failed"
                   and retried.get(v["id"], 0) < args.max_retries]
