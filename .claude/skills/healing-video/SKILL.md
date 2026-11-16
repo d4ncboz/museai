@@ -21,7 +21,7 @@ Next idea of a style: `python3 scripts/ideas.py next --style garden --season now
 - 10 hard cuts of ~1.0 s, ONE caption on every shot, thin white sans (Helvetica Neue Light), ~3.4 % of width, upper third (33 % down), soft shadow. The caption is a contrast hook ("If a boring life looks like this", "Tell me this isn't enough"); `CAPTIONS` in `gen_garden.py`, never reuse one from the last 3 videos.
 - Subject: a real country home outdoors in strong sun, vivid but natural colour. Formula: 1 girl in a patterned dress holding a fresh pick (shot 1 = sound you can see: a soft rustle as the stem is gently lifted, never a sharp snap) → sky/field → harvest basket top-down with an animal wandering in → garden arch/path → fruit platter on flowers → animal beats (wide, then close) → flower meadow → house window with flowers → sunset through trees. Slots 2-9 are shuffled per idea so two videos never share an order.
 - Sound: ambience plus the shot's own sound; music = the reference's own track at `~/.config/museai/music/ref5-boring-life-music.m4a` (user 2026-11-12: "using this music exactly for this kind of video"), `compose.py --music` as is, 10 s. It is someone else's recording: a post can be muted or claimed; keep the original piano option (step 4) as fallback. A second saved track for this style: `~/.config/museai/music/ref6-healing-style2-music.m4a` (25.6 s, from the harvest reference; used for hv gm-0005 Normandy). Alternate the two tracks between garden videos. ref6 is only -29.6 LUFS, so the 1.0 s action sounds (-22) drown it: always add `--music-lufs -20` with it (the Normandy video had it inaudible).
-- Render: `HV_STYLE=garden DURATION=4 scripts/shot "<brief>" sN.mp4` per shot in a `render-queue` jobs file; compose: `python3 scripts/compose.py --idea idea.json --music ~/.config/museai/music/ref5-boring-life-music.m4a --out healing-<slug>.mp4 s1.mp4@1.0 ...` (concept `montage` sets 1.0 s per shot, sans caption).
+- Render: `HV_STYLE=garden DURATION=4 scripts/shot "<brief>" sN.mp4` per shot in a `render-queue` jobs file; compose: `python3 scripts/compose.py --idea idea.json --music ~/.config/museai/music/ref5-boring-life-music.m4a --out healing-<slug>.mp4 s1.mp4@1.0 ...` (concept `montage`: 1.0 s per shot stretched to the 22 s minimum, sans caption; see "Length and pours").
 - Different from classic: outdoors not kitchen, saturated sun not muted, 1.0 s not 1.2-2 s, caption on top not centre, harvest and animals not baking.
 
 ### pov-ritual (reference 7, "POV : All you need is flowers and a cup of tea", 9:16, 9.2 s, measured 2026-11-13)
@@ -30,7 +30,7 @@ Next idea of a style: `python3 scripts/ideas.py next --style garden --season now
 - Story in a FIXED order (one small ritual, not a shuffled montage): 1 waist-down walk in the garden with a can or basket → 2 close-up of A growing → 3 A gathered in her hands → 4 wide of the village (where we are) → 5 inside, from behind, she sets A on the table → 6 opens a cupboard → 7 lifts out the vessel → 8 a drawer of B's ingredients → 9 the B action (pour, slice, stir) → 10 an animal at the open door → 11 the animal walks in (the small funny surprise) → 12 the finished table, she enjoys it. Her face is never shown; one outfit in every shot.
 - Look: warm low sun, honey stone, rust and green outside; bright cream rooms with dark wood, rattan and blue-and-white china inside.
 - Music: the reference's own track `~/.config/museai/music/ref7-pov-ritual-music.m4a` (9.2 s, -13.6 LUFS, already loud: no `--music-lufs`). Someone else's recording: a post can be muted or claimed; fall back to the step 4 piano.
-- Render: `HV_STYLE=ritual DURATION=4 scripts/shot "<brief>" sN.mp4` per shot in a `render-queue` jobs file; compose: `python3 scripts/compose.py --idea idea.json --music ~/.config/museai/music/ref7-pov-ritual-music.m4a --out healing-<slug>.mp4 s1.mp4@1.0 ...` (concept `ritual` sets 0.75 s, the caption and the dissolve).
+- Render: `HV_STYLE=ritual DURATION=4 scripts/shot "<brief>" sN.mp4` per shot in a `render-queue` jobs file; compose: `python3 scripts/compose.py --idea idea.json --music ~/.config/museai/music/ref7-pov-ritual-music.m4a --out healing-<slug>.mp4 s1.mp4@1.0 ...` (concept `ritual` sets the caption and the dissolve; shots stretch to the 22 s minimum, see "Length and pours").
 
 ## The two classic concepts (measured on the user's reference reels, both 9:16, ~9.8 s)
 | | postcard (reference 1) | ode (reference 2) |
@@ -42,6 +42,16 @@ Next idea of a style: `python3 scripts/ideas.py next --style garden --season now
 | sound | soft music over the place's ambience, -18 LUFS | the same, -14 LUFS |
 
 What makes both "healing": nothing hurries, every shot has ONE gentle living motion (steam, breeze, rain, flame, petals, pages), muted warm colours, lived-in real homes, no faces to the camera, no talking. `prompt/healing.txt` (appended to every shot by `scripts/shot`) holds these rules; change them there, never in one video's prompt.
+
+## Length and pours (user 2026-11-16, poffertjes: "too short, at least 20-30 s; the pouring doesn't look good")
+- **Every video lasts 22-30 s.** `compose.py` stretches the shots to `--min-total` (default 22 s) and stops when a clip
+  is shorter than its window. Plan 10-12 shots of ~2 s (the style's shot count is the minimum, not the plan), render
+  them `DURATION=6` so a 2-3 s window starting at @1.0 fits, and pick each window where the motion is calm.
+- **No close-up pours of thick liquids** (batter, honey, cream, thick sauce): muse draws them as a fat, broken ribbon
+  that floats or splits. Show the moment before (jug tilted, first drop) or after (filled pan), or the pour from 1 m
+  away in soft light; thin liquids (tea, water, milk into tea) are fine. Never open a video on a pour of batter.
+  Check every liquid shot on the contact sheet frame by frame before compose; re-render or drop it when the stream
+  breaks, thickens or hangs in the air.
 
 ## Idea bank + history (no duplicates)
 - `ideas.json` / `ideas.md`: 1000 ideas (667 postcards, 333 odes) built by `scripts/gen_ideas.py` from 51 real homes (Welsh farmhouse, Cotswolds, Kyoto machiya, Sa Pa stilt house, Norwegian fjord cabin, Moroccan riad, ...), seasons (rainy/dry season for tropical homes, no snow where it never snows, treeless homes get "NO trees"), local kitchen tasks, animals, sounds, flowers and 40 caption lines. No two ideas share home + season + task. To widen the bank, add homes, tasks, ode subjects or captions at the END of the lists in `gen_ideas.py` and rerun it.

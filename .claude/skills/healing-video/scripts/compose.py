@@ -16,7 +16,9 @@ Concepts (idea["concept"]):
   montage  (reference 5): 10 shots x 1.0 s, ONE thin sans caption in the upper third on every shot.
   ritual   (reference 7): 12 shots x 0.75 s, ONE two-line bold serif "POV : All you need is / A and B"
            caption, left-aligned high on every shot, 0.15 s dissolves (the reference hard-cuts).
---shot overrides the seconds per shot (3-4 s for a slower, longer video). clip@start picks where in
+--shot overrides the seconds per shot. Every video lasts at least --min-total s (default 22, user 2026-11-16:
+"9 s is too short, at least 20-30 s"): short shots stretch to reach it, so plan 10-12 shots of ~2 s.
+clip@start picks where in
 the clip the window starts (default 1.0 s: muse's first second often settles). Hard cuts like both
 references; the last shot fades out 0.5 s so the loop back to shot 1 is soft.
 """
@@ -34,6 +36,7 @@ FONT = "/System/Library/Fonts/Supplemental/Georgia.ttf"
 SANS = "/System/Library/Fonts/HelveticaNeue.ttc"
 SANS_INDEX = 7  # Helvetica Neue Light
 SERIF_BOLD = "/System/Library/Fonts/Supplemental/Times New Roman Bold.ttf"  # reference 7's caption
+MIN_TOTAL = 22.0  # shortest video (s): user 2026-11-16, 9 s too short, wants 20-30 s
 XF = 0.35  # ambience cross-fade between shots (s)
 AMB_LUFS = -30  # every clip's ambience is levelled to this before --ambience scales the bed
 FOLEY_LUFS = -22  # each shot's own action sound (pour, sizzle, meow, birds): clearly heard next to the music
@@ -97,6 +100,11 @@ def has_audio(clip):
     return bool(r.stdout.strip())
 
 
+def clip_seconds(path):
+    return float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0",
+                                 path], capture_output=True, text=True).stdout.strip() or 0)
+
+
 def exposure_lift(path, start):
     """Gamma that brings a dark clip's mean luma up to ~135 (bright, airy like reference 4); 1.0 if bright."""
     out = subprocess.run(["ffmpeg", "-hide_banner", "-ss", start or "1.0", "-t", "2", "-i", path, "-vf",
@@ -124,6 +132,8 @@ def main():
     ap.add_argument("--music-in", type=float, default=0.8, help="seconds of action sound alone before the music "
                     "fades in (the hook)")
     ap.add_argument("--music-lufs", type=float, help="bring the music to this loudness first (a quiet reference track, e.g. -29.6 LUFS, is drowned by the action sound at -22; try -20)")
+    ap.add_argument("--min-total", type=float, default=MIN_TOTAL, help=f"shortest video in seconds (default "
+                    f"{MIN_TOTAL:g}: user 2026-11-16 found 9 s far too short, wants 20-30 s); shots stretch to reach it")
     ap.add_argument("--size", default="1080x1920")
     ap.add_argument("--dissolve", type=float, help="cross-dissolve seconds between shots (default 0.4: soft, natural; user 2026-11-13 found hard cuts too strong; ritual 0.15, a 0.4 s blend would eat half of a 0.75 s shot); 0 = hard cuts")
     a = ap.parse_args()
@@ -137,6 +147,14 @@ def main():
         a.dissolve = 0.15 if ritual else 0.4
     w, h = map(int, a.size.split("x"))
     n = len(a.clips)
+    if shot * n < a.min_total:
+        shot = a.min_total / n
+        print(f"shots stretched to {shot:.2f} s each so the video lasts {a.min_total:g} s")
+    short = [c for c in a.clips
+             if float(c.partition("@")[2] or 1.0) + shot + a.dissolve > clip_seconds(path_of(c)) + 0.05]
+    if short:
+        raise SystemExit(f"{len(short)} clip(s) end before their {shot:.2f} s window: {', '.join(short)}. "
+                         f"Move @start earlier, render DURATION=6, or add shots (more shots = shorter windows).")
     total = shot * n
     tmp = Path(tempfile.mkdtemp())
     # keep the clips' own frame rate (muse: 24): resampling to 30 repeats every 4th frame (qa smooth 13 %)
