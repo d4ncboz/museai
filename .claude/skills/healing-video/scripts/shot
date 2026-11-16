@@ -9,13 +9,26 @@
 # Env passed through to muse-video: IMAGE=first_frame.png SIZE= DURATION=
 set -euo pipefail
 SKILL_DIR=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
-MUSE_VIDEO="$SKILL_DIR/../muse-video/scripts/muse-video"
+MUSE_VIDEO=${MUSE_VIDEO:-"$SKILL_DIR/../muse-video/scripts/muse-video"}
 # hv-0017 looked AI: cosy-bait words make muse stack candles, lamps, flowers and an orange glow.
 # BRIEF_OK=1 skips the check.
 bait=$(grep -oiE '\b(cos[yi]e?|cozy|magical|dreamy|cinematic|enchant[a-z]*|fairy lights?|glow(ing)?|candle(s|light)?|lamp ?light|golden glow|tripod|phone on|perfect(ly arranged)?)\b' <<<"$1" | grep -viE '^perfectly$' | sort -fu | paste -sd, - || true)
 if [[ -n $bait && -z ${BRIEF_OK:-} ]]; then
   echo "shot: brief has AI-look bait words ($bait); describe plain real light and few objects (SKILL.md Real look)" >&2
   exit 2
+fi
+# Swedish river ode (2026-11-16): berries flew out of a rinsed colander, a lidded teapot poured.
+# A pour from a teapot or kettle must say the lid is off; fruit is never tossed, thrown or tumbled.
+if [[ -z ${BRIEF_OK:-} ]]; then
+  if grep -qiE '\bpour' <<<"$1" && grep -qiE '\b(tea ?pot|kettle)s?\b' <<<"$1" && ! grep -qiE '\blid\b' <<<"$1"; then
+    echo "shot: a teapot or kettle pours but the brief never says its lid is lifted off and set aside beside it" >&2
+    exit 2
+  fi
+  if grep -qiE '\b(toss|throw|threw|thrown|fling|flung|tumbl)[a-z]*' <<<"$1" \
+     && grep -qiE '\b(fruit|berr(y|ies)|apples?|plums?|cherr(y|ies)|pears?|lemons?|grapes?|tomato(es)?)\b' <<<"$1"; then
+    echo "shot: fruit is tossed, thrown or tumbled; say it stays inside its colander, basket or bowl the whole shot" >&2
+    exit 2
+  fi
 fi
 out=$(cd "$(dirname "$2")" && pwd)/$(basename "$2")
 prompt="NO TEXT ON SCREEN. $1
