@@ -53,12 +53,13 @@ def create_app(settings: Settings | None = None, driver: MuseDriver | None = Non
         poster = asyncio.create_task(autopost.loop(services)) if settings.autopost_enabled else None
         telegram = asyncio.create_task(hands.telegram_loop(services)) \
             if settings.telegram_bot_token else None
+        postq_sync = asyncio.create_task(hands.postq_sync_loop()) if hands.POSTQ.is_file() else None
         awake = hands.keep_awake() if settings.keep_awake and telegram else None
         log.info("museai %s ready (driver=%s)", __version__, services.driver.name)
         try:
             yield
         finally:
-            for loop in (keepalive, watcher, poster, telegram):
+            for loop in (keepalive, watcher, poster, telegram, postq_sync):
                 if loop:
                     loop.cancel()
                     with contextlib.suppress(asyncio.CancelledError):

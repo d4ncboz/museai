@@ -890,7 +890,6 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
-SYNC_EVERY = 60  # seconds between dashboard syncs while the queue server runs
 META_AHEAD = timedelta(days=28) - timedelta(minutes=10)  # Business Suite schedules at most 28 days out
 BOX_PLATFORM = {"youtube": "youtube", "facebook": "meta", "instagram": "meta", "x": "x", "tiktok": "tiktok"}
 
@@ -936,19 +935,15 @@ def sync_dashboard(now=None, fetch=None):
     return done
 
 
-def sync_loop():
-    while True:
-        try:
-            sync_dashboard()
-        except Exception as e:
-            print(f"sync: {e}", file=sys.stderr, flush=True)
-        time.sleep(SYNC_EVERY)
+def cmd_sync(_):
+    """One sync pass. The museai gateway runs this every minute: launchd's python cannot read ~/Desktop."""
+    for name in sync_dashboard():
+        print(f"queued {name}")
 
 
 def cmd_serve(_):
     ROOT.mkdir(parents=True, exist_ok=True)
     print(f"postq serving {ROOT} on http://127.0.0.1:{PORT}", flush=True)
-    threading.Thread(target=sync_loop, daemon=True).start()
     ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
 
 
@@ -999,11 +994,12 @@ def main():
     sub.add_parser("list")
     sub.add_parser("results")
     sub.add_parser("serve")
+    sub.add_parser("sync", help="queue every open dashboard video that has no queue item")
     wait = sub.add_parser("wait")
     wait.add_argument("ids", nargs="*")
     wait.add_argument("--timeout", type=float, default=0)
     a = ap.parse_args()
-    {"add": cmd_add, "list": cmd_list, "results": cmd_results, "serve": cmd_serve, "wait": cmd_wait,
+    {"add": cmd_add, "list": cmd_list, "results": cmd_results, "serve": cmd_serve, "sync": cmd_sync, "wait": cmd_wait,
      "approve": cmd_approve, "episode": cmd_episode,
      "episodes": cmd_episodes}[a.cmd](a)
 

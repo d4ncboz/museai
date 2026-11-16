@@ -117,6 +117,17 @@ def trigger(svc: Services, name: str, platform: str) -> str:
 POSTQ = Path(__file__).resolve().parents[4] / "tools" / "postq" / "postq"
 
 
+async def postq_sync_loop(every: float = 60) -> None:
+    """Keep the postq queue equal to the dashboard: `postq sync` queues every open video it lacks.
+    Runs here, not in the postq server: this process may read the Desktop, launchd's python may not."""
+    while True:
+        try:
+            await asyncio.to_thread(subprocess.run, [str(POSTQ), "sync"], capture_output=True, timeout=600)
+        except Exception as e:  # postq or its server missing: try again next round
+            log.warning("postq sync: %s", e)
+        await asyncio.sleep(every)
+
+
 def postq_episode(folder: str, platform: str) -> str:
     """Queue one platform of an episode folder in the postq Chrome extension and post it without a click
     right away, not at its captions.txt slot (``postq episode DIR --platforms P --auto --now``);
