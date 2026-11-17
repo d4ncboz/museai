@@ -72,20 +72,6 @@ STYLES = ["scrim", "card", "frame", "caps"]
 HISTORY = Path.home() / ".config/museai/cover-history.json"
 
 
-def pick_style(out: str, want: str) -> str:
-    """``auto``: the style this video's other cover already has, else the one used longest ago (user
-    2026-11-12: mix the style across videos). History: ~/.config/museai/cover-history.json."""
-    if want != "auto":
-        return want
-    hist = json.loads(HISTORY.read_text()) if HISTORY.exists() else []
-    slug = re.sub(r"_(9x16|16x9)$", "", Path(out).stem)
-    for h in reversed(hist):
-        if h["slug"] == slug:
-            return h["style"]
-    last = {h["style"]: i for i, h in enumerate(hist)}
-    return min(STYLES, key=lambda st: last.get(st, -1))
-
-
 def record(out: str, style: str, title: str):
     hist = json.loads(HISTORY.read_text()) if HISTORY.exists() else []
     hist.append({"date": datetime.date.today().isoformat(), "slug": re.sub(r"_(9x16|16x9)$", "", Path(out).stem),
@@ -112,15 +98,15 @@ def main():
     ap.add_argument("--sub", default="", help="small line under the title (normally none: the video's line is in the frame)")
     ap.add_argument("--y", type=float, default=0.50, help="centre of the text block, fraction of the height")
     ap.add_argument("--size", choices=["9:16", "16:9"], default="9:16")
-    ap.add_argument("--style", choices=["auto", *STYLES], default="auto",
-                    help="scrim: dark band, white italic, cream pill; card: cream card, brown italic; "
+    ap.add_argument("--style", choices=STYLES, default="card",
+                    help="card (default; user 2026-11-17: every healing cover in the cream card, one look across the feed); scrim: dark band, white italic, cream pill; card: cream card, brown italic; "
                          "frame: thin cream border, spaced label between rules; caps: dimmed frame, spaced capitals")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     global W, H, MAX_W
     if a.size == "16:9":
         W, H, MAX_W = 1920, 1080, 1500
-    style = pick_style(a.out, a.style)
+    style = a.style
 
     clip, _, t = a.at.partition("@")
     img = frame_at(clip, t)
