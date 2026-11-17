@@ -75,6 +75,9 @@ for kt in ${thumbs[@]+"${thumbs[@]}"}; do
   t="$dest/$(basename "${out%.*}") - thumbnail ${kt%%=*}.jpg"
   cp "${kt#*=}" "$t" && kept+=("$t") && echo "THUMBNAIL $t"
 done
+# DEST = an episode folder on the Desktop ("Chinese 40 · Fri 11-12 12h00 · <title>"): the dashboard
+# lists only folders holding .museai-post, so without it the video never reached "Ready to post" (2026-11-17).
+[ "$(dirname "$dest")" = "$HOME/Desktop" ] && touch "$dest/.museai-post"
 if [ -n "$caption$captions" ]; then
   name=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$(basename "$out")")
   CAPTION="$caption" CAPTIONS="$captions" python3 -c '
