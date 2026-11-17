@@ -1,0 +1,19 @@
+{
+ "key": "AQIAO",
+ "version": 1,
+ "name": "A-Qiao",
+ "age": 25,
+ "sex": "F",
+ "origin": "Chinese (southwest China)",
+ "build": "slim, 5 ft 4 in",
+ "identity": "a 25-year-old Chinese woman from the southwest countryside with a soft oval face: warm light-olive skin with a faint sun tan and a few tiny freckles on the cheekbones, dark-brown almond eyes, natural straight dark brows, a small straight nose, soft natural lips, no makeup look, a small dark mole just under her LEFT eye. Long straight black hair in one thick low braid over her RIGHT shoulder, tied with a plain undyed cotton cord, a few loose strands at the temples. No rings, no earrings.",
+ "voice": "none (field-to-table has no narration)",
+ "base_wardrobe": "a loose indigo hand-dyed cotton jacket with cloth knot buttons over a plain off-white cotton shirt, wide dark-grey linen trousers, black cloth shoes",
+ "used_by": [
+  "field-to-table"
+ ],
+ "views": {
+  "hero": "hero.jpg",
+  "full": "full.jpg"
+ }
+}

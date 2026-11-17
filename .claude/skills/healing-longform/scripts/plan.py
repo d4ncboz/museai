@@ -33,13 +33,18 @@ def load(path):
     return p, json.loads(p.read_text())
 
 
+def look(story):
+    """The footage rules: the story's `look` (path from .claude/skills/, e.g. field-to-table/prompt/look.txt)."""
+    return SKILL.parent / story["look"] if story.get("look") else LOOK
+
+
 def slug(name):
     return name.lower().replace("the ", "").replace(" ", "-")
 
 
 def outfit_line(story, b):
     o = b.get("outfit")
-    return f" Her clothes: {story['outfits'][o]}." if o and "ELLIE" in b.get("cast", []) else ""
+    return f" Her clothes: {story['outfits'][o]}." if o and b.get("cast") else ""
 
 
 def props_of(story, b, root):
@@ -58,7 +63,7 @@ def close(b):
 
 def framing(b):
     """Who is in frame. look.txt describes the girl, so without this muse puts her face into every shot."""
-    if "ELLIE" in b.get("cast", []):
+    if b.get("cast"):
         return (" She is seen from behind or from the side, her face turned away from the camera or bowed over her "
                 "work; she does not look at the camera.")
     if re.search(r"\bher (two )?hands?\b", b["shot"].lower()):
@@ -83,10 +88,10 @@ def bank():
     return bk
 
 
-def render_still(text, cast, props, out_png, n=1):
+def render_still(story, text, cast, props, out_png, n=1):
     bk = bank()
     tmp = out_png.parent / f".{out_png.stem}"
-    body = bk.scene_body(text, cast, LOOK.read_text().strip(), "1920x1080", n, props)
+    body = bk.scene_body(text, cast, look(story).read_text().strip(), "1920x1080", n, props)
     paths = bk.post(body, tmp, out_png.stem)
     paths[0].replace(out_png)
     for extra in paths[1:]:
@@ -102,10 +107,11 @@ def cmd_ref(sp, story, name):
         return
     out.parent.mkdir(exist_ok=True)
     r = story["refs"][name]
-    text = r["brief"]
+    # look.txt describes the woman: without this a ref came back with her in it (field-to-table kitchen, clay pot)
+    text = f'{r["brief"]} Nobody is in the frame: no person, no face, no hands.'
     if r["kind"] == "place":
         text = f"{text} The place: {story['places'][name]}."
-    render_still(text, [], [], out)
+    render_still(story, text, [], [], out)
 
 
 def cmd_still(sp, story, n):
@@ -116,7 +122,7 @@ def cmd_still(sp, story, n):
         print(f"have {out}")
         return
     out.parent.mkdir(exist_ok=True)
-    render_still(still_brief(story, b), b.get("cast", []), props_of(story, b, root), out)
+    render_still(story, still_brief(story, b), b.get("cast", []), props_of(story, b, root), out)
 
 
 def cmd_clip(sp, story, n):
@@ -128,7 +134,7 @@ def cmd_clip(sp, story, n):
         return
     if not still.exists():
         sys.exit(f"no {still}: run `plan.py still {sp} {n}` first")
-    env = dict(os.environ, IMAGE=str(still), SIZE="16:9", DURATION=os.environ.get("DURATION", "10"))
+    env = dict(os.environ, IMAGE=str(still), SIZE="16:9", LOOK_FILE=str(look(story)), DURATION=os.environ.get("DURATION", "10"))
     sys.exit(subprocess.run([str(SKILL / "scripts" / "shot"), clip_brief(story, b), str(out)], env=env).returncode)
 
 

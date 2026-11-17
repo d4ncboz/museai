@@ -1,0 +1,981 @@
+{
+  "title": "Chestnut Season",
+  "slug": "chestnut-day",
+  "story_id": "ft-0001",
+  "season": "late autumn",
+  "look": "field-to-table/prompt/look.txt",
+  "eyebrow": "late autumn in the mountains · hills to table",
+  "hook": "from the hills to the table",
+  "places": {
+    "grove": "a steep green mountain slope above a small farmhouse in southwest China in late autumn: old chestnut trees with yellowing leaves, a narrow earth path with stone steps, fallen spiky green-and-brown chestnut burrs and brown leaves on the ground, ferns, mist in the valley below and layered green hills beyond",
+    "courtyard": "the stone-paved courtyard of a small old farmhouse in the mountains of southwest China: grey brick and pale mud walls, a dark wooden door, grey tile eaves, a low wooden bench, bamboo racks, a stone step, a big round flat bamboo sieve tray resting on two low wooden trestles, potted chilli plants, and beyond a low wall green hills with mist",
+    "kitchen": "her small old farmhouse kitchen: a whitewashed brick wood-fired stove with one wide black iron wok set into it and a small fire door below with stacked split firewood, a dark wooden lid hanging on the wall, a worn wooden worktop, a small wooden window with a view of green hills, a clay water jar with a gourd ladle, smoke-darkened roof beams, a few bamboo baskets on the wall",
+    "stream": "a small clear mountain stream right behind the farmhouse: smooth grey stones, cold clear running water, ferns and bamboo along the banks, a flat stone slab at the edge for washing",
+    "eaves": "the covered porch under the grey tile eaves of the farmhouse facing the valley: an old square wooden table with two long benches, a woven bamboo mat on the floor, a pot of tea, and beyond the edge of the eaves green hills falling into a misty valley"
+  },
+  "light": {
+    "morning": "Early morning, soft cool daylight, mist lying in the valley and drifting between the hills.",
+    "late morning": "Late morning, bright soft daylight, thin clouds, the mist lifting.",
+    "afternoon": "Afternoon, soft clear daylight through thin clouds.",
+    "late afternoon": "Late afternoon, soft low daylight, long gentle shadows, never orange.",
+    "dusk": "Dusk, soft blue fading daylight over the hills and one plain warm bulb on under the eaves; everything clearly visible."
+  },
+  "outfits": {
+    "hills": "a loose indigo hand-dyed cotton jacket with cloth knot buttons over an off-white cotton shirt, wide dark-grey linen trousers, black cloth shoes, a woven bamboo back basket on her back",
+    "work": "a loose indigo hand-dyed cotton jacket with the sleeves rolled to the forearm over an off-white cotton shirt, wide dark-grey linen trousers, black cloth shoes",
+    "kitchen": "an off-white cotton shirt with the sleeves rolled to the forearm, a plain dark-brown cotton apron, wide dark-grey linen trousers",
+    "dusk": "an off-white cotton shirt, a soft grey hand-knitted shawl over her shoulders, wide dark-grey linen trousers"
+  },
+  "refs": {
+    "grove": {
+      "kind": "place",
+      "brief": "The chestnut grove empty, nobody in it, seen from the path: old chestnut trees with yellowing leaves, burrs on the ground, the misty valley below."
+    },
+    "courtyard": {
+      "kind": "place",
+      "brief": "The courtyard empty, nobody in it, seen from the doorway corner: the stone paving, the big round bamboo sieve tray on its trestles, the bench, the eaves, green hills beyond the low wall."
+    },
+    "kitchen": {
+      "kind": "place",
+      "brief": "The kitchen empty, nobody in it, seen from the doorway: the whitewashed brick stove with its black iron wok, the firewood, the worktop, the small window onto green hills."
+    },
+    "eaves": {
+      "kind": "place",
+      "brief": "The porch under the eaves empty, nobody in it: the square wooden table with two benches, a teapot, the misty valley beyond."
+    },
+    "Doudou": {
+      "kind": "prop",
+      "brief": "Close photograph of Doudou alone, a small young country dog with a short cream-and-light-tan coat, a white chest, soft folded-over ear tips, dark eyes and a curled tail, lying on grey stone paving in a farmhouse courtyard, soft daylight."
+    },
+    "back basket": {
+      "kind": "prop",
+      "brief": "A tall woven bamboo back basket with two cloth-wrapped straps standing on stone steps, half full of brown chestnuts, nobody in the frame."
+    },
+    "clay pot": {
+      "kind": "prop",
+      "brief": "A small round brown glazed clay rice pot with a clay lid and a short side handle, standing on a little red-clay charcoal stove on stone, nobody in the frame."
+    }
+  },
+  "chapters": [
+    {
+      "n": 1,
+      "title": "i. the hills",
+      "sub": "chestnuts fall in the night"
+    },
+    {
+      "n": 2,
+      "title": "ii. the courtyard",
+      "sub": "a day of sun"
+    },
+    {
+      "n": 3,
+      "title": "iii. the stove",
+      "sub": "sugar-roasted chestnuts"
+    },
+    {
+      "n": 4,
+      "title": "iv. the clay pot",
+      "sub": "chestnut rice, chestnut cakes"
+    },
+    {
+      "n": 5,
+      "title": "v. the table",
+      "sub": "dusk"
+    }
+  ],
+  "beats": [
+    {
+      "ch": 1,
+      "where": "grove",
+      "time": "morning",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Wide shot of layered green mountains at dawn, mist lying in the valley, the grey tile roof of a small farmhouse among bamboo far below, chestnut trees on the slope in the foreground.",
+      "move": "Only the mist moves, drifting slowly along the valley; the trees, the slope and the farmhouse stay still. No one walks into the frame.",
+      "chapter": true,
+      "hold": 11
+    },
+    {
+      "ch": 1,
+      "where": "courtyard",
+      "time": "morning",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Wide shot of the farmhouse courtyard at dawn, the dark wooden door closed, dew on the stone paving, Doudou asleep curled on the stone step.",
+      "props": [
+        "Doudou"
+      ],
+      "move": "Doudou breathes slowly and lifts one ear.",
+      "hold": 9.5
+    },
+    {
+      "ch": 1,
+      "where": "courtyard",
+      "time": "morning",
+      "kind": "clip",
+      "cast": [
+        "AQIAO"
+      ],
+      "shot": "Medium shot from behind: she stands at the open wooden door, lifting the woven bamboo back basket onto her back, the courtyard and the misty hills in front of her.",
+      "outfit": "hills",
+      "props": [
+        "back basket"
+      ],
+      "move": "She settles the straps on her shoulders and steps out over the threshold.",
+      "hold": 5.5
+    },
+    {
+      "ch": 1,
+      "where": "grove",
+      "time": "morning",
+      "kind": "clip",
+      "cast": [
+        "AQIAO"
+      ],
+      "shot": "Wide shot of the narrow earth path with stone steps climbing the slope between chestnut trees; she walks up it away from the camera, small in the frame, Doudou trotting ahead.",
+      "outfit": "hills",
+      "props": [
+        "Doudou",
+        "back basket"
+      ],
+      "move": "She climbs slowly step by step; the dog stops and waits for her.",
+      "hold": 9.5
+    },
+    {
+      "ch": 1,
+      "where": "grove",
+      "time": "morning",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of the ground under a chestnut tree: brown fallen leaves and several spiky green-and-brown chestnut burrs split open, shiny brown chestnuts showing inside, dew on everything.",
+      "move": "One yellow leaf falls slowly and settles among the burrs.",
+      "hold": 9.5
+    },
+    {
+      "ch": 1,
+      "where": "grove",
+      "time": "morning",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of her black cloth shoe pressing gently on a split spiky chestnut burr on the leaves so it opens wider, showing two shiny brown chestnuts.",
+      "outfit": "hills",
+      "move": "The burr opens under her shoe; the chestnuts roll a little.",
+      "hold": 9.5
+    },
+    {
+      "ch": 1,
+      "where": "grove",
+      "time": "morning",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of her hands holding long bamboo tongs, picking a shiny brown chestnut out of a split spiky burr on the ground; her indigo sleeves at the edge of the frame.",
+      "outfit": "hills",
+      "move": "She lifts the chestnut out with the tongs, slowly and carefully.",
+      "hold": 5.5
+    },
+    {
+      "ch": 1,
+      "where": "grove",
+      "time": "morning",
+      "kind": "clip",
+      "cast": [
+        "AQIAO"
+      ],
+      "shot": "Medium shot from the side: she bends under a chestnut tree on the slope and drops chestnuts from her bamboo tongs over her shoulder into the bamboo back basket.",
+      "outfit": "hills",
+      "props": [
+        "back basket"
+      ],
+      "move": "She tips the tongs toward the basket; chestnuts drop in.",
+      "hold": 6
+    },
+    {
+      "ch": 1,
+      "where": "grove",
+      "time": "morning",
+      "kind": "still",
+      "cast": [],
+      "shot": "Wide shot of the slope under the old chestnut trees, mist in the valley below, no one there; brown burrs scattered on the leaves.",
+      "hold": 9
+    },
+    {
+      "ch": 1,
+      "where": "grove",
+      "time": "late morning",
+      "kind": "clip",
+      "cast": [
+        "AQIAO"
+      ],
+      "shot": "Medium shot from behind: she holds a long bamboo pole up into the branches of a chestnut tree and taps a branch.",
+      "outfit": "hills",
+      "move": "She taps the branch twice; a few spiky burrs drop onto the leaves around her.",
+      "hold": 9.5
+    },
+    {
+      "ch": 1,
+      "where": "grove",
+      "time": "late morning",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up: Doudou sniffs at a spiky chestnut burr on the leaves, then backs away from it, ears up.",
+      "props": [
+        "Doudou"
+      ],
+      "move": "The dog sniffs, flinches back and looks at the burr.",
+      "hold": 9.5
+    },
+    {
+      "ch": 1,
+      "where": "grove",
+      "time": "late morning",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Top-down close-up into the woven bamboo back basket resting on the ground, half full of brown chestnuts of different sizes with a few leaves among them.",
+      "props": [
+        "back basket"
+      ],
+      "move": "Her hand drops one more handful of chestnuts in; they settle.",
+      "hold": 9.5
+    },
+    {
+      "ch": 1,
+      "where": "grove",
+      "time": "late morning",
+      "kind": "clip",
+      "cast": [
+        "AQIAO"
+      ],
+      "shot": "Medium shot from the side: she sits on a stone step on the slope with the back basket beside her, drinking water from a small bamboo tube, looking out over the valley.",
+      "outfit": "hills",
+      "props": [
+        "back basket"
+      ],
+      "move": "She drinks slowly and lowers the bamboo tube; strands of hair move in the wind.",
+      "hold": 9.5
+    },
+    {
+      "ch": 1,
+      "where": "grove",
+      "time": "late morning",
+      "kind": "still",
+      "cast": [],
+      "shot": "Wide shot of the valley and layered green hills from the slope, mist lifting, a few chestnut leaves at the top of the frame.",
+      "hold": 9
+    },
+    {
+      "ch": 1,
+      "where": "grove",
+      "time": "late morning",
+      "kind": "clip",
+      "cast": [
+        "AQIAO"
+      ],
+      "shot": "Wide shot of the stone steps going down through the trees toward the farmhouse roof; she walks down away from the camera with the full basket on her back, Doudou behind her.",
+      "outfit": "hills",
+      "props": [
+        "back basket",
+        "Doudou"
+      ],
+      "move": "She walks down slowly, one step at a time.",
+      "hold": 9.5
+    },
+    {
+      "ch": 2,
+      "where": "courtyard",
+      "time": "late morning",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Wide shot of the courtyard in soft daylight: the big round flat bamboo sieve tray on its trestles in the middle, the woven back basket set down beside it, the hills beyond the wall.",
+      "props": [
+        "back basket"
+      ],
+      "move": "Chilli leaves move in the breeze.",
+      "chapter": true,
+      "hold": 11
+    },
+    {
+      "ch": 2,
+      "where": "stream",
+      "time": "late morning",
+      "kind": "clip",
+      "cast": [
+        "AQIAO"
+      ],
+      "shot": "Medium shot: she crouches on the flat stone at the edge of the clear stream, washing brown chestnuts in a shallow round bamboo basket in the running water.",
+      "outfit": "work",
+      "move": "She dips and shakes the basket slowly in the water; water runs out through the weave.",
+      "hold": 9.5
+    },
+    {
+      "ch": 2,
+      "where": "stream",
+      "time": "late morning",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of a shallow round bamboo basket of brown chestnuts held in cold clear running water, a few leaves and bits of burr floating away downstream; her hands at the rim.",
+      "outfit": "work",
+      "move": "Water runs through the chestnuts; a leaf floats away.",
+      "hold": 9.5
+    },
+    {
+      "ch": 2,
+      "where": "stream",
+      "time": "late morning",
+      "kind": "still",
+      "cast": [],
+      "shot": "Close-up of clear water running over smooth grey stones in the stream, ferns at the edge.",
+      "hold": 8
+    },
+    {
+      "ch": 2,
+      "where": "courtyard",
+      "time": "late morning",
+      "kind": "clip",
+      "cast": [
+        "AQIAO"
+      ],
+      "shot": "Medium shot from the side: she tips the wet chestnuts from the bamboo basket onto the big round flat bamboo sieve tray and spreads them out with her hands.",
+      "outfit": "work",
+      "move": "She spreads the chestnuts with flat hands into one layer.",
+      "hold": 9.5
+    },
+    {
+      "ch": 2,
+      "where": "courtyard",
+      "time": "late morning",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of her hands sorting chestnuts on the round bamboo tray, putting a small cracked one aside into a little clay bowl.",
+      "outfit": "work",
+      "move": "She turns a chestnut over, sets it aside, picks up the next.",
+      "hold": 9.5
+    },
+    {
+      "ch": 2,
+      "where": "courtyard",
+      "time": "afternoon",
+      "kind": "still",
+      "cast": [],
+      "shot": "Top-down close-up of the round bamboo sieve tray covered in one layer of drying brown chestnuts in soft sun, the shadow of a leaf moving across them.",
+      "hold": 8
+    },
+    {
+      "ch": 2,
+      "where": "courtyard",
+      "time": "afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up: Doudou lies on the warm stone paving in the sun beside the trestle, eyes half closed.",
+      "props": [
+        "Doudou"
+      ],
+      "move": "The dog breathes slowly; its ear twitches once.",
+      "hold": 9.5
+    },
+    {
+      "ch": 2,
+      "where": "courtyard",
+      "time": "afternoon",
+      "kind": "clip",
+      "cast": [
+        "AQIAO"
+      ],
+      "shot": "Medium shot from behind: she sits on the low wooden bench in the courtyard sorting chestnuts on her lap in a small bamboo basket, the hills in front of her.",
+      "outfit": "work",
+      "move": "She turns the chestnuts slowly; her braid moves a little in the breeze.",
+      "hold": 9.5
+    },
+    {
+      "ch": 2,
+      "where": "courtyard",
+      "time": "afternoon",
+      "kind": "still",
+      "cast": [],
+      "shot": "Wide shot of the farmhouse from the courtyard gate: grey tiles, pale walls, the bamboo tray of chestnuts in the sun, bamboo moving behind the roof.",
+      "hold": 9
+    },
+    {
+      "ch": 2,
+      "where": "courtyard",
+      "time": "afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of her hands pouring dried chestnuts from the round bamboo tray into a woven bamboo basket.",
+      "outfit": "work",
+      "move": "The chestnuts slide off the tray into the basket.",
+      "hold": 9.5
+    },
+    {
+      "ch": 2,
+      "where": "courtyard",
+      "time": "afternoon",
+      "kind": "clip",
+      "cast": [
+        "AQIAO"
+      ],
+      "shot": "Medium shot from the side: she carries the basket of chestnuts on her hip across the courtyard toward the dark wooden kitchen door, Doudou getting up to follow.",
+      "outfit": "work",
+      "props": [
+        "Doudou"
+      ],
+      "move": "She walks slowly to the door; the dog stands and follows.",
+      "hold": 9.5
+    },
+    {
+      "ch": 3,
+      "where": "kitchen",
+      "time": "afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Wide shot of the farmhouse kitchen in soft daylight from the window: the whitewashed brick stove with its wide black iron wok, firewood stacked below, smoke-darkened beams.",
+      "move": "A thin line of smoke rises from the fire door.",
+      "chapter": true,
+      "hold": 11
+    },
+    {
+      "ch": 3,
+      "where": "kitchen",
+      "time": "afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of her hands feeding a split piece of firewood into the small fire door of the brick stove, small flames inside.",
+      "outfit": "kitchen",
+      "move": "She pushes the wood in slowly; the flames catch it.",
+      "hold": 9.5
+    },
+    {
+      "ch": 3,
+      "where": "kitchen",
+      "time": "afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of the fire inside the stove's fire door: flames licking split firewood.",
+      "move": "The flames move and the wood crackles.",
+      "hold": 8
+    },
+    {
+      "ch": 3,
+      "where": "kitchen",
+      "time": "afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Top-down close-up of the wide black iron wok with a layer of coarse dark sand heating in it.",
+      "outfit": "kitchen",
+      "move": "Her long iron spatula enters the frame and turns the sand slowly.",
+      "hold": 9.5
+    },
+    {
+      "ch": 3,
+      "where": "kitchen",
+      "time": "afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Top-down close-up: her hand tips a bowl of brown chestnuts, each one already scored with a small slit, into the hot dark sand in the black iron wok.",
+      "outfit": "kitchen",
+      "move": "The chestnuts tumble into the sand.",
+      "hold": 9.5
+    },
+    {
+      "ch": 3,
+      "where": "kitchen",
+      "time": "afternoon",
+      "kind": "clip",
+      "cast": [
+        "AQIAO"
+      ],
+      "shot": "Medium shot from the side: she stands at the brick stove stirring the wok of sand and chestnuts with a long iron spatula, steady and slow, soft window light on her.",
+      "outfit": "kitchen",
+      "move": "She stirs with long slow strokes.",
+      "hold": 9.5
+    },
+    {
+      "ch": 3,
+      "where": "kitchen",
+      "time": "afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of brown chestnuts tumbling in hot dark sand in the black iron wok as the spatula turns them; the slits beginning to open.",
+      "outfit": "kitchen",
+      "move": "The spatula turns the sand and chestnuts slowly.",
+      "hold": 9.5
+    },
+    {
+      "ch": 3,
+      "where": "kitchen",
+      "time": "afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of her hand drizzling dark amber syrup from a small clay jug over the chestnuts in the wok.",
+      "outfit": "kitchen",
+      "move": "A thin line of syrup falls onto the chestnuts; they keep turning.",
+      "hold": 9.5
+    },
+    {
+      "ch": 3,
+      "where": "kitchen",
+      "time": "afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of glossy roasted chestnuts in dark sand in the wok, their split shells curled open showing golden chestnut inside, a little smoke.",
+      "move": "A thin wisp of smoke rises from the wok.",
+      "hold": 9.5
+    },
+    {
+      "ch": 3,
+      "where": "kitchen",
+      "time": "afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up: Doudou sits in the kitchen doorway, nose lifted, sniffing the air.",
+      "props": [
+        "Doudou"
+      ],
+      "move": "The dog sniffs, licks its nose and tilts its head.",
+      "hold": 9.5
+    },
+    {
+      "ch": 3,
+      "where": "kitchen",
+      "time": "afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Top-down close-up: her hands shake a wide-mesh bamboo sieve full of roasted chestnuts over the wok so the sand falls back through.",
+      "outfit": "kitchen",
+      "move": "The sand pours through the sieve; the glossy chestnuts stay.",
+      "hold": 9.5
+    },
+    {
+      "ch": 3,
+      "where": "kitchen",
+      "time": "afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of a heap of glossy sugar-roasted chestnuts on brown paper on the wooden worktop, shells split open, steam rising.",
+      "move": "Steam rises slowly from the chestnuts.",
+      "hold": 8
+    },
+    {
+      "ch": 3,
+      "where": "kitchen",
+      "time": "afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of her two hands pressing a roasted chestnut at its slit so the shell cracks open and she lifts out the whole golden chestnut.",
+      "outfit": "kitchen",
+      "move": "She squeezes, the shell opens, the golden chestnut comes out whole.",
+      "hold": 9.5
+    },
+    {
+      "ch": 3,
+      "where": "kitchen",
+      "time": "afternoon",
+      "kind": "clip",
+      "cast": [
+        "AQIAO"
+      ],
+      "shot": "Medium shot from the side: she stands by the small kitchen window eating one roasted chestnut, the green hills outside.",
+      "outfit": "kitchen",
+      "move": "She chews slowly and looks out of the window.",
+      "hold": 9.5
+    },
+    {
+      "ch": 3,
+      "where": "kitchen",
+      "time": "afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up: Doudou sits looking up beside her dark trouser legs; her hand lowers a small piece of chestnut to the dog.",
+      "outfit": "kitchen",
+      "props": [
+        "Doudou"
+      ],
+      "move": "The dog takes the piece gently and its tail wags.",
+      "hold": 9.5
+    },
+    {
+      "ch": 4,
+      "where": "courtyard",
+      "time": "late afternoon",
+      "kind": "still",
+      "cast": [],
+      "shot": "Wide shot of the hills beyond the courtyard wall, clouds moving slowly over the ridges, smoke from the kitchen chimney drifting across.",
+      "chapter": true,
+      "hold": 11
+    },
+    {
+      "ch": 4,
+      "where": "kitchen",
+      "time": "late afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Top-down close-up of her hands shelling boiled chestnuts over a wide clay bowl, the soft pale-yellow chestnuts dropping in.",
+      "outfit": "kitchen",
+      "move": "She squeezes a chestnut out of its shell into the bowl.",
+      "hold": 9.5
+    },
+    {
+      "ch": 4,
+      "where": "kitchen",
+      "time": "late afternoon",
+      "kind": "still",
+      "cast": [],
+      "shot": "Top-down close-up of a wide clay bowl full of whole peeled pale-yellow chestnuts on the wooden worktop.",
+      "hold": 8
+    },
+    {
+      "ch": 4,
+      "where": "stream",
+      "time": "late afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of her hands washing white rice in a wooden basin at the edge of the stream, the water turning milky.",
+      "outfit": "kitchen",
+      "move": "Her fingers stir the rice slowly; milky water swirls.",
+      "hold": 9.5
+    },
+    {
+      "ch": 4,
+      "where": "courtyard",
+      "time": "late afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of a small red-clay charcoal stove on the courtyard stones with red-hot charcoal, a round brown clay rice pot sitting on it.",
+      "props": [
+        "clay pot"
+      ],
+      "move": "The charcoal pulses softly; a thin heat haze rises.",
+      "hold": 9.5
+    },
+    {
+      "ch": 4,
+      "where": "courtyard",
+      "time": "late afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Top-down close-up into the round brown clay pot: white rice in water, her hand placing whole peeled chestnuts on top of the rice one by one.",
+      "outfit": "kitchen",
+      "props": [
+        "clay pot"
+      ],
+      "move": "She sets the chestnuts down gently on the rice.",
+      "hold": 9.5
+    },
+    {
+      "ch": 4,
+      "where": "courtyard",
+      "time": "late afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of her hand setting the clay lid on the round brown clay rice pot.",
+      "outfit": "kitchen",
+      "props": [
+        "clay pot"
+      ],
+      "move": "The lid settles; a thin line of steam starts at its edge.",
+      "hold": 9.5
+    },
+    {
+      "ch": 4,
+      "where": "kitchen",
+      "time": "late afternoon",
+      "kind": "clip",
+      "cast": [
+        "AQIAO"
+      ],
+      "shot": "Medium shot from the side: she sits at the worktop pounding boiled chestnuts in a grey stone mortar with a wooden pestle.",
+      "outfit": "kitchen",
+      "move": "She lifts and lowers the pestle slowly and steadily.",
+      "hold": 9.5
+    },
+    {
+      "ch": 4,
+      "where": "kitchen",
+      "time": "late afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Top-down close-up of a grey stone mortar of smooth mashed pale-yellow chestnut, a wooden pestle resting in it, her hand sprinkling a little sugar in.",
+      "outfit": "kitchen",
+      "move": "The sugar falls onto the mash.",
+      "hold": 9.5
+    },
+    {
+      "ch": 4,
+      "where": "kitchen",
+      "time": "late afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of her hands pressing pale-yellow chestnut paste into a small carved wooden flower mould on the worktop.",
+      "outfit": "kitchen",
+      "move": "She presses the paste in with her thumbs and smooths the top.",
+      "hold": 9.5
+    },
+    {
+      "ch": 4,
+      "where": "kitchen",
+      "time": "late afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of her hands tapping the carved wooden mould on a plate so a small flower-shaped pale-yellow chestnut cake drops out.",
+      "outfit": "kitchen",
+      "move": "She taps the mould; the little cake drops out whole.",
+      "hold": 9.5
+    },
+    {
+      "ch": 4,
+      "where": "kitchen",
+      "time": "late afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Top-down close-up of six small flower-shaped pale-yellow chestnut cakes on a plain white plate, a few dried yellow osmanthus flowers sprinkled over them.",
+      "outfit": "kitchen",
+      "move": "Her hand sprinkles a pinch of osmanthus; the flowers settle.",
+      "hold": 9.5
+    },
+    {
+      "ch": 4,
+      "where": "courtyard",
+      "time": "late afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of the round brown clay pot on the charcoal stove, steam puffing gently from under the lid.",
+      "props": [
+        "clay pot"
+      ],
+      "move": "Steam puffs and curls up from the lid.",
+      "hold": 8
+    },
+    {
+      "ch": 4,
+      "where": "courtyard",
+      "time": "late afternoon",
+      "kind": "clip",
+      "cast": [
+        "AQIAO"
+      ],
+      "shot": "Medium shot from behind: she sits on a low stool beside the charcoal stove fanning it with a round palm-leaf fan, Doudou lying next to her.",
+      "outfit": "kitchen",
+      "props": [
+        "clay pot",
+        "Doudou"
+      ],
+      "move": "She fans slowly; the dog rests its chin on its paws.",
+      "hold": 9.5
+    },
+    {
+      "ch": 4,
+      "where": "courtyard",
+      "time": "late afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Top-down close-up: her hand lifts the clay lid off the round pot: rice cooked through with whole golden chestnuts on top, a cloud of steam.",
+      "outfit": "kitchen",
+      "props": [
+        "clay pot"
+      ],
+      "move": "Steam rises in a soft cloud as the lid comes away.",
+      "hold": 9.5
+    },
+    {
+      "ch": 4,
+      "where": "courtyard",
+      "time": "late afternoon",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of a pair of wooden chopsticks turning the chestnut rice in the clay pot, a golden crust at the edge.",
+      "outfit": "kitchen",
+      "props": [
+        "clay pot"
+      ],
+      "move": "The chopsticks lift a little rice with crust; steam rises.",
+      "hold": 9.5
+    },
+    {
+      "ch": 4,
+      "where": "courtyard",
+      "time": "late afternoon",
+      "kind": "still",
+      "cast": [],
+      "shot": "Wide shot of the courtyard in late afternoon, the clay pot steaming on its stove, the bamboo tray empty, the hills going soft behind.",
+      "props": [
+        "clay pot"
+      ],
+      "hold": 9
+    },
+    {
+      "ch": 5,
+      "where": "eaves",
+      "time": "dusk",
+      "kind": "still",
+      "cast": [],
+      "shot": "Wide shot of the valley at dusk from the porch, layered blue hills, mist settling, the edge of the tile eaves at the top of the frame.",
+      "chapter": true,
+      "hold": 11
+    },
+    {
+      "ch": 5,
+      "where": "eaves",
+      "time": "dusk",
+      "kind": "clip",
+      "cast": [
+        "AQIAO"
+      ],
+      "shot": "Medium shot from the side: she sets the round clay pot of chestnut rice down on the old square wooden table under the eaves, a plain warm bulb on above.",
+      "outfit": "dusk",
+      "props": [
+        "clay pot"
+      ],
+      "move": "She sets the pot down gently and straightens.",
+      "hold": 9.5
+    },
+    {
+      "ch": 5,
+      "where": "eaves",
+      "time": "dusk",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Top-down close-up of the wooden table: the clay pot of chestnut rice, a plain white plate of six small soft pale-yellow chestnut cakes pressed in a flower shape (smooth, unbaked, not browned), a little heap of roasted chestnuts on brown paper, a pot of tea and one bowl with chopsticks.",
+      "props": [
+        "clay pot"
+      ],
+      "move": "Steam rises slowly from the rice and the tea.",
+      "hold": 9
+    },
+    {
+      "ch": 5,
+      "where": "eaves",
+      "time": "dusk",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of her hand pouring tea from a brown clay teapot into a small cup on the wooden table.",
+      "outfit": "dusk",
+      "move": "The tea pours in a thin stream; steam rises.",
+      "hold": 9.5
+    },
+    {
+      "ch": 5,
+      "where": "eaves",
+      "time": "dusk",
+      "kind": "clip",
+      "cast": [
+        "AQIAO"
+      ],
+      "shot": "Medium shot from the side: she sits on the bench at the wooden table, the shawl over her shoulders, holding a bowl of chestnut rice and eating with chopsticks, the blue valley behind.",
+      "outfit": "dusk",
+      "move": "She takes a small bite and chews slowly.",
+      "hold": 9.5
+    },
+    {
+      "ch": 5,
+      "where": "eaves",
+      "time": "dusk",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of her chopsticks lifting a soft golden chestnut from the bowl of rice.",
+      "outfit": "dusk",
+      "move": "She lifts it slowly; a little steam.",
+      "hold": 9.5
+    },
+    {
+      "ch": 5,
+      "where": "eaves",
+      "time": "dusk",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up: Doudou sits by the bench looking up at the table, tail curled, ears soft.",
+      "props": [
+        "Doudou"
+      ],
+      "move": "The dog's tail sweeps once over the floor.",
+      "hold": 9.5
+    },
+    {
+      "ch": 5,
+      "where": "eaves",
+      "time": "dusk",
+      "kind": "clip",
+      "cast": [],
+      "shot": "Close-up of her fingers taking one small soft pale-yellow flower-shaped chestnut cake (smooth, unbaked, not browned) from a plain white plate of them.",
+      "outfit": "dusk",
+      "move": "She lifts the cake off the plate.",
+      "hold": 9.5
+    },
+    {
+      "ch": 5,
+      "where": "eaves",
+      "time": "dusk",
+      "kind": "clip",
+      "cast": [
+        "AQIAO"
+      ],
+      "shot": "Medium shot from behind: she sits at the table with her cup of tea, looking out at the dark-blue hills, Doudou lying at her feet.",
+      "outfit": "dusk",
+      "props": [
+        "Doudou"
+      ],
+      "move": "She lifts the cup and drinks slowly; the dog breathes.",
+      "hold": 9.5
+    },
+    {
+      "ch": 5,
+      "where": "eaves",
+      "time": "dusk",
+      "kind": "still",
+      "cast": [],
+      "shot": "Close-up of the empty bowl and chopsticks resting across it on the table, a few chestnut shells on the brown paper, the teacup.",
+      "hold": 8
+    },
+    {
+      "ch": 5,
+      "where": "courtyard",
+      "time": "dusk",
+      "kind": "still",
+      "cast": [],
+      "shot": "Wide shot of the farmhouse from the courtyard at dusk, one warm bulb lit under the eaves, the blue hills behind and the first stars.",
+      "hold": 10
+    },
+    {
+      "ch": 5,
+      "where": "grove",
+      "time": "dusk",
+      "kind": "still",
+      "cast": [],
+      "shot": "Wide shot of the dark chestnut slope above the farmhouse at dusk, one small lit window below among the bamboo, mist in the valley.",
+      "hold": 12
+    }
+  ],
+  "short": {
+    "text": "from the hills to the table",
+    "shots": [
+      [
+        6,
+        0.3,
+        3.2,
+        0.4
+      ],
+      [
+        7,
+        0.2,
+        2.8,
+        0.42
+      ],
+      [
+        57,
+        0,
+        3,
+        0.4
+      ],
+      [
+        53,
+        0,
+        2.8,
+        0.45
+      ],
+      [
+        62,
+        0,
+        3.6,
+        0.5
+      ]
+    ]
+  }
+}

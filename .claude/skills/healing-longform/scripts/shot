@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Usage: [IMAGE=still.png] shot "brief" out.mp4
-# Renders one long-form shot through muse-video (16:9, 10 s, QUALITY=0) with ../prompt/look.txt appended.
+# Renders one long-form shot through muse-video (16:9, 10 s, QUALITY=0) with ../prompt/look.txt (or $LOOK_FILE) appended.
 # plan.py clip calls it with IMAGE=stills/sN.png; one job line per shot in a render-queue jobs file.
 # Bait words make muse stack props and orange light (healing-video "Real look"); knives and crying looked
 # fake (healing-story). BRIEF_OK=1 skips the check.
@@ -15,6 +15,6 @@ fi
 out=$(cd "$(dirname "$2")" && pwd)/$(basename "$2")
 prompt="NO TEXT ON SCREEN. $1
 
-$(cat "$SKILL_DIR/prompt/look.txt")"
+$(cat "${LOOK_FILE:-$SKILL_DIR/prompt/look.txt}")"
 QUALITY=0 SIZE=${SIZE:-16:9} DURATION=${DURATION:-10} OUT_NAME=$(basename "$out") NO_OPEN=1 \
   "$MUSE_VIDEO" "$prompt" "$(dirname "$out")"

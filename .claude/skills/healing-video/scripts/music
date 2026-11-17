@@ -25,6 +25,9 @@ else
   tags="$style, soft gentle solo felt piano with muted hammers, low and middle register, very slow sparse simple lullaby melody of long held notes left to ring, soft open chords, pianissimo throughout, constant quiet dynamics, no crescendo, no build-up, sustain pedal, meditative, soothing, healing, peaceful, calm, 50 bpm, warm close-miked intimate room recording, instrumental, no drums, no high notes, no vocals"
   lufs=-20; tone="asetrate=44100*0.84,aresample=44100,lowpass=f=2200,lowpass=f=2200"
 fi
+# TAGS replaces the whole instrument description (field-to-table: guzheng and bamboo flute instead of piano);
+# the soft pitch drop, low-pass and the calm gate still apply
+if [[ -n ${TAGS:-} ]]; then tags="$style, $TAGS"; fi
 raw="${out%.*}.raw.wav"
 if [[ -x $ACE_PY ]]; then
   refargs=()
