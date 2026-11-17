@@ -114,6 +114,20 @@ python -m museai
 python scripts/connect_9router.py --port 18610 --prefix muse
 ```
 
+### Offloading Renders to a Colab GPU (muse-renderer)
+Heavy steps after the muse clips come back (stitch/compose, Real-ESRGAN upscale, music) can run on a free Colab
+runtime instead of this machine, through the private companion repo `lvluu/muse-renderer`. Its server is a
+login service on the muse machine (systemd on Linux, launchd on macOS) that starts a Colab runtime per job and
+stops it when idle; the runtime clones this repo, so job commands call the skill scripts through `$MUSEAI`.
+```bash
+# setup once per machine: muse-renderer README "Setup" (agent checklist in its AGENTS.md)
+export MUSE_RENDER_DRIVE=...          # queue folder on Google Drive
+muse-renderer submit -n ep1 seg1.mp4 seg2.mp4 -- 'bash "$MUSEAI/.claude/skills/muse-video/scripts/stitch.sh" out.mp4 seg1.mp4 seg2.mp4'
+muse-renderer wait <id> -o work/      # new files come back here
+```
+Measured 2026-11-17: 3 muse segments stitched in about 100 s on Colab (upload + stitch + download). Only
+committed scripts run there: push a skill-script change before queueing a job that needs it.
+
 ---
 
 ## 5. REVISION LOG & BUG MITIGATION HISTORY
