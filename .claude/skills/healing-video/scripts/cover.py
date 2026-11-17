@@ -98,8 +98,8 @@ def main():
     ap.add_argument("--sub", default="", help="small line under the title (normally none: the video's line is in the frame)")
     ap.add_argument("--y", type=float, default=0.50, help="centre of the text block, fraction of the height")
     ap.add_argument("--size", choices=["9:16", "16:9"], default="9:16")
-    ap.add_argument("--style", choices=STYLES, default="card",
-                    help="card (default; user 2026-11-17: every healing cover in the cream card, one look across the feed); scrim: dark band, white italic, cream pill; card: cream card, brown italic; "
+    ap.add_argument("--style", choices=STYLES, default="scrim",
+                    help="scrim (default; user 2026-11-17, later: every healing cover like healing-korean-harvest, one look across the feed): dark band, white italic, cream pill; card: cream card, brown italic; "
                          "frame: thin cream border, spaced label between rules; caps: dimmed frame, spaced capitals")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
