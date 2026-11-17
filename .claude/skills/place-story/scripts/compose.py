@@ -94,10 +94,19 @@ def window(path, need):
 # ---------- text ----------
 def font(kind, size):
     path, idx = FONTS[kind]
+    if not Path(path).exists():  # Linux (a Colab render): the closest installed sans, bold for "heavy"
+        # name the family: Colab's fontconfig answers "sans-serif:bold" with Liberation Mono (2026-11-17)
+        style = "bold" if kind == "heavy" else "semibold"
+        for fam in ("DejaVu Sans", "Liberation Sans", "Noto Sans"):
+            path, idx = run(["fc-match", "-f", "%{file}", f"{fam}:{style}"]).strip(), 0
+            if "Mono" not in path:
+                break
     return ImageFont.truetype(path, size, index=idx)
 
 
 def emoji(text, height):
+    if not Path(EMOJI_FONT).exists():  # no Apple emoji off macOS: leave the glyph out
+        return Image.new("RGBA", (1, height))
     f = TTCollection(EMOJI_FONT, lazy=True).fonts[0]
     name = "_".join(f"u{ord(c):04X}" for c in text if ord(c) != 0xFE0F)
     glyph = f["sbix"].strikes[160].glyphs.get(name)

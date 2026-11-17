@@ -132,14 +132,15 @@ def generate(style, bpm, seconds, model_id, seed):
     model = MusicgenForConditionalGeneration.from_pretrained(model_id)
     style = ", ".join(t for t in style.split(",") if "vocal" not in t and "sing" not in t)  # MusicGen can't sing
     text = [f"{style}, {bpm:.0f} bpm, steady beat, catchy hook, instrumental, no vocals"]
-    for dev in (["mps"] if torch.backends.mps.is_available() else []) + ["cpu"]:
+    gpus = ["cuda"] if torch.cuda.is_available() else ["mps"] if torch.backends.mps.is_available() else []
+    for dev in gpus + ["cpu"]:
         torch.manual_seed(seed)
         try:
             inputs = proc(text=text, padding=True, return_tensors="pt").to(dev)
             out = model.to(dev).generate(**inputs, do_sample=True, guidance_scale=3.0,
                                          max_new_tokens=int(seconds * 50))
             return out[0, 0].float().cpu().numpy(), model.config.audio_encoder.sampling_rate
-        except (RuntimeError, NotImplementedError) as e:  # MPS lacks some ops on older torch
+        except (RuntimeError, NotImplementedError) as e:  # MPS lacks some ops on older torch; CUDA can run out of memory
             if dev == "cpu":
                 raise
             print(f"{dev} failed ({e}); retrying on cpu", file=sys.stderr)
