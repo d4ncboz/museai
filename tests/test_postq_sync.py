@@ -118,3 +118,26 @@ def test_one_queue_item_per_video(monkeypatch, tmp_path):
     # enqueue (under its lock) refuses the same video from another folder
     with pytest.raises(SystemExit, match="already queued"):
         postq._enqueue(argparse.Namespace(platform="meta", account="A"), "", [], None, str(tmp_path / "x" / "Ep 1.mp4"))
+
+
+def test_test_apps_never_sync_the_live_postq_queue(settings, monkeypatch):
+    """A test app must not start `postq sync`: it writes the real queue, from whatever checkout runs the tests."""
+    from fastapi.testclient import TestClient
+
+    from museai.api.routes import hands
+    from museai.app import create_app
+    from museai.drivers.mock import MockDriver
+
+    started = []
+
+    async def loop(*a, **kw):
+        started.append(1)
+
+    monkeypatch.setattr(hands, "postq_sync_loop", loop)
+    with TestClient(create_app(settings, MockDriver(delay=0))):
+        pass
+    assert not started
+    settings.postq_sync = True
+    with TestClient(create_app(settings, MockDriver(delay=0))):
+        pass
+    assert started == [1] or not hands.POSTQ.is_file()

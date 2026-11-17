@@ -23,6 +23,7 @@ def settings(tmp_path) -> Settings:
         auto_captions=False,
         autopost_enabled=False,  # tests run auto-post passes themselves
         autopost_mock=True,
+        postq_sync=False,  # `postq sync` writes the live queue: two copies of a video came from test runs
     )
 
 

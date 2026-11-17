@@ -54,6 +54,9 @@ class Settings(BaseSettings):
     # Dry run: every platform posts through the mock driver (nothing leaves the machine).
     autopost_mock: bool = False
     autopost_interval: float = 60.0
+    # Run `postq sync` every minute so the postq Chrome extension's queue follows the dashboard.
+    # It writes the live queue (~/.local/state/postq): tests turn it off.
+    postq_sync: bool = True
     # Muse Hands: Telegram bot (BotFather token) that lists the posting queue and presses "Post now".
     # Only these chat ids are answered (comma-separated; message the bot, read the id from the log).
     telegram_bot_token: str = ""
