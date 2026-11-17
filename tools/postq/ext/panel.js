@@ -1,5 +1,5 @@
 const QUEUE = 'http://127.0.0.1:8766';
-const READY = new Set(['youtube', 'x', 'meta']); // platforms with an adapter (mirror of ADAPTERS in background.js)
+const READY = new Set(['youtube', 'x', 'meta', 'tiktok']); // platforms with an adapter (mirror of ADAPTERS in background.js)
 const LIMITS = { youtube: { title: 100, caption: 5000 }, meta: { caption: 2200 }, tiktok: { caption: 2200 }, x: { caption: 280 } };
 const list = document.getElementById('list');
 const cards = new Map();
@@ -52,7 +52,7 @@ function render(item) {
   const q = (s) => el.querySelector(s);
   const [platformPill, who, dryPill, badge, whenEl] = el.querySelectorAll('.meta > *');
   platformPill.textContent = item.platform + (item.targets?.length ? ` → ${item.targets.join(' + ')}` : '');
-  who.textContent = item.account + (item.playlist ? ` · playlist: ${item.playlist}` : '');
+  who.textContent = item.account + (item.playlist ? ` · playlist: ${item.playlist}` : '') + (item.offDash ? ' · not on dashboard' : '');
   dryPill.hidden = !item.dry_run;
   whenEl.textContent = item.created;
   // No preload: 100+ cards each fetching video metadata made the popup open slowly. The cover is the poster.
@@ -181,52 +181,56 @@ async function showProgress() {
 }
 chrome.storage.onChanged.addListener((ch, area) => area === 'session' && ch.progress && showProgress());
 
-// Channel filter, across platforms: one brand at a time. A brand = the shortest account name that
-// is a whole-word prefix of the others ("Dream Jobs" on Meta, "Dream Jobs Daily" on YouTube).
+// Fixed filter lists: every channel and every platform is always listed (with its count, 0 included),
+// so a channel or platform with nothing queued still shows, as an empty list with a note.
+const CHANS = [['chinese', 'Chinese'], ['healing', 'Healing'], ['dream', 'Dream Jobs'], ['travel', 'Travel']];
+const PLATS = [['youtube', 'YouTube'], ['meta', 'Meta'], ['x', 'X'], ['tiktok', 'TikTok']];
+// Older queue items have no channel field: the account names the series.
+const ACCOUNT_CHAN = [['Chinese', 'chinese'], ['Slow Sunlit', 'healing'], ['Dream Jobs', 'dream'], ['Blue Eyes', 'travel'], ['BlueEyes', 'travel'], ['blue_eyes', 'travel']];
+const chanOf = (i) => i.channel || ACCOUNT_CHAN.find(([a]) => i.account?.startsWith(a))?.[1] || '';
 const chanSel = document.getElementById('chan');
-let brands = [];
-const brandOf = (a) => brands.find((b) => a === b || a?.startsWith(b + ' ')) || a;
 const hideDone = document.getElementById('hide');
 const platSel = document.getElementById('plat');
-// Filter choices survive closing the popup (chrome.storage.local); saved.chan is applied once, when the channel list is built.
-const saved = { chan: null };
-const saveFilter = () => chrome.storage.local.set({ popupFilter: { chan: chanSel.value, plat: platSel.value, hide: hideDone.checked } }).catch(() => {});
+// Filter choices survive closing the popup (chrome.storage.local).
+const saveFilter = () => chrome.storage.local.set({ popupFilter: { chan2: chanSel.value, plat: platSel.value, hide: hideDone.checked } }).catch(() => {});
 const filterLoaded = chrome.storage.local.get('popupFilter').then(({ popupFilter: f }) => {
+  renderFilter();
+  chanSel.value = typeof f?.chan2 === 'string' ? f.chan2 : 'chinese';
   if (!f) return;
   platSel.value = f.plat || '';
   hideDone.checked = !!f.hide;
-  if (typeof f.chan === 'string') saved.chan = f.chan;
 }).catch(() => {});
-const shown = (c) => (!chanSel.value || brandOf(c.item.account) === chanSel.value)
+const shown = (c) => (!chanSel.value || chanOf(c.item) === chanSel.value)
   && (!platSel.value || c.item.platform === platSel.value)
   && !(hideDone.checked && ['approved', 'posting', 'done'].includes(c.state));
+function fillSelect(sel, opts, allLabel) {
+  const cur = sel.value;
+  const sig = opts.map((o) => o.join(':')).join();
+  if (sel.dataset.sig === sig) return;
+  sel.replaceChildren(...opts.map(([v, label, n]) => new Option(`${label} (${n})`, v)), new Option(allLabel, ''));
+  sel.value = cur;
+  if (sel.value !== cur) sel.value = opts[0][0];
+  sel.dataset.sig = sig;
+}
 function renderFilter() {
-  const names = [...new Set([...cards.values()].map((c) => c.item.account).filter(Boolean))]
-    .sort((x, y) => x.length - y.length);
-  brands = names.filter((n, i) => !names.slice(0, i).some((b) => n.startsWith(b + ' ')));
-  // Channels and counts follow the platform filter: Meta on a channel with no Meta posts was an empty list.
-  const onPlat = [...cards.values()].filter((c) => !platSel.value || c.item.platform === platSel.value);
-  const count = {};
-  for (const c of onPlat) { const k = brandOf(c.item.account); count[k] = (count[k] || 0) + 1; }
-  const accounts = Object.keys(count).filter(Boolean).sort();
-  const want = ['', ...accounts].map((a) => `${a}|${a ? count[a] : onPlat.length}`).join();
-  if (chanSel.dataset.sig !== want) {
-    const cur = saved.chan ?? chanSel.value;
-    if (saved.chan === '') chanPicked = true;
-    saved.chan = null;
-    chanSel.replaceChildren(new Option(`All channels (${onPlat.length})`, ''),
-      ...accounts.map((a) => new Option(`${a} (${count[a]})`, a)));
-    // Opens on ONE channel (the Dream series first), never "All": the user picks All on purpose.
-    const first = onPlat.find((c) => c.item.channel === 'dream') || onPlat[0];
-    const dflt = first ? brandOf(first.item.account) : '';
-    chanSel.value = chanPicked && cur === '' ? '' : accounts.includes(cur) ? cur : (accounts.includes(dflt) ? dflt : '');
-    chanSel.dataset.sig = want;
+  const all = [...cards.values()];
+  const inPlat = all.filter((c) => !platSel.value || c.item.platform === platSel.value);
+  const inChan = all.filter((c) => !chanSel.value || chanOf(c.item) === chanSel.value);
+  fillSelect(chanSel, CHANS.map(([v, l]) => [v, l, inPlat.filter((c) => chanOf(c.item) === v).length]), `All channels (${inPlat.length})`);
+  fillSelect(platSel, PLATS.map(([v, l]) => [v, l, inChan.filter((c) => c.item.platform === v).length]), `All platforms (${inChan.length})`);
+  for (const c of all) c.el.style.display = shown(c) ? '' : 'none';
+  const none = all.length && !all.some(shown);
+  let note = list.querySelector('.nonote');
+  if (none && !note) { note = Object.assign(document.createElement('div'), { className: 'nonote' }); list.prepend(note); }
+  if (note) {
+    const ch = CHANS.find(([v]) => v === chanSel.value)?.[1] || 'All channels';
+    const pl = PLATS.find(([v]) => v === platSel.value)?.[1] || 'all platforms';
+    note.hidden = !none;
+    note.textContent = `Nothing queued for ${ch} · ${pl}.`;
   }
-  for (const c of cards.values()) c.el.style.display = shown(c) ? '' : 'none';
   renderSummary();
 }
-let chanPicked = false;
-chanSel.onchange = () => { chanPicked = true; saveFilter(); renderFilter(); };
+chanSel.onchange = () => { saveFilter(); renderFilter(); };
 platSel.onchange = () => { saveFilter(); renderFilter(); };
 hideDone.onchange = () => { saveFilter(); renderFilter(); };
 
@@ -234,25 +238,45 @@ hideDone.onchange = () => { saveFilter(); renderFilter(); };
 // ticked there, in slot order. The queue server queues every open dashboard video itself (postq sync_dashboard).
 // Dashboard unreachable: the whole queue shows.
 const DASH = 'http://127.0.0.1:18610/dashboard/posts';
+let lastVideos = null;
+let missing = [];
 async function followDashboard(items) {
   let videos;
   try {
     const res = await fetch(DASH, { signal: AbortSignal.timeout(4000) });
     videos = (await res.json()).videos;
-  } catch { return items; }
+  } catch { videos = lastVideos; }
   if (!Array.isArray(videos)) return items;
+  lastVideos = videos;
+  // 7-day window per channel and platform, counted from that list's first unposted slot (a series that
+  // starts later, like Chinese on 18-11, or YouTube already done for the first weeks, still shows a week).
+  const day = (v) => v.slot?.slice(0, 10);
+  const open = (v, p) => (p === 'meta' ? !(v.posted?.facebook && v.posted?.instagram) : !v.posted?.[p]);
+  const first = {};
+  for (const p of ['youtube', 'meta', 'x', 'tiktok'])
+    for (const v of videos) if (day(v) && open(v, p) && !(first[v.channel + '|' + p] <= day(v))) first[v.channel + '|' + p] = day(v);
+  const within = (v, p) => true || !day(v) || first[v.channel + '|' + p] === undefined || day(v) <= new Date(Date.parse(first[v.channel + '|' + p]) + 6 * 86400000).toISOString().slice(0, 10);
   // Meta schedules at most 28 days ahead: later slots stay out until the queue server can queue them.
   const farMeta = (i, d) => i.platform === 'meta' && Date.parse(d.schedule.facebook || d.schedule.instagram || 0) - Date.now() > 28 * 86400000;
   const byName = new Map(videos.map((v, n) => [v.name, { n, v, posted: v.posted || {}, schedule: v.schedule || {} }]));
   const dash = (i) => byName.get(i.video?.name);
+  // Dashboard videos still open on a platform but with no queue item: the popup cannot post them, say so.
+  const queued = new Set(items.map((i) => i.platform + '|' + i.video?.name));
+  missing = [];
+  for (const v of videos)
+    for (const p of ['youtube', 'meta'])
+      if (day(v) && open(v, p) && within(v, p) && !(p === 'meta' && Date.parse(day(v)) > Date.now() + 28 * 86400000) && !queued.has(p + '|' + v.name) && items.some((i) => i.platform === p && dash(i)?.v.channel === v.channel)) missing.push(`${v.slot} ${v.channel} ${p}: ${v.name.replace(/\.mp4$/, '')}`);
+  // Queue items the dashboard does not list still show (last, marked): nothing queued is hidden.
+  const off = items.filter((i) => !dash(i)).map((i) => ({ ...i, offDash: true }));
   return items
     .filter((i) => {
       const d = dash(i);
-      return d && !farMeta(i, d) && (i.targets?.length ? i.targets : [i.platform]).some((box) => !d.posted[box]);
+      return d && within(d.v, i.platform) && !farMeta(i, d) && (i.targets?.length ? i.targets : [i.platform]).some((box) => !d.posted[box]);
     })
     .sort((a, b) => dash(a).n - dash(b).n)
     // The time is the dashboard's current slot time (slots move; the queued schedule_at goes stale).
-    .map((i) => ({ ...i, schedule_at: dash(i).schedule[i.platform === 'meta' ? 'facebook' : i.platform] || i.schedule_at }));
+    .map((i) => ({ ...i, schedule_at: dash(i).schedule[i.platform === 'meta' ? 'facebook' : i.platform] || i.schedule_at }))
+    .concat(off);
 }
 let orderSig = '';
 let polling = false;
@@ -268,6 +292,14 @@ async function poll() {
       if (c && c.queued && !item.auto && !c.busy && c.state !== 'posting') { c.el.remove(); cards.delete(item.id); }
     }
     for (const item of items) if (!cards.has(item.id)) render(item);
+    // Slots move on the dashboard: refresh the shown time of cards the user is not editing.
+    for (const item of items) {
+      const c = cards.get(item.id);
+      const at = c && !c.busy && !c.queued && c.el.querySelector('[name=at]');
+      if (at && document.activeElement !== at && item.schedule_at) { const v = toLocalInput(item.schedule_at); if (at.value !== v) at.value = v; }
+    }
+    const mb = document.getElementById('missing');
+    if (mb) { mb.hidden = !missing.length; mb.textContent = missing.length ? `On the dashboard but not queued (${missing.length}): ${missing.slice(0, 6).join(' · ')}${missing.length > 6 ? ' …' : ''}` : ''; }
     const sig = items.map((i) => i.id).join();
     if (sig !== orderSig) {
       orderSig = sig;

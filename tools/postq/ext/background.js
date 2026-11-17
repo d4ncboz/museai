@@ -524,7 +524,8 @@ async function metaFlow(stored, pg) {
   const captions = await pg.step('fill', item);
   await pg.step('checkCaptions', item);
   await pg.step('toShare');
-  const sch = await pg.step('schedule', metaWhen(when), item.tz);
+  const at = metaWhen(when);
+  const sch = await pg.step('schedule', at, item.tz);
   const { story } = await pg.step('extras');
   const note = [
     sch.mode === 'scheduled' ? sch.rows.map((r) => `${r.platform} ${r.date} ${r.time}`).join(', ') + ` (${sch.zone})` : 'share now',

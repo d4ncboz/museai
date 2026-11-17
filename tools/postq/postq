@@ -70,6 +70,8 @@ SERIES = {
                 "meta": {"account": "Chinese Everyday For Everyone", "business_id": "1310575373049632",
                          "asset_id": "102602519330709"},
                 "playlist": "Hội Thoại Tiếng Trung",
+                # Cẩm Tú Nhân Sinh episodes (named in the folder / video file) go to the film playlist.
+                "playlist_by_name": {"Cẩm Tú Nhân Sinh": "Học tiếng Trung qua phim"},
                 "related": "latest:Tập", "tz": "Asia/Ho_Chi_Minh", "channel": "chinese",
                 # No thumbnail in the folder: muse renders the scene, the thumbnail skill lays out the text.
                 "thumb": {"style": "chinese", "sub": "Nói sao bằng tiếng Trung?",
@@ -401,8 +403,12 @@ def caption_playlist(text):
     return m[1].strip() if m else None
 
 
-def channel_playlist(series, name):
-    """The episode's playlist as named on the channel: captions.txt's, through the series' renames."""
+def channel_playlist(series, name, video_name=""):
+    """The episode's playlist as named on the channel: captions.txt's, through the series' renames.
+    ``playlist_by_name``: a series' videos whose file name holds the key go to that playlist."""
+    for key, playlist in series.get("playlist_by_name", {}).items():
+        if key.lower() in video_name.lower():
+            return playlist
     if not name:
         return series.get("playlist")
     bare = re.sub(r"[^\w&,' ]", "", name).strip()  # without the emoji the dashboard adds
@@ -676,8 +682,8 @@ def cmd_episode(a):
             asset={k: meta[k] for k in ("business_id", "asset_id") if k in meta} or None,
             cover=str(covers[0]) if covers and platform in ("meta", "youtube") else None, title=p.get("title"),  # Meta and YouTube get the cover; the others keep the platform's own thumbnail (a copy is parked in COVERS_DIR)
             caption=p["caption"], tags=None, at=p["at"], tz=series["tz"], visibility="public",
-            made_for_kids=False, dry_run=a.dry_run, auto=a.auto,
-            playlist=channel_playlist(series, caption_playlist(cap_text)) if platform == "youtube" else None,
+            made_for_kids=False, dry_run=a.dry_run, auto=a.auto, now=getattr(a, "now", False),
+            playlist=channel_playlist(series, caption_playlist(cap_text), videos[0].name) if platform == "youtube" else None,
             channel=series.get("channel"),
             related=(a.related or series.get("related")) if platform == "youtube" else None)
         try:
