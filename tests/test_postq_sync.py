@@ -171,3 +171,12 @@ def test_test_apps_never_sync_the_live_postq_queue(settings, monkeypatch):
     with TestClient(create_app(settings, MockDriver(delay=0))):
         pass
     assert started == [1] or not hands.POSTQ.is_file()
+
+
+def test_pending_items_carry_the_queued_files_real_size(monkeypatch, tmp_path):
+    # A cover re-rendered while sync copied it: the item recorded a size its queued file does not have,
+    # and the extension's ranged transfer broke at byte 0.
+    monkeypatch.setattr(postq, "ROOT", tmp_path)
+    (tmp_path / "a-cover.jpg").write_bytes(b"x" * 10)
+    (tmp_path / "a.json").write_text('{"id": "a", "platform": "youtube", "cover": {"file": "a-cover.jpg", "size": 99}}')
+    assert [i["cover"]["size"] for i in postq.pending()] == [10]

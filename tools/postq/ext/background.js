@@ -209,18 +209,21 @@ function page(tabId, platform, adapter) {
   }
   // Pull the file from the queue server in ranges and hand it to the page chunk by chunk.
   async function send(slot, media, onPct) {
-    for (let start = 0; start < media.size; start += CHUNK) {
-      const end = Math.min(start + CHUNK, media.size) - 1;
-      const res = await fetch(`${QUEUE}/media/${media.file}`, { headers: { Range: `bytes=${start}-${end}` } });
+    // The file's real size comes back in Content-Range: a queue item's recorded size can be stale.
+    let size = media.size;
+    for (let start = 0; start < size; start += CHUNK) {
+      const res = await fetch(`${QUEUE}/media/${media.file}`, { headers: { Range: `bytes=${start}-${Math.min(start + CHUNK, size) - 1}` } });
       if (res.status !== 206) throw new Error(`queue server answered ${res.status} for ${media.file}`);
+      size = Number((res.headers.get('Content-Range') || '').split('/')[1]) || size;
       const bytes = new Uint8Array(await res.arrayBuffer());
+      const end = start + bytes.length - 1;
       let bin = '';
       for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
       const got = await chrome.scripting.executeScript({
-        target: { tabId }, func: (s, b) => globalThis.postqLib.chunk(s, b), args: [slot, btoa(bin)],
+        target: { tabId }, func: (s, b, f) => globalThis.postqLib.chunk(s, b, f), args: [slot, btoa(bin), start === 0],
       });
       if (got[0].result !== end + 1) throw new Error(`${slot} transfer broke at byte ${start}`);
-      onPct?.(Math.round(((end + 1) / media.size) * 100));
+      onPct?.(Math.round(((end + 1) / size) * 100));
     }
   }
   // Load another page in the same tab and re-inject (status reads 'complete' until the new load starts).

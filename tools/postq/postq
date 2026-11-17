@@ -300,7 +300,9 @@ def stage(src, item_id, role, suffixes):
         sys.exit(f"{src.name}: {role} must be one of {' '.join(sorted(suffixes))}")
     name = f"{item_id}-{role}{src.suffix.lower()}"
     shutil.copyfile(src, ROOT / name)
-    return {"file": name, "name": src.name, "size": src.stat().st_size}
+    # The copy's size, not the source's: a source rewritten during the copy (a cover re-rendered by a
+    # running sync) left a size the queued file does not have, and the extension's transfer broke on it.
+    return {"file": name, "name": src.name, "size": (ROOT / name).stat().st_size}
 
 
 def retire_renamed(source, platform, account):
@@ -414,6 +416,15 @@ def read_item(p):
     return item
 
 
+def with_disk_sizes(item):
+    """The extension pulls media in ranges up to `size`: give it the queued file's real size."""
+    for role in ("video", "cover"):
+        m = item.get(role)
+        if isinstance(m, dict) and m.get("file") and (f := ROOT / m["file"]).is_file():
+            m["size"] = f.stat().st_size
+    return item
+
+
 def pending():
     # Studio switches channel for the whole login, so YouTube posts one channel at a time: the
     # channel of the last finished YouTube post stays first until it is done. Business Suite and X
@@ -421,7 +432,7 @@ def pending():
     items = []
     for p in ROOT.glob("*.json"):
         try:
-            items.append(read_item(p))
+            items.append(with_disk_sizes(read_item(p)))
         except (OSError, ValueError):  # archived or half-written between glob and read: next poll has it
             continue
     yt_done = sorted((d for d in (ROOT / "done").glob("*.json")), key=lambda p: p.stat().st_mtime)

@@ -52,7 +52,8 @@ globalThis.postqLib ??= (() => {
 
   // Media arrives from the extension in base64 chunks (a whole video does not fit one message).
   const buffers = new Map();
-  function chunk(slot, b64) {
+  function chunk(slot, b64, first) {
+    if (first) buffers.delete(slot); // a retry in the same page starts clean, not on top of the last try
     const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
     buffers.set(slot, [...(buffers.get(slot) || []), bytes]);
     return buffers.get(slot).reduce((n, b) => n + b.length, 0);
