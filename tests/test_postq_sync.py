@@ -1,7 +1,10 @@
 """postq's dashboard sync: every open dashboard video gets a queue item, nothing else does."""
+import argparse
 from datetime import datetime, timedelta, timezone
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
+
+import pytest
 
 postq = SourceFileLoader("postq_cli", str(Path(__file__).parent.parent / "tools" / "postq" / "postq")).load_module()
 
@@ -93,3 +96,25 @@ def test_second_sync_skips_while_one_runs(monkeypatch, tmp_path, capsys):
     assert "skipped" in capsys.readouterr().out
     postq.cmd_sync(None)
     assert calls == [1]
+
+
+def test_one_queue_item_per_video(monkeypatch, tmp_path):
+    """Same platform, account and file name = one video: the popup must never show it twice."""
+    root = tmp_path / "queue"
+    root.mkdir()
+    monkeypatch.setattr(postq, "ROOT", root)
+    monkeypatch.setattr(postq, "DONE", root / "done")
+    a = tmp_path / "Chinese 01 · Fri 20-11 12h00 · Ep 1" / "Ep 1.mp4"
+    b = tmp_path / "Chinese 04 · Tue 24-11 12h00 · Ep 1" / "Ep 1.mp4"
+    _queued(root, "1-old", a, platform="meta")
+    _queued(root, "2-approved", b, platform="meta", auto=True)
+    _queued(root, "3-again", a, platform="meta")
+    _queued(root, "4-yt", a)  # another platform: its own card
+    assert sorted(postq.retire_duplicates()) == ["1-old", "3-again"]
+    assert sorted(p.stem for p in root.glob("*.json")) == ["2-approved", "4-yt"]
+    done = postq.json.loads((root / "done" / "3-again.json").read_text())
+    assert done["status"] == "duplicate" and done["duplicate_of"] == "2-approved"
+    assert postq.retire_duplicates() == []
+    # enqueue (under its lock) refuses the same video from another folder
+    with pytest.raises(SystemExit, match="already queued"):
+        postq._enqueue(argparse.Namespace(platform="meta", account="A"), "", [], None, str(tmp_path / "x" / "Ep 1.mp4"))

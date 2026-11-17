@@ -119,6 +119,46 @@ def queue_lock():
 
 
 @contextmanager
+def enqueue_lock():
+    ROOT.mkdir(parents=True, exist_ok=True)
+    with (ROOT / ".enqueue.lock").open("w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        yield
+
+
+def retire_duplicates():
+    """Archive second queue items of one video (same platform, account and file name): one card per video.
+
+    The one kept is the one already uploading (claimed or with a video_id), else approved, else the oldest.
+    The others move to done/ with status "duplicate". Returns their ids."""
+    with queue_lock():
+        groups = {}
+        for p in sorted(ROOT.glob("*.json")):
+            try:
+                i = json.loads(p.read_text())
+            except (OSError, ValueError):
+                continue
+            k = (i.get("platform"), i.get("account"), Path(i.get("source") or i["id"]).name)
+            groups.setdefault(k, []).append((p, i))
+        gone = []
+        for items in groups.values():
+            busy = lambda pi: bool(pi[1].get("video_id") or pi[0].with_suffix(".claim").is_file())  # noqa: E731
+            items.sort(key=lambda pi: (not busy(pi), not pi[1].get("auto"), pi[1]["id"]))
+            for p, i in items[1:]:
+                if busy((p, i)):
+                    continue  # two uploads already running: leave both to finish
+                DONE.mkdir(exist_ok=True)
+                (DONE / p.name).write_text(json.dumps(i | {"status": "duplicate", "duplicate_of": items[0][1]["id"]},
+                                                      indent=2, ensure_ascii=False))
+                p.unlink()
+                for media in (i.get("video"), i.get("cover")):
+                    if media and (ROOT / media["file"]).is_file():
+                        (ROOT / media["file"]).replace(DONE / media["file"])
+                gone.append(i["id"])
+    return gone
+
+
+@contextmanager
 def sync_lock():
     """True while this process alone syncs; False when another sync already runs.
 
@@ -303,7 +343,21 @@ def enqueue(a):
         sys.exit("\n".join(errors))
     source = str(Path(a.file).expanduser().resolve())
     retire_renamed(source, a.platform, a.account)
-    if any(i.get("source") == source and i["platform"] == a.platform for i in pending()):
+    # Check and write under one lock: two callers (the gateway's sync, a Telegram tap, `postq episode`)
+    # each passed the check before either wrote, and the popup showed one video twice. Its own lock:
+    # staging copies the video, and the queue server must not wait on that.
+    with enqueue_lock():
+        return _enqueue(a, caption, tags, when, source)
+
+
+def same_video(i, platform, account, source):
+    """The stable key of a queued post: platform, account and the video's file name (its folder may be renamed)."""
+    return (i.get("platform") == platform and i.get("account") == account
+            and Path(i.get("source") or "").name == Path(source).name)
+
+
+def _enqueue(a, caption, tags, when, source):
+    if any(same_video(i, a.platform, a.account, source) for i in pending()):
         sys.exit(f"already queued for {a.platform}: {source}")
     # Posted before (the dashboard tick can lag or miss): never a second copy on the same account.
     for f in (ROOT / "done").glob("*.json"):
@@ -993,6 +1047,8 @@ def cmd_sync(_):
         if not mine:
             print("another sync is running, skipped")
             return
+        for iid in retire_duplicates():
+            print(f"duplicate archived {iid}")
         for name in sync_dashboard():
             print(f"queued {name}")
 
