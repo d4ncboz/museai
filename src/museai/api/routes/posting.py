@@ -135,9 +135,9 @@ TRAVEL_NAME = re.compile(r"^(zoom|reel|scenic|scenery|drop|travel|nostalgia|gown
 # Threads are daytime platforms (mornings and noon best, evenings worst), so they never mirror the
 # evening reel slots; TikTok gets 15 minutes' head start on its peak (its first test audience arrives
 # with the peak). Chinese posts two a day at its own times, 12:00 and 18:30 GMT+7 on every platform
-# (user rule 2026-11-05).
+# (user rule 2026-11-05); no X or Threads (user rule 2026-11-17).
 TIMES = {
-    "chinese": {p: ["12:00 18:30"] * 7 for p in ("youtube", "tiktok", "facebook", "instagram", "x", "threads")},
+    "chinese": {p: ["12:00 18:30"] * 7 for p in ("youtube", "tiktok", "facebook", "instagram")},
     # GMT+7 (user rule 2026-11-05), one plan for Travel, Dream life and Healing. Slot 1, 07:00 (00 UTC):
     # New York 19 h, Los Angeles 16 h, São Paulo 21 h, Tokyo 09 h, Vietnam 07 h. Slot 2, 19:00 (12 UTC):
     # London 12 h, Berlin 13 h, India 17:30, Vietnam 19 h, Tokyo 21 h. Every platform at the same time.

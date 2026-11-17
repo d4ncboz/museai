@@ -267,12 +267,10 @@ def test_posting_queue(client, admin, settings, monkeypatch):
     r = client.post("/dashboard/posts/ep1.mp4", headers=admin,
                     json={"platform": "tiktok", "posted": False}).json()
     assert set(r["video"]["posted"]) == {"youtube", "facebook"}
-    for p in ("tiktok", "instagram", "x"):
-        r = client.post("/dashboard/posts/ep1.mp4", headers=admin, json={"platform": p}).json()
-        assert not r["trashed"]
-    for p in ("threads",):
-        r = client.post("/dashboard/posts/ep1.mp4", headers=admin, json={"platform": p}).json()
-    assert r["trashed"] and trashed == ["ep1 - thumbnail 9x16.jpg", "ep1.mp4"]
+    r = client.post("/dashboard/posts/ep1.mp4", headers=admin, json={"platform": "tiktok"}).json()
+    assert not r["trashed"]
+    r = client.post("/dashboard/posts/ep1.mp4", headers=admin, json={"platform": "instagram"}).json()
+    assert r["trashed"]  # Chinese posts to no X or Threads and trashed == ["ep1 - thumbnail 9x16.jpg", "ep1.mp4"]
     d = client.get("/dashboard/posts", headers=admin).json()
     assert d["videos"] == []
     # The posted video's slot stays booked: the next one takes the slot after it, not its slot again.
@@ -336,7 +334,7 @@ def test_posting_folders(client, admin, settings, monkeypatch):
     assert "=== YouTube Shorts" in caps and "Hello in Chinese" in caps and "Ni hao #chinese" in caps
 
     # Posted everywhere: the whole folder goes, the other renumbers to 01.
-    for p in posting.PLATFORMS:
+    for p in posting.TIMES["chinese"]:
         r = client.post("/dashboard/posts/lesson-ni hao.mp4", headers=admin, json={"platform": p}).json()
     assert r["trashed"] and trashed == [lesson.name]
     client.get("/dashboard/posts", headers=admin)
@@ -651,7 +649,7 @@ def test_posting_move_slot(client, admin, settings, monkeypatch, clock):
     d = client.get("/dashboard/posts", headers=admin).json()
     slots = {v["name"]: v["slot"] for v in d["videos"]}
     assert len(set(slots.values())) == 2
-    assert set(d["videos"][0]["schedule"]) == {"youtube", "tiktok", "facebook", "instagram", "x", "threads"}
+    assert set(d["videos"][0]["schedule"]) == {"youtube", "tiktok", "facebook", "instagram"}  # Chinese: no X, Threads
     assert sum(s["video"] is not None for day in d["calendar"]["chinese"] for s in day["slots"]) == 2
     assert {c["id"] for c in d["channels"]} == {"chinese", "travel", "dream", "healing", "english"}
 
