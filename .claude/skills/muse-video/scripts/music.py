@@ -128,18 +128,29 @@ def voice_check(wav, tags):
 
 
 def generate(style, bpm, seconds, model_id, seed):
+    """MusicGen renders at most 30 s per call; a longer bed continues from its own last 10 s, 20 s at a time."""
     proc = AutoProcessor.from_pretrained(model_id)
     model = MusicgenForConditionalGeneration.from_pretrained(model_id)
+    sr = model.config.audio_encoder.sampling_rate
     style = ", ".join(t for t in style.split(",") if "vocal" not in t and "sing" not in t)  # MusicGen can't sing
     text = [f"{style}, {bpm:.0f} bpm, steady beat, catchy hook, instrumental, no vocals"]
     gpus = ["cuda"] if torch.cuda.is_available() else ["mps"] if torch.backends.mps.is_available() else []
     for dev in gpus + ["cpu"]:
         torch.manual_seed(seed)
         try:
-            inputs = proc(text=text, padding=True, return_tensors="pt").to(dev)
-            out = model.to(dev).generate(**inputs, do_sample=True, guidance_scale=3.0,
-                                         max_new_tokens=int(seconds * 50))
-            return out[0, 0].float().cpu().numpy(), model.config.audio_encoder.sampling_rate
+            model = model.to(dev)
+
+            def render(new_s, prompt=None, dev=dev, model=model):
+                kw = {"audio": prompt, "sampling_rate": sr} if prompt is not None else {}
+                inputs = proc(text=text, padding=True, return_tensors="pt", **kw).to(dev)
+                out = model.generate(**inputs, do_sample=True, guidance_scale=3.0, max_new_tokens=int(new_s * 50))
+                return out[0, 0].float().cpu().numpy()[-int(new_s * sr):]  # new audio only, prompt dropped
+
+            y = render(min(seconds, 30))
+            while len(y) < seconds * sr:
+                y = np.concatenate([y, render(20, y[-10 * sr:])])
+                print(f"musicgen: {len(y) / sr:.0f} of {seconds:.0f} s", file=sys.stderr)
+            return y, sr
         except (RuntimeError, NotImplementedError) as e:  # MPS lacks some ops on older torch; CUDA can run out of memory
             if dev == "cpu":
                 raise
@@ -212,7 +223,8 @@ def main():
     else:
         if engine == "musicgen" and lyrics and not a.engine:
             print("ACE-Step not installed: instrumental MusicGen track, lyrics skipped", file=sys.stderr)
-        y, sr = generate(style, bpm, min(seconds, 30), a.model, a.seed)
+        # a reel picks its body from a 30 s render; a long bed (documentary) gets just its length + 10 s
+        y, sr = generate(style, bpm, min(seconds, 30) if seconds <= 60 else intro_s + body_s + 10, a.model, a.seed)
         sf.write(raw, y, sr)
 
     tempo = song_tempo(y, sr, bpm)
