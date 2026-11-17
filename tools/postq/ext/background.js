@@ -1,4 +1,6 @@
+importScripts('follow.js'); // followDashboard: the badge counts the popup's list, the dashboard's "Ready to post"
 const QUEUE = 'http://127.0.0.1:8766';
+const DASH = 'http://127.0.0.1:18610/dashboard/posts';
 const CHUNK = 4 * 1024 * 1024; // bytes per executeScript call while moving a video into the tab
 const UPLOAD_TIMEOUT_MS = 60 * 60 * 1000;
 const log = (...args) => console.debug('[post-approve]', ...args);
@@ -26,7 +28,12 @@ async function refreshBadge() {
   try {
     // The header tells the queue server the extension is alive (`postq approve` warns when it is not).
     const items = await (await fetch(`${QUEUE}/api/items`, { headers: { 'X-Postq-Poller': chrome.runtime.getManifest().version } })).json();
-    chrome.action.setBadgeText({ text: items.length ? String(items.length) : '' });
+    let shown = items;
+    try {
+      const videos = (await (await fetch(DASH, { signal: AbortSignal.timeout(4000) })).json()).videos;
+      if (Array.isArray(videos)) shown = followDashboard(items, videos).items;
+    } catch { /* dashboard down: count the whole queue */ }
+    chrome.action.setBadgeText({ text: shown.length ? String(shown.length) : '' });
     chrome.action.setBadgeBackgroundColor({ color: '#cc0000' });
     autoPost(items);
   } catch {

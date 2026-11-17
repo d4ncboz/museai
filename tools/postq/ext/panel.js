@@ -52,7 +52,7 @@ function render(item) {
   const q = (s) => el.querySelector(s);
   const [platformPill, who, dryPill, badge, whenEl] = el.querySelectorAll('.meta > *');
   platformPill.textContent = item.platform + (item.targets?.length ? ` → ${item.targets.join(' + ')}` : '');
-  who.textContent = item.account + (item.playlist ? ` · playlist: ${item.playlist}` : '') + (item.offDash ? ' · not on dashboard' : '');
+  who.textContent = item.account + (item.playlist ? ` · playlist: ${item.playlist}` : '');
   dryPill.hidden = !item.dry_run;
   whenEl.textContent = item.created;
   // No preload: 100+ cards each fetching video metadata made the popup open slowly. The cover is the poster.
@@ -229,54 +229,38 @@ function renderFilter() {
     note.textContent = `Nothing queued for ${ch} · ${pl}.`;
   }
   renderSummary();
+  renderMissing();
 }
 chanSel.onchange = () => { saveFilter(); renderFilter(); };
 platSel.onchange = () => { saveFilter(); renderFilter(); };
 hideDone.onchange = () => { saveFilter(); renderFilter(); };
 
-// The popup follows the museai dashboard list: only videos the dashboard lists, only platforms not yet
-// ticked there, in slot order. The queue server queues every open dashboard video itself (postq sync_dashboard).
-// Dashboard unreachable: the whole queue shows.
+// The popup follows the museai dashboard's "Ready to post" list (follow.js): only videos the dashboard
+// lists, only platforms in their `open` list, in slot order. The queue server queues every open dashboard
+// video itself (postq sync_dashboard); what it has not queued yet is listed above the cards.
+// Dashboard unreachable: the last list it gave, or the whole queue before the first answer.
 const DASH = 'http://127.0.0.1:18610/dashboard/posts';
 let lastVideos = null;
 let missing = [];
-async function followDashboard(items) {
-  let videos;
+let hidden = '';
+async function fromDashboard(items) {
   try {
     const res = await fetch(DASH, { signal: AbortSignal.timeout(4000) });
-    videos = (await res.json()).videos;
-  } catch { videos = lastVideos; }
-  if (!Array.isArray(videos)) return items;
-  lastVideos = videos;
-  // 7-day window per channel and platform, counted from that list's first unposted slot (a series that
-  // starts later, like Chinese on 18-11, or YouTube already done for the first weeks, still shows a week).
-  const day = (v) => v.slot?.slice(0, 10);
-  const open = (v, p) => (p === 'meta' ? !(v.posted?.facebook && v.posted?.instagram) : !v.posted?.[p]);
-  const first = {};
-  for (const p of ['youtube', 'meta', 'x', 'tiktok'])
-    for (const v of videos) if (day(v) && open(v, p) && !(first[v.channel + '|' + p] <= day(v))) first[v.channel + '|' + p] = day(v);
-  const within = (v, p) => true || !day(v) || first[v.channel + '|' + p] === undefined || day(v) <= new Date(Date.parse(first[v.channel + '|' + p]) + 6 * 86400000).toISOString().slice(0, 10);
-  // Meta schedules at most 28 days ahead: later slots stay out until the queue server can queue them.
-  const farMeta = (i, d) => i.platform === 'meta' && Date.parse(d.schedule.facebook || d.schedule.instagram || 0) - Date.now() > 28 * 86400000;
-  const byName = new Map(videos.map((v, n) => [v.name, { n, v, posted: v.posted || {}, schedule: v.schedule || {} }]));
-  const dash = (i) => byName.get(i.video?.name);
-  // Dashboard videos still open on a platform but with no queue item: the popup cannot post them, say so.
-  const queued = new Set(items.map((i) => i.platform + '|' + i.video?.name));
-  missing = [];
-  for (const v of videos)
-    for (const p of ['youtube', 'meta'])
-      if (day(v) && open(v, p) && within(v, p) && !(p === 'meta' && Date.parse(day(v)) > Date.now() + 28 * 86400000) && !queued.has(p + '|' + v.name) && items.some((i) => i.platform === p && dash(i)?.v.channel === v.channel)) missing.push(`${v.slot} ${v.channel} ${p}: ${v.name.replace(/\.mp4$/, '')}`);
-  // Queue items the dashboard does not list still show (last, marked): nothing queued is hidden.
-  const off = items.filter((i) => !dash(i)).map((i) => ({ ...i, offDash: true }));
-  return items
-    .filter((i) => {
-      const d = dash(i);
-      return d && within(d.v, i.platform) && !farMeta(i, d) && (i.targets?.length ? i.targets : [i.platform]).some((box) => !d.posted[box]);
-    })
-    .sort((a, b) => dash(a).n - dash(b).n)
-    // The time is the dashboard's current slot time (slots move; the queued schedule_at goes stale).
-    .map((i) => ({ ...i, schedule_at: dash(i).schedule[i.platform === 'meta' ? 'facebook' : i.platform] || i.schedule_at }))
-    .concat(off);
+    const videos = (await res.json()).videos;
+    if (Array.isArray(videos)) lastVideos = videos;
+  } catch { /* keep the last list */ }
+  if (!lastVideos) return items;
+  const f = followDashboard(items, lastVideos);
+  missing = f.missing;
+  hidden = [f.off.length && `${f.off.length} queue item(s) not on the dashboard`, f.dups.length && `${f.dups.length} duplicate(s)`].filter(Boolean).join(' and ');
+  return f.items;
+}
+function renderMissing() {
+  const mb = document.getElementById('missing');
+  const m = missing.filter((x) => (!chanSel.value || x.channel === chanSel.value) && (!platSel.value || x.platform === platSel.value));
+  mb.hidden = !m.length && !hidden;
+  mb.textContent = (m.length ? `On the dashboard, no post card yet (${m.length}): ${m.map((x) => `${x.slot || 'no slot'} ${x.platform} ${x.name.replace(/\.mp4$/, '')}: ${x.why}`).join(' · ')}` : '')
+    + (hidden ? `${m.length ? ' · ' : ''}Hidden: ${hidden}.` : '');
 }
 let orderSig = '';
 let polling = false;
@@ -285,7 +269,7 @@ async function poll() {
   if (polling) return;
   polling = true;
   try {
-    const items = await followDashboard(await (await fetch(`${QUEUE}/api/items`)).json());
+    const items = await fromDashboard(await (await fetch(`${QUEUE}/api/items`)).json());
     // An item whose approval was withdrawn (auto cleared in the queue) must not stay a stuck 'approved' card.
     for (const item of items) {
       const c = cards.get(item.id);
@@ -298,8 +282,6 @@ async function poll() {
       const at = c && !c.busy && !c.queued && c.el.querySelector('[name=at]');
       if (at && document.activeElement !== at && item.schedule_at) { const v = toLocalInput(item.schedule_at); if (at.value !== v) at.value = v; }
     }
-    const mb = document.getElementById('missing');
-    if (mb) { mb.hidden = !missing.length; mb.textContent = missing.length ? `On the dashboard but not queued (${missing.length}): ${missing.slice(0, 6).join(' · ')}${missing.length > 6 ? ' …' : ''}` : ''; }
     const sig = items.map((i) => i.id).join();
     if (sig !== orderSig) {
       orderSig = sig;

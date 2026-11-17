@@ -951,26 +951,24 @@ BOX_PLATFORM = {"youtube": "youtube", "facebook": "meta", "instagram": "meta", "
 def sync_dashboard(now=None, fetch=None):
     """Queue every video the dashboard still lists as open that has no queue item yet.
 
-    The dashboard (folders with a .museai-post marker) is the source of truth: an open platform
-    on a video gets its queue item here, `enqueue` dedupes by source + platform. Platforms outside
-    the channel's own list (Healing: no X/TikTok/Threads) are never queued. Meta slots beyond the
+    The dashboard (folders with a .museai-post marker) is the source of truth: each platform in a
+    video's `open` list (the dashboard leaves out ticked ones and those outside the channel's own list,
+    Healing: no X/TikTok/Threads) gets its queue item here, `enqueue` dedupes by source + platform. Meta slots beyond the
     28-day window wait and enter the queue by themselves once inside it. Returns episode folders queued."""
     now = now or datetime.now(timezone.utc)
     try:
         d = fetch() if fetch else json.load(urllib.request.urlopen(f"{MUSEAI_BASE}/dashboard/posts", timeout=10))
     except Exception:
         return []
-    allowed = {c["id"]: {BOX_PLATFORM.get(b) for b in c.get("platforms", [])} for c in d.get("channels", [])}
     done = []
     for v in d.get("videos", []):
         f = Path(v["folder"]) if v.get("folder") else None  # the dashboard names the folder: launchd's python may not read ~/Desktop
         if not f or not v.get("slot"):
             continue
-        posted = v.get("posted") or {}
-        ok = allowed.get(v.get("channel"))
         want = []
-        for box, plat in BOX_PLATFORM.items():
-            if posted.get(box) or plat in want or (ok is not None and plat not in ok):
+        for box in v.get("open", []):  # the dashboard's own list of platforms still to post
+            plat = BOX_PLATFORM.get(box)
+            if not plat or plat in want:
                 continue
             if plat == "meta":
                 at = (v.get("schedule") or {}).get("facebook") or (v.get("schedule") or {}).get("instagram")

@@ -414,6 +414,9 @@ def _view(path: Path, entry: dict, svc: Services) -> dict:
             "auto_captions": svc.captions.status(_key(path.name)),
             "folder": str(path.parent) if (path.parent / FOLDER_MARK).is_file() else None,  # postq reads no Desktop itself
             "posted": entry.get("posted", {}), "slot": key, "channel": _channel(path.name, entry),
+            # Platforms still to post, in the channel's own list (Healing: no X/TikTok/Threads). postq's
+            # sync and its popup read this, so all three show the same "ready to post" list.
+            "open": [p for p in TIMES[_channel(path.name, entry)] if not entry.get("posted", {}).get(p)],
             "playlist": _playlist(path.name, entry),
             "thumbnails": [{"kind": k, "use": THUMBS[k], "v": int(t.stat().st_mtime)}  # v: new URL when replaced
                            for k, t in _thumbs(path).items()],
