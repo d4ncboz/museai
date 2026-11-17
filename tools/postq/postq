@@ -1002,6 +1002,46 @@ META_AHEAD = timedelta(days=28) - timedelta(minutes=10)  # Business Suite schedu
 BOX_PLATFORM = {"youtube": "youtube", "facebook": "meta", "instagram": "meta", "x": "x", "tiktok": "tiktok"}
 
 
+def open_boxes(v, feed):
+    """The video's platforms still to post. A gateway started before the feed had `open` sends none:
+    then it is what the dashboard page shows unticked, the channel's platforms minus the posted ones."""
+    if isinstance(v.get("open"), list):
+        return v["open"]
+    chans = {c.get("id"): c.get("platforms") for c in feed.get("channels") or []}
+    plats = chans.get(v.get("channel")) or [p.get("id") if isinstance(p, dict) else p for p in feed.get("platforms") or []]
+    return [p for p in plats if not (v.get("posted") or {}).get(p)]
+
+
+def retire_gone(feed):
+    """Archive pending items whose video left the dashboard and whose folder is gone (posted, then trashed).
+
+    Their cards never show (the popup follows the dashboard), but they stayed in the queue for good.
+    Items already uploading (claimed or with a video_id) stay. Returns the ids moved to done/ with
+    status "gone"."""
+    if not isinstance(feed.get("videos"), list):
+        return []
+    listed = {v.get("name") for v in feed["videos"]}
+    gone = []
+    with queue_lock():
+        for p in ROOT.glob("*.json"):
+            try:
+                i = json.loads(p.read_text())
+            except (OSError, ValueError):
+                continue
+            src = i.get("source") or ""
+            if ((i.get("video") or {}).get("name") in listed or not src or Path(src).exists()
+                    or i.get("video_id") or p.with_suffix(".claim").is_file()):
+                continue
+            DONE.mkdir(exist_ok=True)
+            (DONE / p.name).write_text(json.dumps(i | {"status": "gone"}, indent=2, ensure_ascii=False))
+            p.unlink()
+            for media in (i.get("video"), i.get("cover")):
+                if media and (ROOT / media["file"]).is_file():
+                    (ROOT / media["file"]).replace(DONE / media["file"])
+            gone.append(i["id"])
+    return gone
+
+
 def sync_dashboard(now=None, fetch=None):
     """Queue every video the dashboard still lists as open that has no queue item yet.
 
@@ -1014,13 +1054,15 @@ def sync_dashboard(now=None, fetch=None):
         d = fetch() if fetch else json.load(urllib.request.urlopen(f"{MUSEAI_BASE}/dashboard/posts", timeout=10))
     except Exception:
         return []
+    for iid in retire_gone(d):
+        print(f"gone from the dashboard, archived {iid}", flush=True)
     done = []
     for v in d.get("videos", []):
         f = Path(v["folder"]) if v.get("folder") else None  # the dashboard names the folder: launchd's python may not read ~/Desktop
         if not f or not v.get("slot"):
             continue
         want = []
-        for box in v.get("open", []):  # the dashboard's own list of platforms still to post
+        for box in open_boxes(v, d):  # the dashboard's own list of platforms still to post
             plat = BOX_PLATFORM.get(box)
             if not plat or plat in want:
                 continue

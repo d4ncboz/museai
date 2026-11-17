@@ -30,8 +30,8 @@ async function refreshBadge() {
     const items = await (await fetch(`${QUEUE}/api/items`, { headers: { 'X-Postq-Poller': chrome.runtime.getManifest().version } })).json();
     let shown = items;
     try {
-      const videos = (await (await fetch(DASH, { signal: AbortSignal.timeout(4000) })).json()).videos;
-      if (Array.isArray(videos)) shown = followDashboard(items, videos).items;
+      const feed = await (await fetch(DASH, { signal: AbortSignal.timeout(4000) })).json();
+      if (Array.isArray(feed.videos)) shown = followDashboard(items, dashboardVideos(feed)).items;
     } catch { /* dashboard down: count the whole queue */ }
     chrome.action.setBadgeText({ text: shown.length ? String(shown.length) : '' });
     chrome.action.setBadgeBackgroundColor({ color: '#cc0000' });

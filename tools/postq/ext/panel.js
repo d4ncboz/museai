@@ -246,8 +246,8 @@ let hidden = '';
 async function fromDashboard(items) {
   try {
     const res = await fetch(DASH, { signal: AbortSignal.timeout(4000) });
-    const videos = (await res.json()).videos;
-    if (Array.isArray(videos)) lastVideos = videos;
+    const feed = await res.json();
+    if (Array.isArray(feed.videos)) lastVideos = dashboardVideos(feed);
   } catch { /* keep the last list */ }
   if (!lastVideos) return items;
   const f = followDashboard(items, lastVideos);

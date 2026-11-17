@@ -85,6 +85,36 @@ def test_renamed_folder_retires_the_old_item(monkeypatch, tmp_path):
     assert sorted(p.stem for p in root.glob("*.json")) == ["meta", "other", "uploading"]
 
 
+def test_feed_without_open_queues_the_unticked_channel_platforms(monkeypatch, tmp_path):
+    # A gateway started before the feed had `open`: sync queued nothing at all.
+    v = _video(tmp_path, "a.mp4", posted={"youtube": True})
+    del v["open"]
+    calls = []
+    monkeypatch.setattr(postq, "cmd_episode", lambda a: calls.append(a))
+    feed = {"videos": [v], "channels": [{"id": "healing", "platforms": ["youtube", "facebook", "instagram"]}]}
+    postq.sync_dashboard(now=datetime(2026, 11, 16, tzinfo=timezone.utc), fetch=lambda: feed)
+    assert [c.platforms for c in calls] == [["meta"]]
+
+
+def test_items_of_trashed_folders_off_the_dashboard_are_archived(monkeypatch, tmp_path):
+    root = tmp_path / "queue"
+    root.mkdir()
+    monkeypatch.setattr(postq, "ROOT", root)
+    monkeypatch.setattr(postq, "DONE", root / "done")
+    here = tmp_path / "Chinese 01 · Fri 11-12 12h00 · Tea" / "Tea.mp4"
+    here.parent.mkdir()
+    here.write_bytes(b"x")
+    trashed = tmp_path / "Chinese 01 · Fri 20-11 12h00 · Noodles" / "Noodles.mp4"
+    for iid, src in [("gone", trashed), ("uploading", trashed), ("live", here), ("renamed", trashed.with_name("Tea.mp4"))]:
+        _queued(root, iid, src, video={"file": f"{iid}-video.mp4", "name": Path(src).name},
+                **({"video_id": "v1"} if iid == "uploading" else {}))
+    assert postq.retire_gone({}) == []  # no video list in the answer: nothing moves
+    assert postq.retire_gone({"videos": [{"name": "Tea.mp4"}]}) == ["gone"]
+    assert postq.json.loads((root / "done" / "gone.json").read_text())["status"] == "gone"
+    assert (root / "done" / "gone-video.mp4").is_file()
+    assert sorted(p.stem for p in root.glob("*.json")) == ["live", "renamed", "uploading"]
+
+
 def test_second_sync_skips_while_one_runs(monkeypatch, tmp_path, capsys):
     monkeypatch.setattr(postq, "ROOT", tmp_path)
     calls = []

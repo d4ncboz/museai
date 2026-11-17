@@ -13,6 +13,15 @@
 const BOX_PLATFORM = { youtube: 'youtube', facebook: 'meta', instagram: 'meta', x: 'x', tiktok: 'tiktok' };
 const META_AHEAD = 28 * 86400000 - 10 * 60000; // Business Suite schedules at most 28 days out (postq META_AHEAD)
 
+// The feed's videos, each with its `open` list. A gateway started before `open` existed sends none: then
+// it is what the dashboard page itself shows unticked, the channel's platforms minus the posted ones.
+function dashboardVideos(feed) {
+  const plats = new Map((feed.channels || []).map((c) => [c.id, c.platforms]));
+  const all = (feed.platforms || []).map((p) => p.id ?? p);
+  return (feed.videos || []).map((v) => (Array.isArray(v.open) ? v
+    : { ...v, open: (plats.get(v.channel) || all).filter((p) => !(v.posted || {})[p]) }));
+}
+
 function followDashboard(items, videos, now = Date.now()) {
   const boxes = (v, p) => (v.open || []).filter((b) => BOX_PLATFORM[b] === p);
   const metaAt = (v) => v.schedule?.facebook || v.schedule?.instagram;
@@ -53,4 +62,4 @@ function followDashboard(items, videos, now = Date.now()) {
   };
 }
 
-if (typeof module !== 'undefined') module.exports = { followDashboard };
+if (typeof module !== 'undefined') module.exports = { followDashboard, dashboardVideos };

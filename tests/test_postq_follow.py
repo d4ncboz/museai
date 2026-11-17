@@ -58,3 +58,18 @@ def test_popup_list_equals_the_dashboard_list():
     assert [i["id"] for i in f["dups"]] == ["a-yt"]
     assert [(m["name"], m["platform"]) for m in f["missing"]] == [("b.mp4", "youtube"), ("c.mp4", "meta")]
     assert "28 days" in f["missing"][1]["why"]
+
+
+@pytest.mark.skipif(not shutil.which("node"), reason="node not installed")
+def test_feed_without_open_lists_what_the_dashboard_shows_unticked():
+    # A gateway started before the feed had `open`: the popup listed nothing at all.
+    feed = {"platforms": [{"id": p} for p in ("youtube", "tiktok", "facebook", "instagram", "x", "threads")],
+            "channels": [{"id": "healing", "platforms": ["youtube", "facebook", "instagram"]}],
+            "videos": [{"name": "a.mp4", "channel": "healing", "posted": {"youtube": "2026-11-17"}},
+                       {"name": "b.mp4", "channel": "chinese", "posted": {}, "open": ["x"]}]}
+    js = f"const {{dashboardVideos}} = require({json.dumps(str(FOLLOW))});" \
+         f"console.log(JSON.stringify(dashboardVideos({json.dumps(feed)})));"
+    out = json.loads(subprocess.run(["node", "-e", js], capture_output=True, text=True, check=True).stdout)
+    assert [v["open"] for v in out] == [["facebook", "instagram"], ["x"]]
+    items = [_item("a-meta", "meta", "a.mp4", targets=["facebook", "instagram"]), _item("a-yt", "youtube", "a.mp4")]
+    assert [i["id"] for i in _follow(items, out, 0)["items"]] == ["a-meta"]
