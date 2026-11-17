@@ -1,13 +1,16 @@
 ---
 name: field-to-table
-description: Make a 10-15 minute horizontal 16:9 healing film through museai in the slow Chinese countryside "field to table" genre - one young woman (A-Qiao, character bank) and her dog spend a whole quiet day turning one thing from the hills, field, stream or tree into food or a handmade thing (gather, wash, dry, roast, pound, steam, press, dye, weave), then enjoy it at dusk. No narration, no dialogue: real close-miked sound, soft guzheng and bamboo flute, small cream chapter cards. Plus a ~15 s 9:16 hook short cut from the same clips, and 16:9 + 9:16 thumbnails. Picks from a 1000-idea bank (103 subjects x 12 settings x 12 threads) with a history so no subject, setting or thread repeats too soon. Use for "field to table video", "slow countryside cooking video", "video like li ziqi's channel", "ingredient from harvest to meal", "10-15 minute healing video", "long healing cooking video", "rural craft video", or the next one of these.
+description: Make a 10-15 minute horizontal 16:9 healing film through museai in the slow "field to table" style learnt from the big countryside channels, with our healing channel's girl ELLIE and Pip the cat in her English country cottage - she walks into the wood, hedgerow, meadow or kitchen garden with a basket, gathers dinner, cooks it and eats it at dusk by the window. No narration: real close-miked sound, soft piano and guitar, small cream chapter cards, fast human-edit cutting (two cuts per take, wide then punch-in, 0.4 s dissolves) and a 20-25 s cold open of the best moments with a hook line. Plus a ~15 s 9:16 hook short cut from the same clips, and 16:9 + 9:16 thumbnails. Picks from a 1000-idea cottage bank (and a 1000-idea Chinese countryside bank for the A-Qiao variant) with a history so no subject, setting or thread repeats too soon. Use for "field to table video", "slow countryside cooking video", "video like li ziqi's channel", "ingredient from harvest to meal", "10-15 minute healing video", "long healing cooking video", "rural craft video", or the next one of these.
 ---
 
 # field-to-table
 
 Paths are relative to this folder. It is a long-form mode of `../healing-longform/` and reuses its scripts:
 `plan.py` (refs -> stills -> clips, idempotent) and `longform.py` (compose). Server, render queue, quota and
-delivery come from `../muse-video/SKILL.md`; the woman is `AQIAO` in `../character-bank/` (hero + full kept).
+delivery come from `../muse-video/SKILL.md`. The woman is ELLIE (`../character-bank/`, the healing channel's girl:
+braid over her LEFT shoulder) with Pip the cat, and the look is `../healing-longform/prompt/look.txt` (phone-camera,
+real not AI): leave `look` out of story.json. `AQIAO` + `prompt/look.txt` is only the Chinese-countryside variant,
+used when the user asks for it.
 Work folder `~/Movies/museai/healing-<slug>/`. PIL scripts (`longform.py`, `short.py`, `cover.py`) run with
 `~/.local/share/ace-step/venv/bin/python` (it has Pillow; the project venv does not).
 
@@ -29,8 +32,20 @@ What holds viewers for 12-15 minutes with no words:
 - Variants that work the same way: crafts (indigo dye, paper, a bamboo basket, a quilt), preserves (rice wine,
   chilli paste, soy sauce), and festival days (zongzi, mooncakes, new year goods). The bank holds all four.
 
-Never copy a real creator: original woman (A-Qiao), original dog (Doudou), our own titles. No "The life of X"
+Learn the style, never the content: the user wants our own channel's girl and world, not a Chinese farmhouse
+(2026-11-17, v1 with A-Qiao rejected). Never copy a real creator: our own woman, cat, titles. No "The life of X"
 titles (another channel's series name).
+
+## Pace and hook (2026-11-17 feedback: v1 "too slow, looks AI, weak hook")
+
+- **Cut like a human editor.** Each clip beat has `cuts: [[0.3, 4.6], [5.0, 4.4, 1.32, x, y]]`: the wide part of the
+  take, then a 1.32x punch-in of its second half centred on the hands (x, y), like a second camera. Stills 3.5-5 s.
+  Story `xf: 0.4`. ~60 clips + ~12 stills = ~10.5 min, an average shot of ~4 s instead of 9.5 s.
+- **Cold open.** Story `teaser`: 7-8 shots of 2.4-3.6 s from the best moments (the pour, the sizzle, the bubbling
+  dish, her walking into the mist, the cat, her sitting down to eat) with one hook line that promises the payoff
+  ("I walked into the woods with an empty basket. This is what we had for dinner."), then the title card.
+- **Simple real actions** an ordinary person films: a boot in leaves, twisting a mushroom out of moss, butter
+  foaming, a ladle pour. One action per shot; never a pose.
 
 ## Rules that keep it from looking AI
 
@@ -48,23 +63,24 @@ From `../healing-longform/` lessons plus these:
 
 ## Steps
 
-1. **Pick an idea.** `python3 scripts/ideas.py next --season now` (or `--kind craft|preserve|festival`). Turn
-   its `chapters` into 5 chapters and 65-80 beats (12-14 % stills: wides and finished-food still life; the rest
-   clips). Copy `stories/chestnut-day.json` as the template; add `"look": "field-to-table/prompt/look.txt"`,
-   `cast: ["AQIAO"]` when she is in frame, `hold` 9-9.5 s per beat (11 s on chapter openers, 12 s on the last).
-   75 beats x 9.5 s = ~12 min.
+1. **Pick an idea.** `python3 scripts/ideas.py next --season now` (cottage bank; `--bank countryside` for the
+   A-Qiao variant). Turn its `chapters` into 5 chapters and ~70 beats (~60 clips, ~12 stills). Copy
+   `stories/forest-supper.json` as the template (`stories/gen-forest-supper.py` wrote it: edit a copy of the
+   generator, it fills `cuts`, `teaser` and `short`); `cast: ["ELLIE"]` when she is in frame. Check the length with
+   `longform.py --dry` (aim 600-750 s).
 2. **Plan + render**, detached, from the work folder (`H=../healing-longform/scripts`):
    ```bash
    python3 $H/plan.py jobs story.json
    Q=../muse-video/scripts/render-queue
    $Q -j 3 jobs-refs.txt && $Q -j 3 jobs-stills.txt && $Q -j 2 jobs-clips.txt
    ```
-   Look at the refs sheet before stills, and a stills sheet before clips (her braid over the RIGHT shoulder,
+   Look at the refs sheet before stills, and a stills sheet before clips (ELLIE's braid over the LEFT shoulder,
    outfit of that time, nobody else, no door frames, containers full). Delete a bad `stills/sN.png`, fix the
    beat, re-run its job.
 3. **Music** (background, local ACE-Step, not muse quota): two or three 300 s tracks on different seeds,
    joined with `scripts/music_chain.sh` so a 12-15 min film never hears a loop seam:
-   `TAGS="soft solo guzheng ... no vocals" ../healing-video/scripts/music "<season> chinese countryside" mN.m4a 300 <seed>`
+   `TAGS="soft solo felt piano with gentle fingerpicked acoustic guitar, slow, warm, calm, no drums, no vocals"
+   ../healing-video/scripts/music "<season> english countryside cottage" mN.m4a 300 <seed>`
    (exit 3 = calm gate rejected the take: next seed).
 4. **Quota.** 60 clips is more than a day of muse video quota when other queues run. Don't loop on retries:
    `plan.py status story.json` lists missing clips; a missing clip composes as its still pushed in. Compose and
@@ -96,3 +112,6 @@ From `../healing-longform/` lessons plus these:
   and "not browned" in every later beat with that food.
 - 2026-11-17: shared muse accounts gave 9 clips in 2 h, then `upstream_timeout` after 1800 s with progress 0: the
   video quota was gone. Compose with still fallbacks, deliver, recompose after the reset.
+- 2026-11-17 (forest-supper): a prop ref drags the shot to where the ref was shot (the basket ref on a worktop put
+  the forest basket indoors): outdoors, leave the prop out and describe it with the ground it stands on. The
+  opening empty wide still grew ELLIE's face: write "Wide empty landscape ..., no woman and no person anywhere".

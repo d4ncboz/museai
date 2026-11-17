@@ -1,4 +1,4 @@
-"""Compose a ~5 min 16:9 healing day: one shot per beat, sparse voice-over, chapter cards, 1 s dissolves,
+"""Compose a 5-15 min 16:9 healing day: one shot per beat (or per cut), sparse voice-over, chapter cards, 1 s dissolves,
 the clips' own sound as a continuous bed, a real rain bed under rainy beats, soft piano ducked under the voice.
 
   python3 longform.py story.json --music music.m4a --out healing-<slug>.mp4 [--dry]
@@ -7,6 +7,11 @@ Per beat: sN.mp4 when it exists, else stills/sN.png as a slow push-in (so a cut 
 clips are still missing). A beat lasts LEAD + voice + GAP (a beat with no voice: HOLD s: the breathing
 shots). Chapter beats (`"chapter": true`) carry the chapter card; the first one also the film's title.
 Subtitles, grade and the stem levels come from ../healing-video/scripts/story169.py.
+
+Fast cutting (field-to-table): story `xf` sets the dissolve (0.3-0.5 s); a beat's `cuts`
+[[start, secs, zoom, x, y], ...] cuts one take into several shots (zoom 1.3 at x/y = a punch-in, like a second
+camera); story `teaser` {"text", "text_secs", "shots": [[beat, start, secs, zoom?, x?, y?], ...]} is a cold open
+of the best moments with a hook line, before the first chapter card. A beat with `cuts` has no voice.
 """
 import argparse
 import json
@@ -51,6 +56,32 @@ def card_png(lines, path):
     img.save(path)
 
 
+def hook_png(text, path):
+    """Cold-open line: one or two lines of cream italic in the lower third, like a vlogger's own caption."""
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    f = ImageFont.truetype(ITALIC, 52)
+    d = ImageDraw.Draw(img)
+    lines, cur = [], ""
+    for w_ in text.split():
+        t_ = f"{cur} {w_}".strip()
+        if d.textlength(t_, font=f) > W * 0.62 and cur:
+            lines.append(cur)
+            cur = w_
+        else:
+            cur = t_
+    lines.append(cur)
+    y0 = int(H * 0.74) - 36 * (len(lines) - 1)
+    sh = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ds = ImageDraw.Draw(sh)
+    for k, ln in enumerate(lines):
+        ds.text(((W - ds.textlength(ln, font=f)) / 2, y0 + k * 72 + 2), ln, font=f, fill=(0, 0, 0, 190))
+    img = Image.alpha_composite(img, sh.filter(ImageFilter.GaussianBlur(6)))
+    d = ImageDraw.Draw(img)
+    for k, ln in enumerate(lines):
+        d.text(((W - d.textlength(ln, font=f)) / 2, y0 + k * 72), ln, font=f, fill=(250, 244, 230, 255))
+    img.save(path)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("story")
@@ -66,22 +97,35 @@ def main():
     tmp = root / "build"
     tmp.mkdir(exist_ok=True)
 
+    global XF
+    XF = float(story.get("xf", XF))  # a fast-cut film (field-to-table) uses 0.3-0.5 s
+    teaser = story.get("teaser")
+    # one shot per entry: the cold open (teaser shots), then each beat, or each of its `cuts`
+    # (cuts: [[start, secs, zoom, x, y], ...]: one take cut twice, wide then a punch-in, like a two-camera edit)
+    shots = [(bn, dict(start=st, hold=secs, zoom=(rest or [1.0])[0], x=(rest[1:] or [0.5])[0],
+                       y=(rest[2:] or [0.5])[0]), True) for bn, st, secs, *rest in (teaser or {}).get("shots", [])]
+    for bn, b in enumerate(beats, 1):
+        cuts = b.get("cuts") or [[b.get("start", 0.4), b.get("hold", HOLD)]]
+        shots += [(bn, dict(start=c[0], hold=c[1], zoom=(c[2:] or [1.0])[0], x=(c[3:] or [0.5])[0],
+                            y=(c[4:] or [0.5])[0], first=k == 0), False) for k, c in enumerate(cuts)]
     plan, t, first_card = [], 0.0, True
-    for i, b in enumerate(beats, 1):
-        vo = root / "vo" / f"b{i}.wav"
-        vd = dur(vo) if b.get("vo") else 0.0
+    for i, (bn, cut, tease) in enumerate(shots, 1):
+        b = beats[bn - 1]
+        own = not tease and cut.get("first") and not b.get("cuts")  # voice only on an uncut beat
+        vo = root / "vo" / f"b{bn}.wav"
+        vd = dur(vo) if own and b.get("vo") else 0.0
         lead = HOOK_LEAD if i == 1 else LEAD
-        L = (lead + vd + GAP) if vd else float(b.get("hold", HOLD))
-        L += TAIL if i == len(beats) else 0
-        clip = root / b.get("clip", f"s{i}.mp4")
-        src = clip if clip.exists() else root / "stills" / f"s{i}.png"
+        L = (lead + vd + GAP) if vd else float(cut["hold"])
+        L += TAIL if i == len(shots) else 0
+        clip = root / b.get("clip", f"s{bn}.mp4")
+        src = clip if clip.exists() else root / "stills" / f"s{bn}.png"
         card = None
-        if b.get("chapter"):
+        if b.get("chapter") and not tease and cut.get("first"):
             c = chapters[b["ch"]]
             card = ([story["title"]] if first_card else []) + [c["title"], c["sub"]]
             first_card = False
-        plan.append(dict(i=i, b=b, src=src, still=src.suffix == ".png", vo=vo if vd else None, vd=vd, lead=lead, L=L,
-                         T=t, card=card, foley_db=float(b.get("foley_db", 0))))
+        plan.append(dict(i=i, bn=bn, b=b, src=src, still=src.suffix == ".png", vo=vo if vd else None, vd=vd,
+                         lead=lead, L=L, T=t, card=card, cut=cut, foley_db=float(b.get("foley_db", 0))))
         t += L
     total = t
     stills = [p["i"] for p in plan if p["still"]]
@@ -89,7 +133,7 @@ def main():
     missing = [p["src"] for p in plan if not p["src"].exists()]
     if a.dry or missing:
         for p in plan:
-            print(f"b{p['i']:>2} ch{p['b']['ch']} T={p['T']:6.1f} L={p['L']:4.1f} vo={p['vd']:4.1f} "
+            print(f"{p['i']:>3} b{p['bn']:>2} ch{p['b']['ch']} T={p['T']:6.1f} L={p['L']:4.1f} vo={p['vd']:4.1f} "
                   f"{'STILL' if p['still'] else 'clip '} {'CARD' if p['card'] else ''}")
         if missing:
             sys.exit(f"missing: {', '.join(map(str, missing))}")
@@ -100,7 +144,7 @@ def main():
         i, need = p["i"], p["L"] + (XF if p["i"] < len(plan) else 0)
         seg, fol = tmp / f"seg{i}.mp4", tmp / f"fol{i}.wav"
         key = tmp / f"seg{i}.key"
-        stamp = f"{p['src']}:{p['src'].stat().st_mtime}:{need:.3f}:{p['b'].get('vo')}:{p['card']}"
+        stamp = f"{p['src']}:{p['src'].stat().st_mtime}:{need:.3f}:{p['b'].get('vo')}:{p['card']}:{p['cut']}"
         if not a.fresh and seg.exists() and fol.exists() and key.exists() and key.read_text() == stamp:
             p["seg"], p["fol"] = seg, fol
             continue
@@ -118,28 +162,33 @@ def main():
         if p["card"]:
             png = tmp / f"card{i}.png"
             card_png(p["card"], png)
-            overlays.append((png, CARD_IN + (XF / 2 if i > 1 else 0), CARD_IN + CARD_HOLD, 0.9))
+            c0 = CARD_IN + (XF / 2 if i > 1 else 0)
+            overlays.append((png, c0, min(c0 + CARD_HOLD, p["L"] - 0.2), 0.9))  # a short cut ends the card early
         for png, *_ in overlays:
             inputs += ["-loop", "1", "-t", f"{need:.3f}", "-i", str(png)]
         grade = "eq=gamma={g:.3f}:saturation=0.96:contrast=1.01,colorbalance=rs=0.015:gs=0.01:bs=-0.02,noise=alls=4:allf=t"
+        cz = p["cut"]
+        zoom = "" if cz["zoom"] <= 1.0 else (
+            f"crop=iw/{cz['zoom']}:ih/{cz['zoom']}:'min(max(0,{cz['x']}*iw-iw/{cz['zoom']}/2),iw-iw/{cz['zoom']})'"
+            f":'min(max(0,{cz['y']}*ih-ih/{cz['zoom']}/2),ih-ih/{cz['zoom']})',scale={W}:{H}:flags=lanczos,")
         if p["still"]:
             # slow push-in from a 4K upscale (no zoompan jitter): 1.00 -> 1.05 over the beat
             frames = int(need * FPS) + 1
             vf = (f"[0:v]scale=3840:2160:force_original_aspect_ratio=increase,crop=3840:2160,"
-                  f"zoompan=z='1+0.05*on/{frames}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s={W}x{H}:fps={FPS},"
+                  f"zoompan=z='1+0.05*on/{frames}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s={W}x{H}:fps={FPS},{zoom}"
                   f"{grade.format(g=1.0)},trim=duration={need:.3f}[v0]")
             src_in = ["-loop", "1", "-t", f"{need + 0.5:.3f}", "-i", str(p["src"])]
             f = 1.0
         else:
             cd = dur(p["src"])
-            st = min(float(p["b"].get("start", 0.4)), max(0.0, cd - need))
+            st = min(float(p["cut"]["start"]), max(0.0, cd - need))
             f = max(1.0, need / (cd - st))
             if f > 1.45:  # never slower than ~0.7x: the clip's head is used whole
                 st, f = 0.0, need / cd
             y = luma(p["src"], st)
             g = min(1.5, math.log(max(y, 20) / 255) / math.log(130 / 255)) if y < 125 else 1.0
             vf = (f"[0:v]trim=start={st:.3f},setpts=(PTS-STARTPTS)*{f:.4f},fps={FPS},"
-                  f"scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},{grade.format(g=g)},"
+                  f"scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},{zoom}{grade.format(g=g)},"
                   f"trim=duration={need:.3f}[v0]")
             src_in = ["-i", str(p["src"])]
             p["st"] = st
@@ -165,6 +214,15 @@ def main():
         off += plan[k - 1]["L"]
         fc += f"[{last}][{k}:v]xfade=transition=fade:duration={XF}:offset={off:.3f}[x{k}];"
         last = f"x{k}"
+    if teaser and teaser.get("text"):
+        # the cold open's hook line: small cream italic over the first teaser shots, then the title card follows
+        png = tmp / "hook.png"
+        hook_png(teaser["text"], png)
+        h1 = float(teaser.get("text_secs", 4.5))
+        ins += ["-loop", "1", "-t", f"{h1 + 1:.3f}", "-i", str(png)]
+        fc += (f"[{len(plan)}:v]format=rgba,fade=in:st=0.4:d=0.6:alpha=1,fade=out:st={h1 - 0.6:.2f}:d=0.6:alpha=1[hk];"
+               f"[{last}][hk]overlay=0:0:enable='between(t,0.4,{h1:.2f})'[hko];")
+        last = "hko"
     fc += f"[{last}]fade=out:st={total - 3:.3f}:d=3[vout]"
     video = tmp / "video.mp4"
     run(["ffmpeg", "-y", "-hide_banner", *ins, "-filter_complex", fc, "-map", "[vout]", "-c:v", "libx264",
