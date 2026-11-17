@@ -172,6 +172,10 @@ def main():
 
     # 3. audio stems: voice, the clips' sound as one continuous bed, rain under rainy beats, music
     def place(files, delays, out, pre=""):
+        if not files:  # a film with no narration (field-to-table): a silent stem, amix needs 1+ inputs
+            run(["ffmpeg", "-y", "-hide_banner", "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo", "-t",
+                 f"{total:.3f}", str(out)])
+            return
         ins_, fc_ = [], ""
         for k, (f_, d_) in enumerate(zip(files, delays, strict=True)):
             ins_ += ["-i", str(f_)]
@@ -199,6 +203,9 @@ def main():
              f"adelay={int(r0 * 1000)}:all=1,apad,atrim=duration={total:.3f}", "-t", f"{total:.3f}", str(rain)])
         stems.append((rain, -33))
     for stem, lufs in stems:
+        if stem == voice and not voiced:  # silence: loudnorm measures -inf and fails; the silent stem is the result
+            run(["ffmpeg", "-y", "-hide_banner", "-i", str(voice), str(voice.with_suffix(".n.m4a"))])
+            continue
         run(["python3", LNORM, str(stem), str(stem.with_suffix(".n.m4a")), str(lufs)])
     music = tmp / "music.wav"
     if a.music == "none":
