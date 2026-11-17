@@ -118,6 +118,22 @@ def queue_lock():
         yield
 
 
+@contextmanager
+def sync_lock():
+    """True while this process alone syncs; False when another sync already runs.
+
+    The gateway syncs every minute and a manual `postq sync` can overlap it: both read the queue
+    before either writes, so the same video went in twice."""
+    ROOT.mkdir(parents=True, exist_ok=True)
+    with (ROOT / ".sync.lock").open("w") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            yield False
+            return
+        yield True
+
+
 def server_running():
     with socket.socket() as s:
         return s.connect_ex(("127.0.0.1", PORT)) == 0
@@ -975,8 +991,12 @@ def sync_dashboard(now=None, fetch=None):
 
 def cmd_sync(_):
     """One sync pass. The museai gateway runs this every minute: launchd's python cannot read ~/Desktop."""
-    for name in sync_dashboard():
-        print(f"queued {name}")
+    with sync_lock() as mine:
+        if not mine:
+            print("another sync is running, skipped")
+            return
+        for name in sync_dashboard():
+            print(f"queued {name}")
 
 
 def cmd_serve(_):

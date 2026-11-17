@@ -76,3 +76,16 @@ def test_renamed_folder_retires_the_old_item(monkeypatch, tmp_path):
     assert done["status"] == "superseded" and done["superseded_by"] == str(new)
     assert (root / "done" / "old-video.mp4").is_file()
     assert sorted(p.stem for p in root.glob("*.json")) == ["meta", "other", "uploading"]
+
+
+def test_second_sync_skips_while_one_runs(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(postq, "ROOT", tmp_path)
+    calls = []
+    monkeypatch.setattr(postq, "sync_dashboard", lambda: calls.append(1) or [])
+    with postq.sync_lock() as first:
+        assert first
+        postq.cmd_sync(None)
+    assert calls == []
+    assert "skipped" in capsys.readouterr().out
+    postq.cmd_sync(None)
+    assert calls == [1]
