@@ -58,6 +58,9 @@ def test_popup_list_equals_the_dashboard_list():
     assert [i["id"] for i in f["dups"]] == ["a-yt"]
     assert [(m["name"], m["platform"]) for m in f["missing"]] == [("b.mp4", "youtube"), ("c.mp4", "meta")]
     assert "28 days" in f["missing"][1]["why"]
+    assert f["missing"][1]["wait"] == "2026-12-23" and "wait" not in f["missing"][0]  # panel: one summary line
+    twice = _follow([], [videos[2], {**videos[2], "folder": "/f/c2"}], now)["missing"]
+    assert len(twice) == 1  # two dashboard videos with one name: one row, not two
 
 
 @pytest.mark.skipif(not shutil.which("node"), reason="node not installed")

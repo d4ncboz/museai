@@ -45,11 +45,14 @@ function followDashboard(items, videos, now = Date.now()) {
   for (const v of videos)
     for (const p of [...new Set((v.open || []).map((b) => BOX_PLATFORM[b]).filter(Boolean))])
       if (!queued.has(p + '|' + v.name)) {
+        queued.add(p + '|' + v.name); // two dashboard videos with one name: one row
         const at = p === 'meta' && metaAt(v);
-        const why = at && Date.parse(at) - now > META_AHEAD
-          ? `queues on ${new Date(Date.parse(at) - META_AHEAD).toISOString().slice(0, 10)} (Meta: 28 days ahead at most)`
+        // `wait`: Meta's 28-day window not open yet; postq queues it on that day by itself (not a problem).
+        const wait = at && Date.parse(at) - now > META_AHEAD
+          ? new Date(Date.parse(at) - META_AHEAD).toISOString().slice(0, 10) : undefined;
+        const why = wait ? `queues on ${wait} (Meta: 28 days ahead at most)`
           : !v.slot ? 'no slot yet' : !v.folder ? 'not in its posting folder yet' : 'not queued yet';
-        missing.push({ channel: v.channel, platform: p, name: v.name, slot: v.slot, why });
+        missing.push({ channel: v.channel, platform: p, name: v.name, slot: v.slot, why, wait });
       }
   return {
     items: shown

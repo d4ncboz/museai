@@ -258,9 +258,16 @@ async function fromDashboard(items) {
 function renderMissing() {
   const mb = document.getElementById('missing');
   const m = missing.filter((x) => (!chanSel.value || x.channel === chanSel.value) && (!platSel.value || x.platform === platSel.value));
-  mb.hidden = !m.length && !hidden;
-  mb.textContent = (m.length ? `On the dashboard, no post card yet (${m.length}): ${m.map((x) => `${x.slot || 'no slot'} ${x.platform} ${x.name.replace(/\.mp4$/, '')}: ${x.why}`).join(' · ')}` : '')
-    + (hidden ? `${m.length ? ' · ' : ''}Hidden: ${hidden}.` : '');
+  // Videos waiting for Meta's 28-day window are expected (postq queues each on its day): one line, not a row each.
+  const waits = m.filter((x) => x.wait).sort((a, b) => a.wait.localeCompare(b.wait));
+  const rows = m.filter((x) => !x.wait);
+  const parts = [
+    rows.length && `On the dashboard, no post card yet (${rows.length}): ${rows.map((x) => `${x.slot || 'no slot'} ${x.platform} ${x.name.replace(/\.mp4$/, '')}: ${x.why}`).join(' · ')}`,
+    waits.length && `${waits.length} Meta post(s) wait for Meta's 28-day window: postq queues each on its day, next on ${waits[0].wait} (${waits.filter((x) => x.wait === waits[0].wait).map((x) => x.name.replace(/\.mp4$/, '')).join(', ')})`,
+    hidden && `Hidden: ${hidden}`,
+  ].filter(Boolean);
+  mb.hidden = !parts.length;
+  mb.textContent = parts.join(' · ') + (parts.length ? '.' : '');
 }
 let orderSig = '';
 let polling = false;
