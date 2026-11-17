@@ -46,6 +46,12 @@
     .status { font-size: 12px; word-break: break-word; }
     .status.ok { color: var(--ok); } .status.bad { color: var(--bad); }
     .status a { color: inherit; }
+    #waiting { padding: 8px 10px; } #waiting h3 { font-size: 12px; color: var(--muted); margin: 4px 0 6px; font-weight: 600; }
+    #waiting .wlist { display: grid; gap: 4px; }
+    .wrow { display: flex; gap: 8px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; font-size: 12px; }
+    .wrow img { width: 27px; height: 48px; object-fit: cover; border-radius: 3px; flex: none; background: var(--line); }
+    .wrow .wname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wrow .wwhen { color: var(--muted); white-space: nowrap; }
     .card[data-state=queued] { border-left: 4px solid var(--ok); }
     .card[data-state=posting] { border-left: 4px solid var(--primary); }
     .card[data-state=done] { border-left: 4px solid var(--ok); opacity: .7; }
@@ -91,6 +97,7 @@
   </section>
   <div id="missing" class="status" hidden></div>
   <main id="list"></main>
+  <section id="waiting" hidden><h3></h3><div class="wlist"></div></section>
   <script src="follow.js"></script>
   <script src="panel.js"></script>
 </body>

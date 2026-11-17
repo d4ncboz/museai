@@ -258,16 +258,33 @@ async function fromDashboard(items) {
 function renderMissing() {
   const mb = document.getElementById('missing');
   const m = missing.filter((x) => (!chanSel.value || x.channel === chanSel.value) && (!platSel.value || x.platform === platSel.value));
-  // Videos waiting for Meta's 28-day window are expected (postq queues each on its day): one line, not a row each.
+  // Videos waiting for Meta's 28-day window are expected (postq queues each on its day): rows below the cards.
   const waits = m.filter((x) => x.wait).sort((a, b) => a.wait.localeCompare(b.wait));
   const rows = m.filter((x) => !x.wait);
+  renderWaiting(waits.sort((a, b) => String(a.slot).localeCompare(String(b.slot))));
   const parts = [
     rows.length && `On the dashboard, no post card yet (${rows.length}): ${rows.map((x) => `${x.slot || 'no slot'} ${x.platform} ${x.name.replace(/\.mp4$/, '')}: ${x.why}`).join(' · ')}`,
-    waits.length && `${waits.length} Meta post(s) wait for Meta's 28-day window: postq queues each on its day, next on ${waits[0].wait} (${waits.filter((x) => x.wait === waits[0].wait).map((x) => x.name.replace(/\.mp4$/, '')).join(', ')})`,
     hidden && `Hidden: ${hidden}`,
   ].filter(Boolean);
   mb.hidden = !parts.length;
   mb.textContent = parts.join(' · ') + (parts.length ? '.' : '');
+}
+// Videos past Meta's 28-day window: no queue item yet (postq queues each on its day), so no card;
+// listed below the cards, one row each, so the whole plan is visible.
+function renderWaiting(waits) {
+  const box = document.getElementById('waiting');
+  box.hidden = !waits.length;
+  box.querySelector('h3').textContent = `Waiting for Meta's 28-day window (${waits.length}): postq queues each on its day`;
+  box.querySelector('.wlist').replaceChildren(...waits.map((x) => {
+    const row = Object.assign(document.createElement('div'), { className: 'wrow' });
+    const img = Object.assign(document.createElement('img'), { loading: 'lazy', alt: '' });
+    img.src = `${DASH}/${encodeURIComponent(x.name)}/thumbnail/9x16`;
+    img.onerror = () => { img.style.visibility = 'hidden'; };
+    const name = Object.assign(document.createElement('span'), { className: 'wname', textContent: `${x.slot} · ${x.platform} · ${x.name.replace(/\.mp4$/, '')}` });
+    const when = Object.assign(document.createElement('span'), { className: 'wwhen', textContent: `queues ${x.wait}` });
+    row.append(img, name, when);
+    return row;
+  }));
 }
 let orderSig = '';
 let polling = false;
