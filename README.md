@@ -218,6 +218,15 @@ Finished videos can post themselves to TikTok, YouTube Shorts, Facebook Reels an
 on a schedule, with rules and per-video overrides on `/dashboard` → Auto-post. Setup of the developer
 apps, scopes and audits: [docs/auto-post.md](docs/auto-post.md).
 
+## Render queue
+
+Heavy render steps (the 4K upscale in `deliver.sh`) can run on a Colab GPU through
+[muse-renderer](https://github.com/lvluu/muse-renderer#setup). Set `MUSE2API_RENDER_DRIVE` (the museai
+server) and `MUSE_RENDER_DRIVE` (the shell scripts) to its folder on Google Drive; `/dashboard` → Queue then shows
+the worker (`GPU online` / `idle` / `offline`), the queue and each job's output files. Unset, the feature is off.
+`UHD=1 deliver.sh` sends the upscale there while the worker's heartbeat is fresh and says so (`upscale: remote`);
+otherwise, or when the remote job fails, it upscales locally and prints why.
+
 ## Browser control for Claude Code
 
 To let Claude Code drive your own browser on muse.ai (with your logged-in session), run

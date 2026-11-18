@@ -36,7 +36,7 @@
   .badge.hot { color: #fff; background: var(--accent); border-radius: 999px; padding: 0 7px; }
   .nav-foot { margin-top: auto; display: flex; flex-direction: column; gap: 8px; padding: 0 10px; }
   main { max-width: 1000px; width: 100%; padding: 24px 24px 48px; }
-  [data-section][hidden] { display: none; }
+  [data-section][hidden], .pill[hidden] { display: none; }
   header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
   h1 { font-size: 20px; margin: 0; }
   h2 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em;
@@ -89,6 +89,18 @@
   .p-idle { color: var(--idle); background: var(--idle-bg); }
   .stat.s-bad b { color: var(--bad); }
   .stat.s-run b { color: var(--run); }
+
+  /* render queue */
+  .rq { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px;
+        margin-bottom: 24px; display: grid; gap: 8px; }
+  .rq-links { display: flex; gap: 14px; font-size: 12px; flex-wrap: wrap; }
+  .rq-links a, .rq-job a { color: var(--accent); }
+  .rq-job { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; font-size: 13px;
+            border-top: 1px solid var(--line); padding-top: 8px; }
+  .rq-job code { font-size: 12px; }
+  .rq-job details { flex-basis: 100%; }
+  .rq-job pre { margin: 6px 0 0; padding: 8px; background: var(--soft); border-radius: 6px; font-size: 11px;
+                white-space: pre-wrap; word-break: break-word; max-height: 240px; overflow: auto; }
 
   /* videos */
   .toolbar { position: sticky; top: 0; z-index: 1; background: var(--bg); padding: 8px 0;
@@ -264,6 +276,7 @@
   <button data-view="autopost">Auto-post <span class="badge" id="navAuto"></span></button>
   <div class="nav-foot">
     <span class="pill p-idle" id="cpu" title="Host CPU">CPU …</span>
+    <span class="pill p-idle" id="gpu" title="Colab render queue" hidden>GPU …</span>
     <label class="live"><input type="checkbox" id="auto" checked> live · <span id="updated">loading…</span></label>
     <button id="refresh">Refresh</button>
   </div>
@@ -296,6 +309,10 @@
       accounts run short, the client rendering the fewest goes first. Accounts show Ready when no request
       waits: clients are checking a take or writing the next prompt.</p>
     <div class="stats" id="qStats"></div>
+    <div id="rq" hidden>
+      <h2>Renderer</h2>
+      <div class="rq" id="rqCard"></div>
+    </div>
     <h2>Waiting and rendering</h2>
     <div class="list qlist" id="qNow"></div>
     <h2>Clients, last 3 hours</h2>
@@ -348,7 +365,7 @@ const PAGE = 40;
 const TABS = [["", "All"], ["active", "Active"], ["succeeded", "Done"], ["failed", "Failed"]];
 // Remote viewers pass the admin key in the fragment (never sent to the server in the URL).
 const key = new URLSearchParams(location.hash.slice(1)).get("key") || "";
-let accounts = [], usage = {}, system = null, tasks = [], selected = "", tab = "", shown = PAGE, timer = null;
+let accounts = [], usage = {}, system = null, renderer = null, tasks = [], selected = "", tab = "", shown = PAGE, timer = null;
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
@@ -1236,16 +1253,53 @@ function cpuStat() {
     + `<span>CPU ${system.level === "ok" ? "" : esc(system.level) + " · "}${esc(detail)}</span></div>`;
 }
 
+// Colab render queue (muse-renderer): hidden until MUSE2API_RENDER_DRIVE points at its Drive folder.
+const GPU_STATE = { online: ["p-ok", "GPU online"], idle: ["p-run", "GPU idle"], offline: ["p-bad", "GPU offline"] };
+function renderGpu() {
+  const el = $("gpu"), box = $("rq");
+  el.hidden = box.hidden = !renderer;
+  if (!renderer) return;
+  const [cls, text] = GPU_STATE[renderer.state] || GPU_STATE.offline;
+  el.className = "pill " + cls;
+  el.textContent = text;
+  el.title = renderer.host ? `Colab render queue · worker on ${renderer.host}` : "Colab render queue";
+  const c = renderer.counts || {};
+  const jobHtml = (j) => `<div class="rq-job"><code>${esc(j.id)}</code>`
+    + `${pill(j.state === "done" ? ["p-ok", "done"] : j.state === "failed" ? ["p-bad", "failed"] : ["p-run", j.state])}`
+    + `<span class="meta">${[j.seconds != null ? j.seconds + " s" : "", j.rc != null ? "rc " + j.rc : ""].filter(Boolean).join(" · ")}</span>`
+    + (j.files || []).map((f) => `<a href="/dashboard/renderer/${encodeURIComponent(j.id)}/${encodeURIComponent(f)}" data-rqfile>${esc(f)}</a>`).join("")
+    + (j.state === "failed" && j.log ? `<details><summary class="meta">log</summary><pre>${esc(j.log)}</pre></details>` : "")
+    + `</div>`;
+  $("rqCard").innerHTML = `<div class="meta">`
+    + (renderer.error ? "" : `${plural(c.queue || 0, "job")} queued · ${c.running || 0} running · ${c.done || 0} done · ${c.failed || 0} failed`)
+    + (renderer.job ? ` · running ${esc(renderer.job)}` : "") + `</div>`
+    + (renderer.error ? `<div class="err">${esc(renderer.error)}</div>` : "")
+    + (renderer.jobs || []).map(jobHtml).join("")
+    + `<div class="rq-links">`
+    + (renderer.runtime === "up" && renderer.colab_url ? `<a href="${esc(renderer.colab_url)}" target="_blank" rel="noopener">Colab session</a>` : "")
+    + `<a href="https://github.com/lvluu/muse-renderer" target="_blank" rel="noopener">muse-renderer</a></div>`;
+}
+// Output files sit behind the admin key for remote viewers, which a plain link cannot send.
+document.addEventListener("click", async (e) => {
+  const a = e.target.closest("[data-rqfile]"); if (!a || !key) return;
+  e.preventDefault();
+  const r = await fetch(a.getAttribute("href"), { headers: { Authorization: "Bearer " + key } });
+  if (r.ok) window.open(URL.createObjectURL(await r.blob()), "_blank");
+  else alert(`download failed: ${r.status}`);
+});
+
 async function load() {
   try {
     const d = await api("/dashboard/data");
     accounts = d.accounts;
     usage = d.usage || {};
     system = d.system || null;
+    renderer = d.renderer || null;
     tasks = d.videos;
     $("updated").textContent = "updated " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
     render();
     renderCpu();
+    renderGpu();
     loadPosts();
     loadAuto();
   } catch (e) {

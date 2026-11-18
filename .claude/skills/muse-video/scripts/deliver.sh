@@ -64,7 +64,27 @@ if [ "${UHD:-0}" = 0 ]; then
   cp "$final" "$out"
   cmp -s "$final" "$out" || { echo "copy differs: $out" >&2; exit 1; }
 else
-  "$(dirname "$0")/upscale.sh" "$final" "$out"
+  # Remote: the Colab render queue (github.com/lvluu/muse-renderer) when its server heartbeat is under
+  # 60 s old and the CLI is there; otherwise local, and it says which and why.
+  renderer=${MUSE_RENDERER:-$HOME/dev/muse-renderer/muse-renderer}
+  why=
+  if [ -z "${MUSE_RENDER_DRIVE:-}" ]; then why="MUSE_RENDER_DRIVE not set"
+  elif [ ! -x "$renderer" ]; then why="muse-renderer not found at $renderer"
+  else
+    host=$(python3 -c '
+import json, os, sys, time
+d = json.load(open(os.path.join(os.path.expanduser(sys.argv[1]), "server.json")))
+if time.time() - d["ts"] < 60: print(d.get("host") or "?")' "$MUSE_RENDER_DRIVE" 2>/dev/null) || host=
+    [ -n "$host" ] || why="render server offline"
+  fi
+  if [ -z "$why" ]; then
+    echo "upscale: remote (muse-renderer on $host)"
+    # a failed remote job must not lose the delivery: redo it here
+    "$renderer" upscale "$final" "$out" || { echo "upscale: local (remote job failed)"; "$(dirname "$0")/upscale.sh" "$final" "$out"; }
+  else
+    echo "upscale: local ($why)"
+    "$(dirname "$0")/upscale.sh" "$final" "$out"
+  fi
   frames() { ffprobe -v error -count_packets -select_streams v:0 -show_entries stream=nb_read_packets -of csv=p=0 "$1"; }
   [ "$(frames "$final")" = "$(frames "$out")" ] || { echo "frame count differs: $out" >&2; exit 1; }
 fi

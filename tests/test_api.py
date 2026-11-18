@@ -134,7 +134,7 @@ def test_dashboard_page(client, admin):
     assert client.get("/dashboard/data").status_code == 401
     data = client.get("/dashboard/data", headers=admin).json()
     assert data["system"]["level"] in {"ok", "busy", "overloaded"}
-    assert {k: v for k, v in data.items() if k != "system"} == {
+    assert {k: v for k, v in data.items() if k not in ("system", "renderer")} == {
         "accounts": [],
         "usage": {},
         "videos": [],

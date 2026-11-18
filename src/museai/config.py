@@ -7,7 +7,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DriverName = Literal["mock", "browser", "http"]
@@ -20,6 +20,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
+        populate_by_name=True,
     )
 
     # --- server ---
@@ -36,6 +37,13 @@ class Settings(BaseSettings):
     api_key: str = Field(default="", description="Bearer key for /v1/*. Auto-generated if empty.")
     admin_key: str = Field(
         default="", description="Bearer key for /admin/*. Falls back to api_key."
+    )
+
+    # --- render queue ---
+    # Folder of the Colab render queue on Google Drive (github.com/lvluu/muse-renderer). Empty = off.
+    render_drive: str = Field(
+        default="",
+        validation_alias=AliasChoices("MUSE2API_RENDER_DRIVE", "MUSE_RENDER_DRIVE"),
     )
 
     # --- storage ---
