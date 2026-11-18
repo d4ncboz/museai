@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 T = TypeVar("T")
 
 # A failover with less render time left than this is not started.
-MIN_VIDEO_ATTEMPT = 120.0
+MIN_VIDEO_ATTEMPT = 420.0  # a render takes 1-7 min: a retry with less left only fails later with a timeout
 
 _ANONYMOUS = Account(id="anonymous", label="driver without accounts")
 

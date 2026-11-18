@@ -108,8 +108,9 @@ class Settings(BaseSettings):
     # ~16 min instead of holding its account for 25.
     video_timeout_base: float = 360.0
     video_timeout_per_second: float = 60.0
-    # Render time one video job may spend on accounts in all, failovers included (30 min).
-    video_job_deadline: float = 1800.0
+    # Render time one video job may spend on accounts in all, failovers included (60 min:
+    # 30 left a failover only a few minutes after one 25-min timeout).
+    video_job_deadline: float = 3600.0
     # An account whose render timed out gets no new video job for this long while another
     # account can take it.
     stuck_video_cooldown: float = 1800.0
@@ -123,7 +124,7 @@ class Settings(BaseSettings):
     # How long an image/video job waits for a free account (up to account_max_concurrency jobs per account).
     # 0 = queue until one is free.
     media_queue_timeout: float = 0.0
-    account_max_concurrency: int = 6
+    account_max_concurrency: int = 2  # 6 per account overloaded the one Chromium (CDP timeouts)
     account_cooldown: float = 120.0
     # How long an account rests after muse.ai reports it out of quota.
     account_quota_cooldown: float = 3600.0

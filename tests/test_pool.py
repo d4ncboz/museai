@@ -321,12 +321,19 @@ async def test_video_job_render_time_is_capped_across_failovers(tmp_path, monkey
             return await super().generate_video(account, req)
 
     driver = Slow({"a0", "a1", "a2"})
+    gw = Gateway(pool, driver, max_failover=2, video_deadline=2400)
+    with pytest.raises(GenerationTimeout):
+        await gw.generate_video(VideoRequest(prompt="p", model="m", timeout=1500))
+    # 1500 s on the first account leaves 900 s for the second; then nothing for a third.
+    assert [t for _, t in driver.calls] == [1500, 900]
+    assert clock[0] <= 2400
+    # 300 s left (under MIN_VIDEO_ATTEMPT) is no retry: a render that short only timed out (192 s, 2026-11-18).
+    driver.calls.clear()
+    clock[0] = 0.0
     gw = Gateway(pool, driver, max_failover=2, video_deadline=1800)
     with pytest.raises(GenerationTimeout):
         await gw.generate_video(VideoRequest(prompt="p", model="m", timeout=1500))
-    # 1500 s on the first account leaves 300 s for the second; then too little for a third.
-    assert [t for _, t in driver.calls] == [1500, 300]
-    assert clock[0] <= 1800
+    assert [t for _, t in driver.calls] == [1500]
 
 
 def test_video_timeout_scales_with_clip_length():
