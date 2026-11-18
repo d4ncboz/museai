@@ -24,6 +24,7 @@ def settings(tmp_path) -> Settings:
         autopost_enabled=False,  # tests run auto-post passes themselves
         autopost_mock=True,
         postq_sync=False,  # `postq sync` writes the live queue: two copies of a video came from test runs
+        render_drive="",  # MUSE_RENDER_DRIVE in the developer's shell turned the renderer on in every test
     )
 
 
