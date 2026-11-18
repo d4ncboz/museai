@@ -1,0 +1,176 @@
+{
+ "note": "One entry per taught item: {hanzi, pinyin, vi, hsk, first_ep, reused_eps:[]}. No re-teaching as 'new' within 20 episodes; mark 'ôn lại'.",
+ "words": [
+  {
+   "hanzi": "面",
+   "pinyin": "miàn",
+   "vi": "mì, sợi mì",
+   "hsk": 1,
+   "first_ep": 1,
+   "reused_eps": []
+  },
+  {
+   "hanzi": "碗",
+   "pinyin": "wǎn",
+   "vi": "bát",
+   "hsk": 1,
+   "first_ep": 1,
+   "reused_eps": []
+  },
+  {
+   "hanzi": "汤",
+   "pinyin": "tāng",
+   "vi": "canh",
+   "hsk": 1,
+   "first_ep": 1,
+   "reused_eps": []
+  },
+  {
+   "hanzi": "牛肉",
+   "pinyin": "niúròu",
+   "vi": "thịt bò",
+   "hsk": 1,
+   "first_ep": 1,
+   "reused_eps": []
+  },
+  {
+   "hanzi": "钱",
+   "pinyin": "qián",
+   "vi": "tiền",
+   "hsk": 1,
+   "first_ep": 1,
+   "reused_eps": []
+  },
+  {
+   "hanzi": "多少",
+   "pinyin": "duōshao",
+   "vi": "bao nhiêu",
+   "hsk": 1,
+   "first_ep": 1,
+   "reused_eps": []
+  },
+  {
+   "hanzi": "好吃",
+   "pinyin": "hǎochī",
+   "vi": "ngon",
+   "hsk": 1,
+   "first_ep": 1,
+   "reused_eps": []
+  },
+  {
+   "hanzi": "辣",
+   "pinyin": "là",
+   "vi": "cay",
+   "hsk": 1,
+   "first_ep": 1,
+   "reused_eps": []
+  },
+  {
+   "hanzi": "客人",
+   "pinyin": "kèrén",
+   "vi": "khách",
+   "hsk": 2,
+   "first_ep": 1,
+   "reused_eps": []
+  },
+  {
+   "hanzi": "关门",
+   "pinyin": "guān mén",
+   "vi": "đóng cửa",
+   "hsk": 2,
+   "first_ep": 1,
+   "reused_eps": []
+  },
+  {
+   "hanzi": "骨头",
+   "pinyin": "gǔtou",
+   "vi": "xương",
+   "hsk": 2,
+   "first_ep": 1,
+   "reused_eps": []
+  },
+  {
+   "hanzi": "淡",
+   "pinyin": "dàn",
+   "vi": "nhạt",
+   "hsk": 2,
+   "first_ep": 1,
+   "reused_eps": []
+  },
+  {
+   "hanzi": "贵",
+   "pinyin": "guì",
+   "vi": "đắt",
+   "hsk": 1,
+   "first_ep": 1,
+   "reused_eps": []
+  },
+  {
+   "hanzi": "便宜",
+   "pinyin": "piányi",
+   "vi": "rẻ",
+   "hsk": 1,
+   "first_ep": 1,
+   "reused_eps": []
+  },
+  {
+   "hanzi": "爷爷",
+   "pinyin": "yéye",
+   "vi": "ông nội",
+   "hsk": 1,
+   "first_ep": 1,
+   "reused_eps": []
+  }
+ ],
+ "expressions": [
+  {
+   "hanzi": "欢迎光临!",
+   "pinyin": "Huānyíng guānglín!",
+   "vi": "Hoan nghênh quý khách!",
+   "first_ep": 1,
+   "reused_eps": []
+  },
+  {
+   "hanzi": "您几位?",
+   "pinyin": "Nín jǐ wèi?",
+   "vi": "Quý khách mấy người?",
+   "first_ep": 1,
+   "reused_eps": []
+  },
+  {
+   "hanzi": "来两碗牛肉面。",
+   "pinyin": "Lái liǎng wǎn niúròu miàn.",
+   "vi": "Cho hai bát mì bò.",
+   "first_ep": 1,
+   "reused_eps": []
+  },
+  {
+   "hanzi": "我不要香菜。",
+   "pinyin": "Wǒ búyào xiāngcài.",
+   "vi": "Tôi không lấy rau mùi.",
+   "first_ep": 1,
+   "reused_eps": []
+  },
+  {
+   "hanzi": "多少钱?",
+   "pinyin": "Duōshao qián?",
+   "vi": "Bao nhiêu tiền?",
+   "first_ep": 1,
+   "reused_eps": []
+  },
+  {
+   "hanzi": "太好吃了!",
+   "pinyin": "Tài hǎochī le!",
+   "vi": "Ngon quá!",
+   "first_ep": 1,
+   "reused_eps": []
+  },
+  {
+   "hanzi": "对不起。/没关系。",
+   "pinyin": "Duìbuqǐ. / Méi guānxi.",
+   "vi": "Xin lỗi. / Không sao.",
+   "first_ep": 1,
+   "reused_eps": []
+  }
+ ]
+}

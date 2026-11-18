@@ -1,0 +1,30 @@
+{
+  "key": "GU_XIAOYI",
+  "version": 1,
+  "name": "顾小意 Gu Xiaoyi",
+  "age": 6,
+  "sex": "F",
+  "origin": "Chinese (Han), ancient river-city child",
+  "build": "small child, about 3 ft 9 in, slim",
+  "identity": "a 6-year-old Chinese girl with a round face and soft cheeks: fair warm skin, large dark brown observant eyes, small straight nose, small mouth, a quiet serious look. Black hair in two neat buns on top of her head, each with a small pink silk flower pin. Fine natural skin, no makeup.",
+  "voice": "small, soft, clear child's Mandarin, short simple sentences",
+  "base_wardrobe": "a clean pink cotton hanfu with a crossed collar and a tiny embroidered flower on each cuff, a pale sash, a small cloth rabbit tucked in the sash",
+  "used_by": [
+    "historical-drama"
+  ],
+  "views": {
+    "hero": "hero.jpg",
+    "full": "full.jpg"
+  },
+  "outfits_used": [
+    "P12 (ep23, 元宵): mustard-yellow padded winter jacket, white fluffy trim, tiny embroidered ducks; two side braids with orange silk ribbons; tiger-head hat on shoulders",
+    "P13 (ep26, 放风筝): sky-blue padded spring jacket with white cloud embroidery, silver butterfly pendant; two round buns with turquoise ribbons",
+    "P14 (ep28, 天热吃西瓜): pale-yellow cotton summer hanfu, green leaf collar, jade bracelet; two high pigtails with lemon-yellow ribbons, round paper fan",
+    "P15 (ep30, 睡前故事): cream cotton sleeping robe, small embroidered pink rabbits, silver bell bracelet; two loose low braids with pink silk ribbons",
+    "P16 (ep32, 生日): bright-red silk birthday dress, golden lucky-cloud embroidery, jade longevity-lock pendant; two small round buns with red-and-gold ribbons",
+    "P18 (ep36, 浇花): lilac-purple cotton hanfu, white daisy embroidery, shell necklace; two low ponytails with white silk bows",
+    "P17 (ep33, 写字): lilac-purple padded autumn jacket, tiny white embroidered rabbits, silver bell at collar; two high round puffs with lavender ribbons",
+    "P19 (ep37, laundry): tangerine-orange padded cotton jacket with tiny white stars, cream sash, high ponytail with tangerine bow",
+    "P26 (ep52 fever): 6-year-old Chinese girl with a round face and soft cheeks, slightly flushed from fever, large dark brown eyes, black hair in one high side ponytail tied with a cream silk ribbon and a small peach silk flower pin, a peach-pink padded cotton night jacket with tiny grey embroidered kittens and a cream sash"
+  ]
+}

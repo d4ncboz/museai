@@ -1,0 +1,92 @@
+{
+ "series": "锦绣人生",
+ "stage": 2,
+ "approved": true,
+ "world": {
+  "dynasty": "大昭朝",
+  "reign_year_start": "昭安十二年",
+  "city": "青梧城",
+  "river": "澜水",
+  "lane": "长乐巷"
+ },
+ "prices_wen": {
+  "bowl_of_noodles": 12,
+  "day_laborer_pay": 40,
+  "good_coat": 2000,
+  "note": "1 两 = 1000 文 (keep consistent)"
+ },
+ "episodes": [
+  {
+   "n": 1,
+   "title": "最后一碗面",
+   "summary": "老爹 smashes a bowl of soup: 清寒 cut bones to save money. Father-son fight; 小意 (grieving mother) barely eats; at night a stranger in black-gold sleeves says 'the day has come'.",
+   "new_secrets": [
+    "paper hidden under loose brick of stove",
+    "stranger in black-gold sleeves (unseen)",
+    "老爹 whispers 对不起,周婉"
+   ],
+   "relationships": {
+    "清寒-老爹": "strained",
+    "月瑶": "noticed thin soup, kept silent",
+    "明轩": "short 2 wen, owes"
+   },
+   "objects": [
+    "cloth rabbit",
+    "hidden paper"
+   ],
+   "price_wen": {
+    "bowl": 12,
+    "flour_20_bags": 290
+   }
+  }
+ ],
+ "secrets": [
+  {
+   "id": "debt",
+   "what": "顾老爹 borrowed for 周婉's care from a loan house tied to 秦墨's uncle",
+   "known_by": [
+    "顾老爹"
+   ],
+   "surfaces": "ep2 (note), ep92 (full)"
+  },
+  {
+   "id": "capital_letter",
+   "what": "sealed letter for 张老爷 from a former patient in the capital",
+   "known_by": [],
+   "surfaces": "ep30 (hint), ep100"
+  },
+  {
+   "id": "qin_mo_past",
+   "what": "秦墨 begged at 归味楼's kitchen door as a boy",
+   "known_by": [
+    "秦墨"
+   ],
+   "surfaces": "S1 hints, S9"
+  }
+ ],
+ "objects": [
+  {
+   "name": "cloth rabbit",
+   "owner": "顾小意",
+   "note": "made by 周婉"
+  },
+  {
+   "name": "recipe book of the 汤",
+   "owner": "顾老爹",
+   "note": "passed to 清寒 ep97"
+  },
+  {
+   "name": "IOU note",
+   "owner": "unknown",
+   "note": "found by 安宁 ep2"
+  }
+ ],
+ "open_threads": [
+  "debt paper under stove",
+  "stranger at door",
+  "小意 not eating",
+  "清寒 owes 钱多多 290 wen next month",
+  "明轩 owes 2 wen"
+ ],
+ "relationships": {}
+}

@@ -1,0 +1,30 @@
+{
+  "key": "GU_QINGHAN",
+  "version": 2,
+  "name": "顾清寒 Gu Qinghan",
+  "age": 30,
+  "sex": "M",
+  "origin": "Chinese (Han), ancient river-city restaurateur",
+  "build": "lean, tall, about 5 ft 11 in, strong forearms from kitchen work",
+  "identity": "a 30-year-old strikingly handsome Chinese man with a well-proportioned oval-to-square face, high cheekbones and a defined jaw: clear warm light skin (clean-shaven, neat), bright deep dark brown eyes with a steady warm gaze, strong straight unmarked black brows, a straight nose, well-shaped lips with a faint half-smile. Glossy black hair, neatly combed into a high topknot with a carved jade-green hairpin, a few soft strands at the temples. Fine pores, natural skin, no makeup.",
+  "voice": "low, calm, unhurried standard Mandarin, short sentences, restrained warmth",
+  "base_wardrobe": "a fine deep-indigo silk-cotton robe with a crossed collar, subtle tonal cloud-pattern embroidery along the collar and cuffs, a jade-grey sash with a small jade pendant, crisp and freshly pressed, sleeves neat",
+  "used_by": [
+    "historical-drama"
+  ],
+  "views": {
+    "hero": "hero.jpg",
+    "full": "full.jpg"
+  },
+  "outfits_used": [
+    "P12 (ep24, 元宵): deep forest-green quilted silk winter robe, thick cream wool scarf, silver hairpin, no apron",
+    "P13 (ep25, 问路): deep teal linen travel robe, short camel-brown cloak, blue cloth bundle across chest, dark-wood hairpin",
+    "P14 (ep27, 打碎碗): charcoal-grey silk robe, ink-bamboo sleeves, white inner collar, jade-white sash; carved bamboo hairpin",
+    "P15 (ep29, 约时间): dusty plum-purple silk robe, silver-thread cloud embroidery at cuffs, cream inner collar, black sash; topknot with dark-blue silk ribbon",
+    "P16 (ep31, 点菜): terracotta-brown linen robe, indigo cloth-wrapped sleeves, brown cloth belt, cream apron; topknot with plain dark-wood hairpin",
+    "P18 (ep35, 帮忙拿东西): ochre-yellow silk-cotton robe, brown cloud trim, dark-brown sash; topknot with jade ring",
+    "P17 (ep34, 钓鱼): rust-brown linen autumn robe, bronze sash, sleeves rolled to forearm; topknot with plain wooden hairpin, no apron",
+    "P19 (ep38, haircut): mustard-ochre cotton robe, dark-brown trim and sash, sleeves rolled, bone hairpin, wooden comb",
+    "P26 (ep52 fever): handsome 30-year-old Chinese man, neat topknot with a pewter hairpin, pale celadon-green silk-linen robe with silver-grey trim, a white inner collar and a slate-grey sash, smooth clean face, tired caring eyes"
+  ]
+}

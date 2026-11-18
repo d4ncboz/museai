@@ -1,0 +1,30 @@
+{
+  "key": "SHEN_YUEYAO",
+  "version": 2,
+  "name": "沈月瑶 Shen Yueyao",
+  "age": 28,
+  "sex": "F",
+  "origin": "Chinese (Han), ancient river-city medicine-shop owner",
+  "build": "slim, about 5 ft 5 in, upright posture",
+  "identity": "a 28-year-old strikingly pretty Chinese woman with an oval face and softly rounded cheeks: luminous fair skin with a natural flush, large bright dark brown eyes with a quick amused look, finely arched dark brows, a small straight nose, rose-coloured lips, one small dimple in her RIGHT cheek when she smiles. Long glossy black hair parted in the middle, half pinned up in a neat bun with small pink silk flowers and a pearl hairpin, the rest falling smoothly over her shoulders. Small pearl drop earrings. Fine pores, soft natural makeup.",
+  "voice": "clear, lively, warm standard Mandarin, teasing and direct, quick but never rushed",
+  "base_wardrobe": "a layered pale-pink silk hanfu with a crossed collar, delicate plum-blossom embroidery on the hem and cuffs, a cream silk sash tied in a bow with a small embroidered herb pouch, fresh, elegant and crisp, fabric flowing",
+  "used_by": [
+    "historical-drama"
+  ],
+  "views": {
+    "hero": "hero.jpg",
+    "full": "full.jpg"
+  },
+  "outfits_used": [
+    "P12 (ep23, 元宵): deep wine-red quilted silk winter hanfu, cream rabbit-fur collar, gold embroidered cuffs; half-up bun, gold butterfly hairpin + red coral flower comb, coral drop earrings",
+    "P13 (ep25, 问路): lavender silk spring hanfu, ivory sash, silver-thread cuffs; silver butterfly hairpin + white plum sprig, amethyst drop earrings; small bamboo basket",
+    "P14 (ep27, 打碎碗): peach-coral summer gauze hanfu, jade-green sash, gold peony hem; jade leaf hairpin + pearl comb, pearl earrings",
+    "P15 (ep29, 约时间): ivory-white silk hanfu, pale-blue hydrangea embroidery, dusty-rose sash, sky-blue shawl; braided side bun, pale-blue silk flower + silver tassel hairpin, aquamarine drop earrings",
+    "P16 (ep31, 点菜): pale-mint-green silk hanfu, pink peach-blossom embroidery, soft-pink sash; low twisted bun, jade comb + two pink silk tassels, pearl earrings",
+    "P18 (ep35, 帮忙拿东西): deep sapphire-blue silk hanfu, white crane embroidery on sleeves, silver-grey sash; high double-loop bun, silver phoenix hairpin + white jade flower, moonstone drop earrings",
+    "P17 (ep33, 写字): sage-green silk autumn hanfu, white plum-blossom embroidery, mauve sash, cream inner collar; low side bun, jade-and-silver hairpin + small white pearl flower, jade drop earrings",
+    "P19 (ep37, laundry): slate-blue silk hanfu, silver bamboo embroidery, pale-grey sash, sleeves tied back with cream band, low side braid, silver leaf hairpin + jasmine",
+    "P26 (ep51 congee): beautiful 28-year-old Chinese woman, hair in twin low loops with a gold leaf hairpin and a small carnelian-red silk flower, carnelian drop earrings, natural makeup, elegant champagne-gold silk hanfu with moss-green leaf embroidery, a moss-green sash, soft white inner collar, sleeves tied back with a cream cloth band and a clean "
+  ]
+}

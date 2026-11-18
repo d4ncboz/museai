@@ -1,0 +1,30 @@
+{
+  "key": "GU_LAODIE",
+  "version": 1,
+  "name": "顾老爹 Gu Laodie",
+  "age": 63,
+  "sex": "M",
+  "origin": "Chinese (Han), ancient river-city restaurant founder",
+  "build": "stout, broad shoulders, about 5 ft 7 in, thick strong hands",
+  "identity": "a 63-year-old Chinese man with a broad square face and a strong jaw: warm tan skin with deep smile lines and forehead lines, thick dark brows streaked with grey, deep-set dark brown eyes with a stern, proud gaze, a wide nose, a firm mouth with short neat grey stubble, white hair at the temples. Wears a neat dark cloth cap over short grey-black hair. Fine pores, weathered but clean skin, no makeup.",
+  "voice": "deep, gruff, slow standard Mandarin, short blunt sentences, rarely raised unless angry",
+  "base_wardrobe": "a clean, crisp blue-grey cotton robe with a crossed collar and tidy dark trim, a plain dark sash, a neat dark cloth cap, freshly pressed",
+  "used_by": [
+    "historical-drama"
+  ],
+  "views": {
+    "hero": "hero.jpg",
+    "full": "full.jpg"
+  },
+  "outfits_used": [
+    "P12 (ep24, 元宵): round brown fur-lined felt hat, maroon-and-brown quilted cotton coat, grey wool scarf",
+    "P13 (ep26, 放风筝): wide-brimmed straw hat, olive-green cotton robe, rust-brown sleeveless vest, coarse cloth belt",
+    "P14 (ep28, 天热吃西瓜): pointed bamboo-leaf hat, sand-beige linen vest over white shirt, rolled sleeves, palm-leaf fan",
+    "P15 (ep30, 睡前故事): charcoal-blue cotton robe, brown sheepskin waistcoat, rope belt, wooden bead bracelet; soft grey felt cap",
+    "P16 (ep32, 生日): dark-green brocade jacket, gold coin pattern, frog buttons, brown belt; black silk skullcap",
+    "P18 (ep36, 浇花): burnt-amber orange cotton gardening jacket, white towel on shoulder; white cloth tied round forehead",
+    "P17 (ep34, 钓鱼): navy-blue cotton robe with white bamboo pattern, wide navy cloth headband, woven straw rain cape over shoulders",
+    "P19 (ep38, haircut): light-grey undyed linen robe, white cloth cape, bare head short grey-streaked hair, wooden bead bracelet",
+    "P26 (ep51 congee): stout 63-year-old Chinese man, broad square face, grey-streaked brows, short grey stubble, completely bare head with short grey-streaked hair, a sandalwood-tan linen jacket with black frog buttons and a deep-red wool scarf, a brown cloth belt"
+  ]
+}
