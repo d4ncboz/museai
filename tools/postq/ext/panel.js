@@ -185,6 +185,10 @@ chrome.storage.onChanged.addListener((ch, area) => area === 'session' && ch.prog
 // so a channel or platform with nothing queued still shows, as an empty list with a note.
 const CHANS = [['chinese', 'Chinese'], ['healing', 'Healing'], ['dream', 'Dream Jobs'], ['travel', 'Travel']];
 const PLATS = [['youtube', 'YouTube'], ['meta', 'Meta'], ['x', 'X'], ['tiktok', 'TikTok']];
+// The platforms each channel posts to (dashboard TIMES): the platform list shows only those of the
+// chosen channel. The dashboard feed's `channels` replaces this default once it answers.
+const chanPlats = { chinese: ['youtube', 'meta', 'tiktok'], healing: ['youtube', 'meta'] };
+const platsOf = (chan) => PLATS.filter(([v]) => !chan || !chanPlats[chan] || chanPlats[chan].includes(v));
 // Older queue items have no channel field: the account names the series.
 const ACCOUNT_CHAN = [['Chinese', 'chinese'], ['Slow Sunlit', 'healing'], ['Dream Jobs', 'dream'], ['Blue Eyes', 'travel'], ['BlueEyes', 'travel'], ['blue_eyes', 'travel']];
 const chanOf = (i) => i.channel || ACCOUNT_CHAN.find(([a]) => i.account?.startsWith(a))?.[1] || '';
@@ -217,7 +221,7 @@ function renderFilter() {
   const inPlat = all.filter((c) => !platSel.value || c.item.platform === platSel.value);
   const inChan = all.filter((c) => !chanSel.value || chanOf(c.item) === chanSel.value);
   fillSelect(chanSel, CHANS.map(([v, l]) => [v, l, inPlat.filter((c) => chanOf(c.item) === v).length]), `All channels (${inPlat.length})`);
-  fillSelect(platSel, PLATS.map(([v, l]) => [v, l, inChan.filter((c) => c.item.platform === v).length]), `All platforms (${inChan.length})`);
+  fillSelect(platSel, platsOf(chanSel.value).map(([v, l]) => [v, l, inChan.filter((c) => c.item.platform === v).length]), `All platforms (${inChan.length})`);
   for (const c of all) c.el.style.display = shown(c) ? '' : 'none';
   const none = all.length && !all.some(shown);
   let note = list.querySelector('.nonote');
@@ -248,6 +252,9 @@ async function fromDashboard(items) {
     const res = await fetch(DASH, { signal: AbortSignal.timeout(4000) });
     const feed = await res.json();
     if (Array.isArray(feed.videos)) lastVideos = dashboardVideos(feed);
+    for (const ch of feed.channels || []) {
+      if (Array.isArray(ch.platforms)) chanPlats[ch.id] = [...new Set(ch.platforms.map((b) => BOX_PLATFORM[b]).filter(Boolean))];
+    }
   } catch { /* keep the last list */ }
   if (!lastVideos) return items;
   const f = followDashboard(items, lastVideos);
