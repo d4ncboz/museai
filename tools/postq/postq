@@ -761,7 +761,7 @@ def cmd_episode(a):
             platform=platform, targets=p["targets"], file=str(videos[0]), caption_ig=p.get("caption_ig"),
             account=series.get(f"{platform}_account") or meta.get("account", series["account"]),
             asset={k: meta[k] for k in ("business_id", "asset_id") if k in meta} or None,
-            cover=str(covers[0]) if covers and platform in ("meta", "youtube") else None, title=p.get("title"),  # Meta and YouTube get the cover; the others keep the platform's own thumbnail (a copy is parked in COVERS_DIR)
+            cover=str(covers[0]) if covers and platform in ("meta", "youtube", "tiktok") else None, title=p.get("title"),  # Meta, YouTube and TikTok (Edit cover -> Upload cover) get the cover; X keeps its own thumbnail
             caption=p["caption"], tags=None, at=p["at"], tz=series["tz"], visibility="public",
             made_for_kids=False, dry_run=a.dry_run, auto=a.auto, now=getattr(a, "now", False),
             playlist=channel_playlist(series, caption_playlist(cap_text), videos[0].name) if platform == "youtube" else None,
