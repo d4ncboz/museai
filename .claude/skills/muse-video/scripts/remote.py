@@ -2,17 +2,22 @@
 """Heavy steps on the Colab render queue (github.com/lvluu/muse-renderer) instead of this machine.
 
   remote.py online                     print the render server's host (exit 0), or why not (stderr, exit 1)
+  remote.py drive                      print the render queue's Drive folder (exit 1 when none is known)
   remote.py ace OUT.wav SCRIPT ARGS..  run an ACE-Step script of museai (path relative to the museai root,
                                        e.g. .claude/skills/healing-video/scripts/ace_piano.py) on the Colab GPU
                                        with ARGS + --out; OUT.wav comes back here. Exit 1 when the job failed.
 
-Online = MUSE_RENDER_DRIVE set, the CLI at MUSE_RENDERER (default ~/dev/muse-renderer/muse-renderer) and a
+Drive folder = MUSE_RENDER_DRIVE, else the --root of the worker service installed on this machine
+(`muse-renderer install-service`): agent sessions and launchd jobs do not read ~/.zshrc, so the env var
+alone sent their renders to this Mac (2026-11-19: a local ACE render while the queue was up).
+Online = a drive folder, the CLI at MUSE_RENDERER (default ~/dev/muse-renderer/muse-renderer) and a
 server.json heartbeat under 60 s old. The job runs the museai main checkout on the runtime: push a script
 change before a remote job needs it. --ref FILE goes up with the job.
 """
 
 import json
 import os
+import plistlib
 import shlex
 import shutil
 import subprocess
@@ -24,14 +29,34 @@ from pathlib import Path
 RENDERER = Path(os.environ.get("MUSE_RENDERER", "~/dev/muse-renderer/muse-renderer")).expanduser()
 
 
+def _service_root():
+    try:
+        plist = Path.home() / "Library/LaunchAgents/com.muse-renderer.worker.plist"
+        if plist.is_file():
+            args = plistlib.loads(plist.read_bytes()).get("ProgramArguments", [])
+        else:
+            unit = (Path.home() / ".config/systemd/user/muse-renderer.service").read_text()
+            line = next(ln for ln in unit.splitlines() if ln.startswith("ExecStart="))
+            args = shlex.split(line.split("=", 1)[1])
+        return args[args.index("--root") + 1]
+    except (OSError, ValueError, StopIteration, IndexError, plistlib.InvalidFileException):
+        return None
+
+
+def drive():
+    d = os.environ.get("MUSE_RENDER_DRIVE") or _service_root()
+    if d:
+        os.environ["MUSE_RENDER_DRIVE"] = d  # for the muse-renderer CLI this script calls
+    return d
+
+
 def online():
-    drive = os.environ.get("MUSE_RENDER_DRIVE")
-    if not drive:
-        return None, "MUSE_RENDER_DRIVE not set"
+    if not drive():
+        return None, "MUSE_RENDER_DRIVE not set and no muse-renderer service installed"
     if not os.access(RENDERER, os.X_OK):
         return None, f"muse-renderer not found at {RENDERER}"
     try:
-        beat = json.loads((Path(drive).expanduser() / "server.json").read_text())
+        beat = json.loads((Path(os.environ["MUSE_RENDER_DRIVE"]).expanduser() / "server.json").read_text())
     except (OSError, ValueError):
         return None, "render server offline"
     if time.time() - beat.get("ts", 0) >= 60:
@@ -71,7 +96,14 @@ def main(argv):
         host, why = online()
         print(host or why, file=sys.stdout if host else sys.stderr)
         return 0 if host else 1
+    if argv[:1] == ["drive"]:
+        d = drive()
+        if d:
+            print(d)
+        return 0 if d else 1
     if argv[:1] == ["ace"] and len(argv) >= 3:
+        if not drive():
+            sys.exit("remote: no render queue drive (MUSE_RENDER_DRIVE)")
         return ace(argv[1], argv[2], argv[3:])
     sys.exit(__doc__)
 

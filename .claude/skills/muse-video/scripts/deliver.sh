@@ -66,17 +66,14 @@ if [ "${UHD:-0}" = 0 ]; then
 else
   # Remote: the Colab render queue (github.com/lvluu/muse-renderer) when its server heartbeat is under
   # 60 s old and the CLI is there; otherwise local, and it says which and why.
+  # (remote.py: the drive comes from MUSE_RENDER_DRIVE or the installed worker service)
   renderer=${MUSE_RENDERER:-$HOME/dev/muse-renderer/muse-renderer}
+  rp="$(dirname "$0")/remote.py"
+  MUSE_RENDER_DRIVE=${MUSE_RENDER_DRIVE:-$(python3 "$rp" drive 2>/dev/null || true)}
+  export MUSE_RENDER_DRIVE
   why=
-  if [ -z "${MUSE_RENDER_DRIVE:-}" ]; then why="MUSE_RENDER_DRIVE not set"
-  elif [ ! -x "$renderer" ]; then why="muse-renderer not found at $renderer"
-  else
-    host=$(python3 -c '
-import json, os, sys, time
-d = json.load(open(os.path.join(os.path.expanduser(sys.argv[1]), "server.json")))
-if time.time() - d["ts"] < 60: print(d.get("host") or "?")' "$MUSE_RENDER_DRIVE" 2>/dev/null) || host=
-    [ -n "$host" ] || why="render server offline"
-  fi
+  host=$(python3 "$rp" online 2>"${TMPDIR:-/tmp}/remote.why.$$") || { why=$(cat "${TMPDIR:-/tmp}/remote.why.$$"); host=; }
+  rm -f "${TMPDIR:-/tmp}/remote.why.$$"
   if [ -z "$why" ]; then
     echo "upscale: remote (muse-renderer on $host)"
     # a failed remote job must not lose the delivery: redo it here
