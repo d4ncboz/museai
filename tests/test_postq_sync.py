@@ -150,6 +150,28 @@ def test_one_queue_item_per_video(monkeypatch, tmp_path):
         postq._enqueue(argparse.Namespace(platform="meta", account="A"), "", [], None, str(tmp_path / "x" / "Ep 1.mp4"))
 
 
+def test_enqueue_gives_a_queued_item_its_missing_cover(monkeypatch, tmp_path):
+    """TikTok items queued before they carried covers posted with TikTok's default frame (no Edit cover step)."""
+    root = tmp_path / "queue"
+    root.mkdir()
+    monkeypatch.setattr(postq, "ROOT", root)
+    monkeypatch.setattr(postq, "DONE", root / "done")
+    src = tmp_path / "Chinese 01 · Sun 13-12 18h30 · Ep 1" / "Ep 1.mp4"
+    cover = tmp_path / "Ep 1 - thumbnail 9x16.jpg"
+    cover.write_bytes(b"jpg")
+    _queued(root, "1-tt", src, platform="tiktok")
+    _queued(root, "2-claimed", tmp_path / "Ep 2.mp4", platform="tiktok", claimed="now")
+    ns = argparse.Namespace(platform="tiktok", account="A", cover=str(cover))
+    with pytest.raises(SystemExit, match="cover added"):
+        postq._enqueue(ns, "", [], None, str(src))
+    item = postq.json.loads((root / "1-tt.json").read_text())
+    assert item["cover"]["name"] == cover.name and (root / item["cover"]["file"]).read_bytes() == b"jpg"
+    # one being posted right now keeps what it has
+    with pytest.raises(SystemExit, match="already queued for tiktok: "):
+        postq._enqueue(ns, "", [], None, str(tmp_path / "Ep 2.mp4"))
+    assert postq.json.loads((root / "2-claimed.json").read_text())["cover"] is None
+
+
 def test_test_apps_never_sync_the_live_postq_queue(settings, monkeypatch):
     """A test app must not start `postq sync`: it writes the real queue, from whatever checkout runs the tests."""
     from fastapi.testclient import TestClient

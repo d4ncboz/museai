@@ -359,7 +359,14 @@ def same_video(i, platform, account, source):
 
 
 def _enqueue(a, caption, tags, when, source):
-    if any(same_video(i, a.platform, a.account, source) for i in pending()):
+    queued = next((i for i in pending() if same_video(i, a.platform, a.account, source)), None)
+    if queued:
+        if getattr(a, "cover", None) and not queued.get("cover") and not queued.get("claimed"):
+            # Queued before this platform got covers (TikTok before #388): without one the adapter skips
+            # Edit cover, so give it the cover now instead of posting with TikTok's default frame.
+            fixed = {**queued, "cover": stage(a.cover, queued["id"], "cover", IMAGE_SUFFIXES)}
+            (ROOT / f"{queued['id']}.json").write_text(json.dumps(fixed, indent=2, ensure_ascii=False))
+            sys.exit(f"already queued for {a.platform}, cover added: {source}")
         sys.exit(f"already queued for {a.platform}: {source}")
     # Posted before (the dashboard tick can lag or miss): never a second copy on the same account.
     for f in (ROOT / "done").glob("*.json"):
