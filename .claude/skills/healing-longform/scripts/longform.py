@@ -16,6 +16,8 @@ of the best moments with a hook line, before the first chapter card. A beat with
 import argparse
 import json
 import math
+import os
+import shlex
 import sys
 from pathlib import Path
 
@@ -28,9 +30,14 @@ from story169 import FPS, LNORM, H, W, chunks, dur, has_audio, luma, run, sub_pn
 XF = 1.0  # dissolve: longer than story mode's 0.6 s, the long form never hurries
 LEAD, HOOK_LEAD, GAP, HOLD, TAIL = 1.4, 0.4, 2.6, 8.0, 4.0
 CARD_IN, CARD_HOLD = 0.9, 4.2  # chapter card fades in after 0.9 s and stays 4.2 s
-ITALIC = "/System/Library/Fonts/Supplemental/Georgia Italic.ttf"
-REGULAR = "/System/Library/Fonts/Supplemental/Georgia.ttf"
-RAIN = Path("/Applications/iMovie.app/Contents/Resources/iMovie Sound Effects/Hard Rain.mp3")
+_FONTS, _RAIN = "/System/Library/Fonts/Supplemental", "/Applications/iMovie.app/Contents/Resources/iMovie Sound Effects"
+_ASSETS = os.environ.get("HV_ASSETS")  # fonts and rain sent along with a remote compose (Colab has no macOS fonts)
+ITALIC = os.path.join(_ASSETS or _FONTS, "Georgia Italic.ttf")
+REGULAR = os.path.join(_ASSETS or _FONTS, "Georgia.ttf")
+RAIN = Path(_ASSETS or _RAIN) / "Hard Rain.mp3"
+# HV_NVENC=1 (set by the remote compose: a T4 with 2 vCPUs) encodes on the GPU
+VENC = (["-c:v", "h264_nvenc", "-preset", "p5", "-rc", "vbr", "-cq", "18", "-b:v", "0"] if os.environ.get("HV_NVENC")
+        else ["-c:v", "libx264", "-preset", "medium", "-crf", "18"])
 RAIN_FILTER = "highpass=f=200,lowpass=f=3200,lowpass=f=3200,stereotools=slev=0.35,aecho=0.8:0.5:28|61:0.22|0.12"
 
 
@@ -138,6 +145,8 @@ def main():
         if missing:
             sys.exit(f"missing: {', '.join(map(str, missing))}")
         return
+    if os.environ.get("LONGFORM_REMOTE", "1") != "0" and remote_compose(a, sp, root, plan):
+        return
 
     # 1. one graded segment per beat (+ subtitles, + chapter card), and its own sound
     for p in plan:
@@ -199,7 +208,7 @@ def main():
                    f"enable='between(t,{a0:.2f},{a1:.2f})'[w{k}]")
             last = f"w{k}"
         run(["ffmpeg", "-y", "-hide_banner", *src_in, *inputs, "-filter_complex", vf, "-map", f"[{last}]", "-an",
-             "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p", str(seg)])
+             *VENC, "-pix_fmt", "yuv420p", str(seg)])
         p["f"] = f
         p["seg"], p["fol"] = seg, fol
         foley_src(p, plan, need, fol)
@@ -225,8 +234,8 @@ def main():
         last = "hko"
     fc += f"[{last}]fade=out:st={total - 3:.3f}:d=3[vout]"
     video = tmp / "video.mp4"
-    run(["ffmpeg", "-y", "-hide_banner", *ins, "-filter_complex", fc, "-map", "[vout]", "-c:v", "libx264",
-         "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p", "-r", str(FPS), str(video)])
+    run(["ffmpeg", "-y", "-hide_banner", *ins, "-filter_complex", fc, "-map", "[vout]", *VENC,
+         "-pix_fmt", "yuv420p", "-r", str(FPS), str(video)])
 
     # 3. audio stems: voice, the clips' sound as one continuous bed, rain under rainy beats, music
     def place(files, delays, out, pre=""):
@@ -287,6 +296,37 @@ def main():
     run(["ffmpeg", "-y", "-hide_banner", "-i", str(video), "-i", str(final_a), "-map", "0:v", "-map", "1:a", "-c:v",
          "copy", "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart", a.out])
     print(f"wrote {a.out} ({dur(a.out):.1f} s)")
+
+
+def remote_compose(a, sp, root, plan):
+    """Compose on the Colab render queue (muse-video/scripts/remote.py) while it is online: minutes of every
+    core here (loud fans). The story folder's clips, stills and voice go up; only the film comes back.
+    False: offline, or the job failed (then it composes here)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "muse-video" / "scripts"))
+    import remote
+
+    host = remote.online()[0]
+    srcs = {p["src"] for p in plan}
+    if not host or not all(s.is_relative_to(root) for s in srcs):
+        return False
+    print(f"compose: remote (muse-renderer on {host})", flush=True)
+    vo = root / "vo"
+    files = [sp, *sorted(srcs), *(sorted(vo.iterdir()) if vo.is_dir() else [])]
+    assets = {n: os.path.join(_FONTS, n) for n in ("Georgia.ttf", "Georgia Italic.ttf")}
+    if RAIN.exists():
+        assets[RAIN.name] = str(RAIN)
+    music = "none"
+    if a.music != "none":
+        assets["music" + Path(a.music).suffix] = a.music
+        music = "w/_assets/music" + Path(a.music).suffix
+    cmd = ('HV_ASSETS="$PWD/w/_assets" HV_NVENC=1 LONGFORM_REMOTE=0 python3 '
+           '"$MUSEAI/.claude/skills/healing-longform/scripts/longform.py" '
+           + shlex.join([f"w/{sp.relative_to(root)}", "--music", music, "--out", "out.mp4"]))
+    if remote.compose(root, files, assets, cmd, a.out) == 0:
+        print(f"wrote {a.out} ({dur(a.out):.1f} s)")
+        return True
+    print("compose: local (remote job failed)", flush=True)
+    return False
 
 
 def foley_src(p, plan, need, out):

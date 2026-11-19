@@ -39,10 +39,23 @@ import subprocess
 import sys
 import tempfile
 
-import cv2
-import librosa
-import mediapipe as mp
-import numpy as np
+# Face mesh over every frame is minutes of full CPU: on the Colab render queue while it is online (remote.py);
+# SPEAKERS_REMOTE=0 keeps it here, and a failed job runs here
+if os.environ.get("SPEAKERS_REMOTE", "1") != "0" and len(sys.argv) == 5:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import remote
+
+    if remote.online()[0]:
+        print("speakers: remote", file=sys.stderr)
+        rc = remote.speakers(sys.argv[1:])
+        if rc is not None:
+            sys.exit(rc)
+        print("speakers: local (remote job failed)", file=sys.stderr)
+
+import cv2  # noqa: E402
+import librosa  # noqa: E402
+import mediapipe as mp  # noqa: E402
+import numpy as np  # noqa: E402
 
 video, sheet = sys.argv[1], sys.argv[-1]
 if sys.argv[2].endswith(".json"):  # cues.json SPEAKERS

@@ -227,7 +227,10 @@ the worker (`GPU online` / `idle` / `offline`), the queue and each job's output 
 `UHD=1 deliver.sh` sends the upscale there while the worker's heartbeat is fresh and says so (`upscale: remote`);
 otherwise, or when the remote job fails, it upscales locally and prints why. On Colab Real-ESRGAN runs in PyTorch
 (`esrgan_cuda.py`; no Vulkan there). The healing-video `music` script sends its ACE-Step render the same way
-(`music: remote`, `MUSIC_REMOTE=0` keeps it local) through `muse-video/scripts/remote.py`.
+(`music: remote`, `MUSIC_REMOTE=0` keeps it local) through `muse-video/scripts/remote.py`, and so do the
+healing-longform compose (`compose: remote`, `LONGFORM_REMOTE=0`; the story folder goes up, only the film comes back,
+encoded with NVENC) and the muse-video lip-sync check `speakers.py` (`speakers: remote`, `SPEAKERS_REMOTE=0`).
+Without `MUSE_RENDER_DRIVE`, `remote.py` takes the folder from the installed worker service.
 
 ## Browser control for Claude Code
 

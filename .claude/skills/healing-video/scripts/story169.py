@@ -6,6 +6,7 @@ serif subtitles, 0.6 s dissolves, each clip's own sound low under the voice, sof
 import argparse
 import json
 import math
+import os
 import re
 import subprocess
 import sys
@@ -16,7 +17,8 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 W, H, FPS = 1920, 1080, 24
 XF = 0.6
 LEAD, HOOK_LEAD, GAP, TAIL = 0.7, 0.35, 0.9, 3.0
-FONT = "/System/Library/Fonts/Supplemental/Georgia.ttf"
+# HV_ASSETS: a folder with the fonts (and rain) when this runs off the Mac (longform compose on Colab)
+FONT = os.path.join(os.environ.get("HV_ASSETS", "/System/Library/Fonts/Supplemental"), "Georgia.ttf")
 LNORM = str(Path(__file__).resolve().parent / "lnorm.py")
 
 
