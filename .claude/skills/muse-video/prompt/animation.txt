@@ -1,0 +1,15 @@
+ANIMATED ILLUSTRATION REQUIREMENTS
+
+Animate the attached illustration: it is the exact first frame. Keep its art style exactly for the whole clip: the same 2D cartoon drawing, bold outlines, flat colours, cel shading and palette. Never turn it into a photograph, live action or 3D render, never redraw it in another style, never change the characters' faces, clothes or the objects' shapes and positions.
+
+MOTION
+
+Smooth, natural animation at real speed: the action written in the prompt clearly happens and carries on through the whole clip, never a frozen picture and never a warp, wobble or jelly effect. Only the things named in the prompt move; everything else stays still and rigid. People move gently and naturally: breathing, small head and hand movements, blinking; no talking, no lip movement. The camera follows the move given in the prompt slowly and steadily, with no cuts, no sudden zooms, no shaking and nothing new entering from the frame edges.
+
+SOUND
+
+Silent, or only quiet ambient sound. No spoken narration, no dialogue, no singing, no music.
+
+SCREEN
+
+No watermarks, no subtitles, no captions, no logos, no letters, words or numbers anywhere in the picture.

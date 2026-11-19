@@ -4,6 +4,7 @@
 # Optional env: SIZE=9:16  DURATION=30  IMAGE=first_frame.png  OUT_NAME=clip1.mp4
 #               CONTINUE_FROM=prev_clip.mp4  (its last frame becomes this clip's first frame)
 #               STYLE=travel  (append ../prompt/travel.txt instead of ../prompt/quality.txt)
+#               STYLE=animation  (animate an illustration given as IMAGE=, no voice: ../prompt/animation.txt)
 #               QUALITY=0  (skip appending the style block)
 #               RETRIES=15 RETRY_WAIT=120  (resubmit on busy account / server restart / server down)
 #               MUSEAI_HOME=~/Work/museai  MUSEAI_BASE=http://127.0.0.1:18610

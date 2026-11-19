@@ -5,7 +5,8 @@ Usage (run from anywhere):
   cm.py check <id> [--draft]           content gate: length, hook, claims + sources, prompts, title, thumbnail
   cm.py images <id> [--only S03]       illustrations through museai /v1/images/generations (skips existing)
   cm.py voice <id>                     one narrator voice per scene (edge-tts) -> timeline.json
-  cm.py build <id>                     Ken Burns clips + labels + narration (+ music) -> <id>.mp4
+  cm.py anim <id> [--only S03]         muse-video jobs (illustration = first frame) -> anim/jobs.txt
+  cm.py build <id>                     muse clips (else Ken Burns stills) + labels + narration -> <id>.mp4
   cm.py thumb <id> [--scene S01]       1280x720 thumbnail (YouTube) -> <id>_thumb.jpg
   cm.py qa <id>                        file checks + the playbook's manual checklist -> RESULT ok|FAIL
 
@@ -18,8 +19,10 @@ Env: MUSEAI_HOME (folder holding data/api_key; default the repo, then ~/Work/mus
 import asyncio
 import base64
 import json
+import math
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -42,28 +45,37 @@ FORMATS = {
     "short": {"size": (1080, 1920), "words": (75, 130), "secs": (20, 60), "aspect": "9:16"},
 }
 WPS = 145 / 60
+# Channel outro after the last scene of every episode: spoken line + on-screen label over the last frame.
+CTA = {
+    "id": "CTA",
+    "section": "cta",
+    "say": "If you want to see more stories like this, subscribe.",
+    "labels": ["Subscribe for more"],
+    "move": "push_in",
+}
 PAPER, INK, CHARCOAL, RED, BRASS = "#EFE6D2", "#1F3A5F", "#2B2B2B", "#A63D32", "#B08D57"
 
+# The channel look lives in prompt/look.txt and prompt/avoid.txt: change it there, never in one episode.
+# CM_LOOK=<name> tries another look (prompt/look-<name>.txt, avoid-<name>.txt) in its own work folder.
+LOOK_NAME = os.environ.get("CM_LOOK", "")
+_sfx = f"-{LOOK_NAME}" if LOOK_NAME else ""
+LOOK = (SKILL / f"prompt/look{_sfx}.txt").read_text().strip()
+AVOID = (SKILL / f"prompt/avoid{_sfx}.txt").read_text().strip()
 MASTER = (
-    "Create an educational scientific illustration in the style of a 19th-century engineering encyclopedia. "
-    "Subject: {subject}. Show: {show}. {variant}"
-    "Style: detailed hand-engraved ink illustration, antique ivory paper background, fine cross-hatching and "
-    "precise linework, muted navy blue and charcoal ink, occasional muted red accent, subtle vintage "
-    "imperfections, scientifically plausible proportions, museum-quality technical drawing. "
-    "Composition: {composition}. "
-    "Avoid: modern photography, photorealism, cartoon characters, excessive decoration, any labels, letters, "
-    "numbers or text, watermarks."
+    "{look} Subject: {subject}. Show: {show}. {variant}Composition: {composition}. Avoid: {avoid}."
 )
 VARIANTS = {
     "main": "",
-    "cutaway": "Cutaway cross-section revealing internal components, exploded-view style. ",
-    "closeup": "Macro detail view, tight framing on the part named above. ",
-    "map": "Antique hand-drawn cartographic map, sepia and ink blue, compass rose, no place names. ",
-    "diagram": "Clean technical diagram plate, flow lines and arrows drawn as engraved linework. ",
+    "cutaway": "A clean cutaway that opens the object to show its inner parts, same look. ",
+    "closeup": "Close-up, tight framing on the part named above, shallow depth of field. ",
+    "map": "An aerial view of the place, as seen from high above, no place names. ",
+    "diagram": "A clean explanatory diagram in the same look and palette: simple shapes, glowing flow lines "
+    "and arrows, plain dark background. ",
 }
 COMPOSITION = {
-    "16:9": "16:9 landscape, clear central subject, visually readable, suitable for an educational documentary",
-    "9:16": "9:16 vertical portrait, subject in the upper two-thirds, lower third calm paper for captions",
+    "16:9": "16:9 landscape, one clear subject filling most of the frame",
+    "9:16": "9:16 vertical portrait, one clear subject filling the middle of the frame, "
+    "the scene continues to the bottom edge with simple, uncluttered ground or sky there for on-screen labels",
 }
 MOVES = ("push_in", "pull_out", "pan_left", "pan_right", "pan_up", "pan_down", "still")
 BANNED = (
@@ -93,7 +105,7 @@ def load(eid: str) -> dict:
 
 
 def work(eid: str) -> Path:
-    w = WORK / eid
+    w = WORK / (f"{eid}--{LOOK_NAME}" if LOOK_NAME else eid)
     w.mkdir(parents=True, exist_ok=True)
     return w
 
@@ -270,6 +282,8 @@ def api_key() -> str:
 
 def prompt_for(ep: dict, img: dict) -> str:
     return MASTER.format(
+        look=LOOK,
+        avoid=AVOID,
         subject=img["subject"],
         show=img["show"],
         variant=VARIANTS[img.get("variant", "main")],
@@ -316,11 +330,87 @@ def cmd_images(eid: str, only: str | None) -> None:
         print(p)
 
 
+# ---------- animation ----------
+MOVE_WORDS = {
+    "push_in": "slow steady push-in",
+    "pull_out": "slow steady pull-out",
+    "pan_left": "slow steady pan to the left",
+    "pan_right": "slow steady pan to the right",
+    "pan_up": "slow steady tilt up",
+    "pan_down": "slow steady tilt down",
+    "still": "locked camera, no camera move",
+}
+MUSE_VIDEO = SKILL.parent / "muse-video/scripts/muse-video"
+
+
+def anim_of(ep: dict, scene: dict, w: Path) -> Path:
+    """The muse clip of a scene, or of the scene whose picture it reuses."""
+    src = scene["image"] if isinstance(scene.get("image"), str) else scene["id"]
+    return w / "anim" / f"{src}.mp4"
+
+
+def cmd_anim(eid: str, only: str | None) -> None:
+    """Write one muse-video job per scene (its illustration as first frame) for render-queue."""
+    ep = load(eid)
+    w = work(eid)
+    tl_path = w / "timeline.json"
+    if not tl_path.exists():
+        sys.exit("run cm.py voice first: clip lengths follow the narration")
+    tl = {x["id"]: x for x in json.loads(tl_path.read_text())}
+    out = w / "anim"
+    out.mkdir(exist_ok=True)
+    jobs = []
+    for s in ep["scenes"]:
+        if not isinstance(s.get("image"), dict) or (only and s["id"] != only):
+            continue
+        if (out / f"{s['id']}.mp4").exists() and not only:
+            print(f"skip {s['id']}.mp4 (exists)")
+            continue
+        if not s.get("motion"):
+            sys.exit(f"{s['id']}: no 'motion' (what moves in the clip)")
+        img = image_of(ep, s, w)
+        if not img.exists():
+            sys.exit(f"{s['id']}: missing {img}; run cm.py images {eid}")
+        prompt = out / f"{s['id']}.prompt.txt"
+        prompt.write_text(
+            "NEW STANDALONE REQUEST. Ignore any earlier versions, drafts, images or projects. "
+            "Use ONLY the image attached to this message as the first frame.\n\n"
+            f"SCENE: {s['image']['subject']}.\n"
+            f"MOTION: {s['motion']}.\n"
+            f"CAMERA: {MOVE_WORDS[s.get('move', 'push_in')]}.\n"
+        )
+        secs = max(5, math.ceil(tl[s["id"]]["dur"] + 0.5))
+        env = (
+            f"MUSE_SKILL_DEV=1 STYLE=animation SIZE={fmt(ep)['aspect']} DURATION={secs} "
+            f"IMAGE={shlex.quote(str(img))} OUT_NAME={s['id']}.mp4 NO_OPEN=1 "
+            f"MUSE_SESSION=cm-{eid}{' RETAKE=1' if only else ''}"
+        )
+        jobs.append(
+            f"{env} {shlex.quote(str(MUSE_VIDEO))} -f {shlex.quote(str(prompt))} "
+            f"{shlex.quote(str(out))}"
+        )
+    if not jobs:
+        print("nothing to render")
+        return
+    q = out / "jobs.txt"
+    q.write_text("\n".join(jobs) + "\n")
+    print(f"{len(jobs)} clips -> {q}\nrun in one background call (one clip at a time):")
+    print(f"  {MUSE_VIDEO.parent / 'render-queue'} {q}")
+
+
 # ---------- voice ----------
 async def _tts(text: str, path: Path) -> None:
     import edge_tts
 
-    await edge_tts.Communicate(text.replace("!", "."), VOICE, rate=RATE).save(str(path))
+    # The free Edge endpoint throttles (503 or "No audio was received") in bursts; back off exponentially.
+    for attempt in range(6):
+        try:
+            await edge_tts.Communicate(text.replace("!", "."), VOICE, rate=RATE).save(str(path))
+            return
+        except Exception as e:
+            if attempt == 5:
+                sys.exit(f"edge-tts failed 6 times: {e}")
+            await asyncio.sleep(5 * 2**attempt)
 
 
 def cmd_voice(eid: str) -> None:
@@ -328,8 +418,9 @@ def cmd_voice(eid: str) -> None:
     vdir = work(eid) / "voice"
     vdir.mkdir(exist_ok=True)
     timeline, t = [], 0.0
-    sections = [s.get("section", "") for s in ep["scenes"]]
-    for i, s in enumerate(ep["scenes"]):
+    scenes = ep["scenes"] + [CTA]
+    sections = [s.get("section", "") for s in scenes]
+    for i, s in enumerate(scenes):
         mp3, wav = vdir / f"{s['id']}.mp3", vdir / f"{s['id']}.wav"
         stamp = vdir / f"{s['id']}.txt"
         said = f"{VOICE}|{RATE}|{s['say']}"
@@ -394,7 +485,7 @@ def label_png(labels: list[str], w: int, h: int, path: Path) -> None:
     d = ImageDraw.Draw(im)
     base = int(h * (0.028 if w > h else 0.022))
     x = int(w * 0.06)
-    y = int(h * (0.08 if w > h else 0.70))
+    y = int(h * (0.08 if w > h else 0.78))
     for lab in labels:
         txt = lab.upper()
         size = base
@@ -438,15 +529,45 @@ def cmd_build(eid: str) -> None:
     clips = w / "clips"
     clips.mkdir(exist_ok=True)
     parts, audio = [], []
-    for s in ep["scenes"]:
-        img = image_of(ep, s, w)
+    for s in ep["scenes"] + [CTA]:
+        if s is CTA:
+            # The outro holds the last frame of the story, so the picture does not jump.
+            img = clips / "CTA.png"
+            run(
+                [
+                    "ffmpeg",
+                    "-y",
+                    "-v",
+                    "error",
+                    "-sseof",
+                    "-0.1",
+                    "-i",
+                    str(parts[-1]),
+                    "-frames:v",
+                    "1",
+                    "-update",
+                    "1",
+                    str(img),
+                ]
+            )
+        else:
+            img = image_of(ep, s, w)
         if not img.exists():
             sys.exit(f"{s['id']}: missing {img}; run cm.py images {eid}")
         t = tl[s["id"]]
         n = max(1, round(t["dur"] * FPS))
         clip = clips / f"{s['id']}.mp4"
-        vf = zoompan(s.get("move", "push_in"), n, W, H)
-        cmd = ["ffmpeg", "-y", "-v", "error", "-i", str(img)]
+        anim = anim_of(ep, s, w)
+        if s is not CTA and anim.exists():
+            # muse clip, muted (narration only); a clip shorter than the scene holds its last frame.
+            vf = (
+                f"scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},fps={FPS},"
+                f"tpad=stop_mode=clone:stop_duration={t['dur']:.3f},format=yuv420p"
+            )
+            cmd = ["ffmpeg", "-y", "-v", "error", "-an", "-i", str(anim)]
+        else:
+            vf = zoompan(s.get("move", "push_in"), n, W, H)
+            cmd = ["ffmpeg", "-y", "-v", "error", "-i", str(img)]
         if s.get("labels"):
             lp = clips / f"{s['id']}_labels.png"
             label_png(s["labels"], W, H, lp)
@@ -486,7 +607,9 @@ def cmd_build(eid: str) -> None:
         run(cmd)
         parts.append(clip)
         audio.append((w / "voice" / f"{s['id']}.wav", t["dur"]))
-        print(f"{s['id']} {t['dur']:.1f} s {s.get('move', 'push_in')}")
+        print(
+            f"{s['id']} {t['dur']:.1f} s {'muse clip' if s is not CTA and anim.exists() else s.get('move', 'push_in')}"
+        )
 
     lst = clips / "list.txt"
     lst.write_text("".join(f"file '{p.name}'\n" for p in parts))
@@ -591,7 +714,7 @@ def write_srt(ep: dict, tl: dict, path: Path) -> None:
         return f"{ms // 3600000:02}:{ms // 60000 % 60:02}:{ms // 1000 % 60:02},{ms % 1000:03}"
 
     rows = []
-    for i, s in enumerate(ep["scenes"], 1):
+    for i, s in enumerate(ep["scenes"] + [CTA], 1):
         t = tl[s["id"]]
         rows.append(f"{i}\n{ts(t['start'])} --> {ts(t['start'] + t['speech'])}\n{s['say']}\n")
     path.write_text("\n".join(rows))
@@ -657,7 +780,7 @@ MANUAL = [
     "Every important claim has 2 reliable sources (listed in the description)",
     "Uncertain claims are said as uncertain; no invented quotes or scenes",
     "First 20 s (Shorts: 2 s) create curiosity; one central question, answered at the end",
-    "Illustrations match the engraving look; no photoreal frame, no garbled AI text",
+    "Illustrations match the channel look (prompt/look.txt); no photoreal frame, no garbled AI text",
     "Mechanical parts are drawn correctly (checked against a real reference photo)",
     "Narration is natural; technical terms and names are pronounced right",
     "Title is true to the video; thumbnail readable on a phone and shows what the video shows",
@@ -768,6 +891,8 @@ def main(argv: list[str]) -> int:
         cmd_images(eid, opt("--only"))
     elif cmd == "voice":
         cmd_voice(eid)
+    elif cmd == "anim":
+        cmd_anim(eid, opt("--only"))
     elif cmd == "build":
         if not shutil.which("ffmpeg"):
             sys.exit("ffmpeg not found")

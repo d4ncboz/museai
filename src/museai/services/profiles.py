@@ -19,11 +19,16 @@ from pydantic import BaseModel, Field
 
 from ..errors import InvalidRequest, Muse2APIError, NotFound
 
-_NAME = re.compile(r"[A-Za-z0-9_-]{1,64}")
+_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.@+-]{0,63}")
+
+
+def bu_name(name: str) -> str:
+    """browser-harness allows only [A-Za-z0-9_-] in BU_NAME (same mapping as `bh-profile`)."""
+    return re.sub(r"[^A-Za-z0-9_-]", "_", name)
 
 
 class Profile(BaseModel):
-    name: str  # id: also the bh-profile folder name and BU_NAME, fixed once created
+    name: str  # id: also the bh-profile folder name (BU_NAME via bu_name), fixed once created
     label: str = Field("", max_length=100)  # display name shown in the table
     logged_in: bool = False
     verified: bool = False
@@ -31,7 +36,7 @@ class Profile(BaseModel):
 
 def check_name(name: str) -> str:
     if not _NAME.fullmatch(name) or name == "default":
-        raise InvalidRequest("profile name must match [A-Za-z0-9_-]{1,64} and not be 'default'")
+        raise InvalidRequest("profile name must be an email or ID (letters, digits, . @ + - _; max 64) and not 'default'")
     return name
 
 

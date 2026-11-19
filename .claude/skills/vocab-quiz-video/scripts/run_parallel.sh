@@ -13,7 +13,7 @@ here=$(cd "$(dirname "$0")" && pwd)
 
 for prompt in "$@"; do
   slug=$(basename "$prompt" .prompt.txt); slug=${slug#vocab-}
-  name=$(printf '%s' "$prof-$slug" | cut -c1-64)  # one browser-harness daemon (and tab) per run
+  name=$(printf '%s' "$prof-$slug" | tr -c 'A-Za-z0-9_\n-' _ | cut -c1-64)  # one browser-harness daemon (and tab) per run
   (
     BU_NAME=$name BU_CDP_URL=$cdp PROMPT_FILE=$prompt OUT=videos/$slug.mp4 REC=$slug \
       timeout 3000 browser-harness < "$here/muse_run.py" > "videos/$slug.render.log" 2>&1

@@ -16,6 +16,7 @@
    "section": "hook",
    "say": "Narration for this picture, written for the ear. Short sentences.",
    "image": {"subject": "the object or mechanism", "show": "the specific visual detail", "variant": "main"},
+   "motion": "what moves in this clip and how, in concrete terms (the crack grows outward in short jumps, clouds drift slowly past)",
    "move": "push_in",
    "labels": [],
    "claims": ["c1"]

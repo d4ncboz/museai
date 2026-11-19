@@ -57,7 +57,7 @@ async def _launch(store: bh.ProfileStore, name: str, url: str) -> dict:
         "name": name,
         "running": True,
         "cdp_url": cdp,
-        "env": {"BU_NAME": name, "BU_CDP_URL": cdp},
+        "env": {"BU_NAME": bh.bu_name(name), "BU_CDP_URL": cdp},
     }
 
 

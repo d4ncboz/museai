@@ -3,6 +3,7 @@
 # Each profile is its own Chromium --user-data-dir with its own debug port, so logins persist
 # across runs and several profiles can run side by side. browser-harness reaches a profile
 # through BU_NAME=<name> and BU_CDP_URL=http://127.0.0.1:<port>.
+# browser-harness allows only [A-Za-z0-9_-] in BU_NAME, so other characters (an email's @ and .) become _.
 set -euo pipefail
 
 usage() {
@@ -41,9 +42,11 @@ fi
 root="${BH_PROFILES_DIR:-$default_root}"
 
 check_name() {
-  [[ ${1:-} =~ ^[A-Za-z0-9_-]{1,64}$ ]] || die "profile name must match [A-Za-z0-9_-]{1,64}"
+  [[ ${1:-} =~ ^[A-Za-z0-9][A-Za-z0-9_.@+-]{0,63}$ ]] || die "profile name must be an email or ID (letters, digits, . @ + - _; max 64)"
   [[ $1 != default ]] || die "'default' is reserved for your normal browser"
 }
+
+bu_name() { printf %s "${1//[^A-Za-z0-9_-]/_}"; }
 
 port_of() { cat "$root/$1/.bh-port" 2>/dev/null || true; }
 
@@ -100,20 +103,20 @@ start() {
   for _ in $(seq 1 60); do is_up "$port" && break; sleep 0.25; done
   is_up "$port" || die "browser did not open port $port; see $dir/.bh-browser.log"
   # A daemon left from an earlier browser session holds a dead connection.
-  BU_NAME=$name browser-harness --reload >/dev/null 2>&1 || true
+  BU_NAME=$(bu_name "$name") browser-harness --reload >/dev/null 2>&1 || true
   echo "Profile $name runs on port $port" >&2
 }
 
-print_env() { printf 'export BU_NAME=%s BU_CDP_URL=http://127.0.0.1:%s\n' "$1" "$(port_of "$1")"; }
+print_env() { printf 'export BU_NAME=%s BU_CDP_URL=http://127.0.0.1:%s\n' "$(bu_name "$1")" "$(port_of "$1")"; }
 
 stop() {
   local name=$1 port
   port=$(port_of "$name")
   if is_up "$port"; then
-    BU_NAME=$name BU_CDP_URL="http://127.0.0.1:$port" browser-harness <<<'cdp("Browser.close")' >/dev/null 2>&1 || true
+    BU_NAME=$(bu_name "$name") BU_CDP_URL="http://127.0.0.1:$port" browser-harness <<<'cdp("Browser.close")' >/dev/null 2>&1 || true
     for _ in $(seq 1 40); do is_up "$port" || break; sleep 0.25; done
   fi
-  BU_NAME=$name browser-harness --reload >/dev/null 2>&1 || true
+  BU_NAME=$(bu_name "$name") browser-harness --reload >/dev/null 2>&1 || true
   if is_up "$port"; then die "$name still runs on port $port"; fi
   echo "Stopped $name"
 }
@@ -133,7 +136,7 @@ cmd=${1:-}; shift || true
 case $cmd in
   start) check_name "${1:-}"; start "$@" ;;
   run)   check_name "${1:-}"; name=$1; shift; start "$name"
-         BU_NAME=$name BU_CDP_URL="http://127.0.0.1:$(port_of "$name")" exec browser-harness "$@" ;;
+         BU_NAME=$(bu_name "$name") BU_CDP_URL="http://127.0.0.1:$(port_of "$name")" exec browser-harness "$@" ;;
   env)   check_name "${1:-}"; [[ -d $root/$1 ]] || die "no profile $1"; print_env "$1" ;;
   list)  list ;;
   stop)  check_name "${1:-}"; stop "$1" ;;

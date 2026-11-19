@@ -6,62 +6,133 @@
  "answer": "The hole in the middle pane equalises pressure so the outer pane carries the cabin load and the middle pane stays as an unstressed backup; it also lets moisture out so the window does not fog.",
  "pillar": "Everyday Engineering",
  "from_video": "001-airplane-windows",
- "thumbnail": {"text": "The hole on purpose", "scene": "S03"},
- "music": {"file": "", "licence": ""},
+ "thumbnail": {
+  "text": "The hole on purpose",
+  "scene": "S03"
+ },
+ "music": {
+  "file": "",
+  "licence": ""
+ },
  "claims": {
-  "c1": {"text": "A passenger window has three panes: inner, middle and outer.",
-         "sources": ["Time, 'This Is Why There Are Holes in Airplane Windows', https://time.com/3903109/airplane-window-holes",
-                     "Gizmodo, 'Why Is There a Hole in Airplane Windows?', https://gizmodo.com/why-is-there-a-hole-in-airplane-windows-1703660371"],
-         "verified": true},
-  "c2": {"text": "The hole is in the middle pane; it equalises pressure so the outer pane carries the load and the middle pane is a backup.",
-         "sources": ["Time, https://time.com/3903109/airplane-window-holes",
-                     "Gizmodo, https://gizmodo.com/why-is-there-a-hole-in-airplane-windows-1703660371"],
-         "verified": true},
-  "c3": {"text": "Air through the hole lets moisture out of the gap, which keeps the window from fogging.",
-         "sources": ["Time, https://time.com/3903109/airplane-window-holes",
-                     "BGR, 'Those Tiny Holes In Airplane Windows Have An Important Purpose', https://bgr.com/2155765/why-airplane-windows-have-tiny-holes/"],
-         "verified": true}
+  "c1": {
+   "text": "A passenger window has three panes: inner, middle and outer.",
+   "sources": [
+    "Time, 'This Is Why There Are Holes in Airplane Windows', https://time.com/3903109/airplane-window-holes",
+    "Gizmodo, 'Why Is There a Hole in Airplane Windows?', https://gizmodo.com/why-is-there-a-hole-in-airplane-windows-1703660371"
+   ],
+   "verified": true
+  },
+  "c2": {
+   "text": "The hole is in the middle pane; it equalises pressure so the outer pane carries the load and the middle pane is a backup.",
+   "sources": [
+    "Time, https://time.com/3903109/airplane-window-holes",
+    "Gizmodo, https://gizmodo.com/why-is-there-a-hole-in-airplane-windows-1703660371"
+   ],
+   "verified": true
+  },
+  "c3": {
+   "text": "Air through the hole lets moisture out of the gap, which keeps the window from fogging.",
+   "sources": [
+    "Time, https://time.com/3903109/airplane-window-holes",
+    "BGR, 'Those Tiny Holes In Airplane Windows Have An Important Purpose', https://bgr.com/2155765/why-airplane-windows-have-tiny-holes/"
+   ],
+   "verified": true
+  }
  },
  "scenes": [
-  {"id": "S01", "section": "hook",
+  {
+   "id": "S01",
+   "section": "hook",
    "say": "There's a hole in your plane window.",
-   "image": {"subject": "an oval passenger aircraft cabin window with rounded corners seen from inside the cabin",
-             "show": "a tiny round hole near the bottom edge of the window, small but clearly visible", "variant": "main"},
-   "move": "push_in"},
-  {"id": "S02", "section": "hook",
+   "image": {
+    "subject": "an oval passenger aircraft cabin window with rounded corners seen from inside the cabin",
+    "show": "a tiny round hole near the bottom edge of the window, small but clearly visible",
+    "variant": "main"
+   },
+   "move": "push_in"
+  },
+  {
+   "id": "S02",
+   "section": "hook",
    "say": "Look closely next time you fly. A tiny hole, near the bottom. On purpose.",
-   "image": {"subject": "the lower edge of an aircraft cabin window",
-             "show": "a pin-sized round hole drilled through a clear acrylic pane, fine hatching around it", "variant": "closeup"},
-   "move": "push_in"},
-  {"id": "S03", "section": "mechanism",
+   "image": {
+    "subject": "the lower edge of an intact aircraft cabin window pane",
+    "show": "a smooth undamaged clear pane with one single neat pin-sized round hole drilled cleanly through it, no cracks, no damage, fine hatching on the frame around it",
+    "variant": "closeup"
+   },
+   "move": "push_in"
+  },
+  {
+   "id": "S03",
+   "section": "mechanism",
    "say": "A plane window isn't one sheet. It's three panes: inner, middle and outer.",
-   "image": {"subject": "an aircraft cabin window assembly",
-             "show": "three separate curved acrylic panes in a row with air gaps between them, set in the fuselage wall", "variant": "cutaway"},
+   "image": {
+    "subject": "three identical oval aircraft window panes",
+    "show": "the three transparent oval panes floating one behind another in a straight line, seen at a three-quarter angle, evenly spaced with clear gaps between them like slides in a projector, each pane complete and separate, nothing else in the picture",
+    "variant": "main"
+   },
    "move": "pan_right",
-   "labels": ["Inner pane", "Middle pane", "Outer pane"],
-   "claims": ["c1"]},
-  {"id": "S04", "section": "mechanism",
+   "labels": [
+    "Inner pane",
+    "Middle pane",
+    "Outer pane"
+   ],
+   "claims": [
+    "c1"
+   ]
+  },
+  {
+   "id": "S04",
+   "section": "mechanism",
    "say": "The hole is in the middle pane. It lets cabin air into the gap, so the pressure on both sides of the middle pane stays equal.",
-   "image": {"subject": "a cross-section of two aircraft window panes",
-             "show": "air flow lines passing through a small hole in the inner of the two panes into the gap between them, equal arrows on both sides", "variant": "diagram"},
+   "image": {
+    "subject": "a cross-section of two aircraft window panes",
+    "show": "air flow lines passing through a small hole in the inner of the two panes into the gap between them, equal arrows on both sides",
+    "variant": "diagram"
+   },
    "move": "push_in",
-   "labels": ["Breather hole"],
-   "claims": ["c2"]},
-  {"id": "S05", "section": "mechanism",
+   "labels": [
+    "Breather hole"
+   ],
+   "claims": [
+    "c2"
+   ]
+  },
+  {
+   "id": "S05",
+   "section": "mechanism",
    "say": "So the outer pane carries the load. The middle one waits, unstressed, as a backup if the outer pane ever fails.",
    "image": "S03",
    "move": "push_in",
-   "labels": ["Outer pane: carries the load", "Middle pane: backup"],
-   "claims": ["c2"]},
-  {"id": "S06", "section": "discovery",
+   "labels": [
+    "Outer pane: carries the load",
+    "Middle pane: backup"
+   ],
+   "claims": [
+    "c2"
+   ]
+  },
+  {
+   "id": "S06",
+   "section": "discovery",
    "say": "And the air moving through the hole takes moisture with it, so the window doesn't fog up or frost over.",
-   "image": {"subject": "an aircraft cabin window at high altitude",
-             "show": "a clear pane with faint frost crystals only at the outer edge, a thin stream of air through a tiny hole", "variant": "closeup"},
+   "image": {
+    "subject": "an aircraft cabin window at high altitude",
+    "show": "a clear pane with faint frost crystals only at the outer edge, a thin stream of air through a tiny hole",
+    "variant": "closeup"
+   },
    "move": "pan_up",
-   "claims": ["c3"]},
-  {"id": "S07", "section": "payoff",
+   "claims": [
+    "c3"
+   ]
+  },
+  {
+   "id": "S07",
+   "section": "payoff",
    "say": "One tiny hole, two jobs. Nothing is ordinary when you understand how it works.",
    "image": "S01",
-   "move": "pull_out"}
+   "move": "pull_out"
+  }
  ]
 }

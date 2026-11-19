@@ -10,7 +10,7 @@
 | Niche | illustrated everyday-engineering explainers |
 | AI-made | yes: label every post, AI profile labels on |
 
-Notes: Source: the-curious-mechanism.zip playbook (PLAYBOOK.md, brand/style-guide.md). Niche leaders (Half as Interesting, Practical Engineering, Jared Owen, Steve Mould, Primal Space) share: a question-title (Why/How), a 15-20 s hook with no intro, one clean diagram look, 8-15 min long-form plus Shorts cut from it. Gap: none uses a 19th-century engraving / patent-drawing look; that is the brand. Long-form 8-12 min weekly on YouTube; 2-3 Shorts a week (30-55 s, 9:16, complete mini-story) on every platform. Brand font is Libre Baskerville (Google Fonts); kit uses DejaVu Serif because kit.py renders with locally installed fonts. Handle 'curiousmechanism' is 16 chars, over the 15-char X limit, so handles are shortened.
+Notes: Source: the-curious-mechanism.zip playbook (PLAYBOOK.md, brand/style-guide.md). Niche leaders (Half as Interesting, Practical Engineering, Jared Owen, Steve Mould, Primal Space) share: a question-title (Why/How), a 15-20 s hook with no intro, one clean diagram look, 8-15 min long-form plus Shorts cut from it. Gap: none uses a 19th-century engraving / patent-drawing look; that is the brand. Long-form 8-12 min weekly on YouTube; 2-3 Shorts a week (30-55 s, 9:16, complete mini-story) on every platform. Brand font is Libre Baskerville (Google Fonts); kit uses DejaVu Serif because kit.py renders with locally installed fonts. Handle 'curiousmechanism' is 16 chars, over the 15-char X limit, so handles are shortened. 2026-11-13: look changed from the playbook's engraving to a clean 2D cartoon (engraving was faded on phones; cartoon picked over cinematic painted after a side-by-side test); stories open on what went wrong.
 
 ## Name and handle
 
@@ -22,10 +22,10 @@ Notes: Source: the-curious-mechanism.zip playbook (PLAYBOOK.md, brand/style-guid
 
 ## Style
 
-- **Look** (paste in every muse prompt): 19th-century engineering encyclopedia illustration: detailed hand-engraved ink drawing on antique ivory paper, fine cross-hatching and precise linework, muted navy blue and charcoal ink with an occasional muted red accent and brass tones on metal parts, subtle vintage paper imperfections, scientifically plausible proportions, museum-quality technical drawing, clear central subject, calm and curious mood. No photography, no photorealism, no cartoon characters, no labels or text in the image.
-- **Palette:** `#EFE6D2` `#1F3A5F` `#2B2B2B` `#A63D32` `#B08D57`
+- **Look** (paste in every muse prompt): Clean 2D cartoon illustration, like a high-quality animated educational series: bold clean outlines, flat colours with soft cel shading, simple readable shapes, expressive characters with large clear faces and simple features. Period-accurate clothes, aircraft and rooms for the year in the scene, simplified but correct. Strong contrast and a limited palette of deep teal, warm amber, cream and a bright red for danger or the key part. The subject is large and fills the frame. People are anonymous, friendly and ordinary, with clear emotion.
+- **Palette:** `#13293D` `#E0A458` `#F2E8D5` `#1B1B1B` `#B23A2E`
 - **Font:** DejaVu Serif
-- **Mood:** curious, precise, warm
+- **Mood:** clear, human, curious
 
 ## Art
 

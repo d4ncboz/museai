@@ -21,6 +21,7 @@ Nothing is delivered until `scripts/qa.py` says PASS and the contact sheet looks
 `scripts/muse-video` appends one style block to every prompt (set `QUALITY=0` only to debug). Edit these files to change the rules for all future videos; don't paste the rules into each prompt.
 - `prompt/quality.txt` (default) - people talking: motion / continuity / conversation / lip-sync / speech pace / acting / caption-safe composition / final check. The model renders no text; captions are burned in afterwards.
 - `prompt/travel.txt` (`STYLE=travel`) - travel documentary: real geography and landmarks, natural grade and light, slow plausible camera, instrumental music + ambience, no narration, no text on screen.
+- `prompt/animation.txt` (`STYLE=animation`) - animate an illustration given as `IMAGE=` (first frame) in its own art style: only the named things move, no talking, no music, no text; the narration is added in the edit (curious-mechanism `cm.py anim`).
 
 ## Server
 - museai FastAPI on 127.0.0.1:18610 (`uv run python -m museai` in the repo root, in a visible terminal tab). Check: `lsof -nP -iTCP:18610 -sTCP:LISTEN`; not listening → start it, wait for "Application startup complete".

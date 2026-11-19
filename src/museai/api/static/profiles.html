@@ -89,9 +89,10 @@
     <label>Name
       <input name="label" maxlength="100" autocomplete="off" placeholder="e.g. Michael Rogers">
     </label>
-    <label>Profile ID
-      <input name="pname" required pattern="[A-Za-z0-9_\-]{1,64}" autocomplete="off"
-             title="Letters, digits, - and _ (max 64)">
+    <label>Email
+      <input name="pname" required pattern="[A-Za-z0-9][A-Za-z0-9_.@+\-]{0,63}" autocomplete="off"
+             placeholder="e.g. michael.rogers@example.com"
+             title="Email or ID: letters, digits, . @ + - and _ (max 64)">
     </label>
     <label>Login status
       <select name="loggedIn"><option value="no">No</option><option value="yes">Yes</option></select>
@@ -103,6 +104,17 @@
     <div class="row">
       <button type="button" id="cancel">Cancel</button>
       <button class="primary" value="save">Save</button>
+    </div>
+  </form>
+</dialog>
+<!-- own dialog instead of confirm(): embedded browsers (e.g. the Claude app pane) make confirm() return false -->
+<dialog id="confirmDlg">
+  <form method="dialog">
+    <h2 id="confirmText"></h2>
+    <p class="hint">The saved browser profile stays on disk.</p>
+    <div class="row">
+      <button value="no">Cancel</button>
+      <button class="primary" value="yes">Remove</button>
     </div>
   </form>
 </dialog>
@@ -186,7 +198,12 @@ async function toggle(name) {
 }
 
 async function remove(name) {
-  if (!confirm(`Remove "${name}" from the list? The saved browser profile stays on disk.`)) return;
+  const dlg = $("confirmDlg");
+  $("confirmText").textContent = `Remove "${name}" from the list?`;
+  dlg.returnValue = "";
+  dlg.showModal();
+  await new Promise((done) => dlg.addEventListener("close", done, { once: true }));
+  if (dlg.returnValue !== "yes") return;
   busy.set(name, "Stopping…"); render();
   try { await api(dataUrl(name), "DELETE"); } catch (e) { showError(e); }
   busy.delete(name);

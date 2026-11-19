@@ -1,0 +1,188 @@
+{
+ "id": "s002-comet-corners",
+ "title": "Why do airplane windows have round corners?",
+ "format": "short",
+ "question": "Why does every opening in an airliner's cabin have rounded corners?",
+ "answer": "In 1954 two de Havilland Comets broke apart in flight; water-tank tests showed metal fatigue cracks starting at the corner of a square cut-out in the roof. Sharp corners pile up stress on every pressurised flight; rounded corners spread it.",
+ "pillar": "Everyday Engineering",
+ "from_video": "001-airplane-windows",
+ "thumbnail": {
+  "text": "The deadly corner",
+  "scene": "S06"
+ },
+ "music": {
+  "file": "",
+  "licence": ""
+ },
+ "people_rule": "People are anonymous representative passengers, crew and engineers. Never a real victim's face, never invented dialogue.",
+ "claims": {
+  "c1": {
+   "text": "On 10 January 1954 the de Havilland Comet G-ALYP broke up in flight off the island of Elba; all 35 people aboard died.",
+   "sources": [
+    "Wikipedia, 'BOAC Flight 781', https://en.wikipedia.org/wiki/BOAC_Flight_781",
+    "Migflug, 'De Havilland Comet: First, Beautiful, Deadly', https://migflug.com/afterburner/de-havilland-comet-first-jet-airliner-metal-fatigue-square-windows/",
+    "Time, 'Science: The Fate of Yoke Peter', https://content.time.com/time/subscriber/article/0,33009,823674,00.html"
+   ],
+   "verified": true
+  },
+  "c2": {
+   "text": "On 8 April 1954, about three months later, Comet G-ALYY broke up in flight near Naples.",
+   "sources": [
+    "Wikipedia, 'South African Airways Flight 201', https://en.wikipedia.org/wiki/South_African_Airways_Flight_201",
+    "Migflug, https://migflug.com/afterburner/de-havilland-comet-first-jet-airliner-metal-fatigue-square-windows/"
+   ],
+   "verified": true
+  },
+  "c3": {
+   "text": "Investigators put a whole Comet in a water tank and pressurised it again and again; it failed from metal fatigue after the equivalent of about 3,000 flights.",
+   "sources": [
+    "Wikipedia, 'BOAC Flight 781' (G-ALYU tank test, equivalent of 3,000 flights), https://en.wikipedia.org/wiki/BOAC_Flight_781",
+    "Engineers Ireland, 'Beyond the limits of imagination: what do the Comet aircraft failures teach us', https://www.engineersireland.ie/Engineers-Journal/Mechanical/beyond-the-limits-of-imagination-what-do-the-comet-aircraft-failures-teach-us"
+   ],
+   "verified": true
+  },
+  "c4": {
+   "text": "The inquiry traced the failure to the forward ADF (radio direction-finder antenna) window, a cut-out in the roof, not a passenger window.",
+   "sources": [
+    "Wikipedia, 'BOAC Flight 781' (inquiry: failure 'at the forward ADF window in the roof'), https://en.wikipedia.org/wiki/BOAC_Flight_781",
+    "PPRuNe archive, 'Comet Metal Fatigue', https://www.pprune.org/archive/index.php/t-581694.html",
+    "Migflug, 'The de Havilland Comet: The Beautiful Jet That Taught Us How Aircraft Break', https://migflug.com/jetflights/de-havilland-comet-metal-fatigue-square-windows-investigation-1954/"
+   ],
+   "verified": true
+  },
+  "c5": {
+   "text": "A pressurised cabin is loaded on every flight; stress concentrates at sharp corners of openings and is spread by rounded corners.",
+   "sources": [
+    "Wikipedia, 'Stress concentration', https://en.wikipedia.org/wiki/Stress_concentration",
+    "Engineers Ireland, https://www.engineersireland.ie/Engineers-Journal/Mechanical/beyond-the-limits-of-imagination-what-do-the-comet-aircraft-failures-teach-us"
+   ],
+   "verified": true
+  }
+ },
+ "scenes": [
+  {
+   "id": "S01",
+   "section": "hook",
+   "say": "This jet is about to break apart.",
+   "image": {
+    "subject": "the cabin of a 1950s de Havilland Comet jet airliner in flight, 1954",
+    "show": "a young woman in 1950s travelling clothes at a window seat beside a large, nearly square cabin window with tight corners (not oval), smiling softly at bright clouds outside, other passengers reading behind her, warm afternoon light, calm and unaware",
+    "variant": "main"
+   },
+   "move": "push_in",
+   "claims": [
+    "c1"
+   ],
+   "motion": "the young woman watches the clouds with a soft smile and slowly turns her head a little toward the window; bright clouds drift slowly past outside; a passenger behind her turns a page of his newspaper; the cabin vibrates very slightly"
+  },
+  {
+   "id": "S02",
+   "section": "incident",
+   "say": "January 1954, off the island of Elba. A de Havilland Comet breaks up in mid-air. All thirty-five people on board are lost.",
+   "image": {
+    "subject": "a 1950s jet airliner breaking apart in the dusk sky over the Mediterranean, seen at middle distance as a dark silhouette against a burning orange sky; clean smooth wings with nothing hanging under them, no engine pods, no propellers",
+    "show": "the fuselage torn in two mid-air, the front section separating, burning fragments and long smoke trails falling toward the dark sea, an island on the horizon, seen from very far away, small figures on a coastal terrace in the foreground staring up in shock, no bodies, no close-up",
+    "variant": "main"
+   },
+   "move": "pan_down",
+   "claims": [
+    "c1"
+   ],
+   "motion": "the two halves of the jet drift further apart in the sky and fall slowly toward the sea, burning fragments tumble down trailing long smoke; the small figures on the terrace freeze, one raises a hand to her mouth, another points up; seen from far away, no close-up of the plane"
+  },
+  {
+   "id": "S03",
+   "section": "incident",
+   "say": "Three months later, near Naples, it happens again.",
+   "image": {
+    "subject": "an empty 1950s airport departure gate at night",
+    "show": "rain on a tall window, a single unclaimed suitcase on a bench, a jet's lights fading into the dark sky outside, lonely blue light",
+    "variant": "main"
+   },
+   "move": "push_in",
+   "claims": [
+    "c2"
+   ],
+   "motion": "rain streams down the tall window in thin rivulets; the distant jet lights outside fade slowly into the dark; the suitcase on the bench stays still; the room is quiet and empty"
+  },
+  {
+   "id": "S04",
+   "section": "mechanism",
+   "say": "So engineers sink a whole Comet in a giant water tank, and pressurise it again and again, flight after flight.",
+   "image": {
+    "subject": "a huge 1950s test hall with a complete jet airliner fuselage inside an enormous water tank",
+    "show": "three engineers in shirtsleeves and ties on a gantry above the water, one checking a pressure gauge, cold industrial light, the fuselage half submerged",
+    "variant": "main"
+   },
+   "move": "pan_right",
+   "claims": [
+    "c3"
+   ],
+   "motion": "the water level in the tank rises slowly around the half-submerged fuselage with small ripples spreading across the surface; one engineer taps the pressure gauge and its needle climbs; the other two lean on the railing and watch the fuselage"
+  },
+  {
+   "id": "S05",
+   "section": "mechanism",
+   "say": "About three thousand flights later, the metal tears open. At a corner.",
+   "image": {
+    "subject": "the aluminium skin of a 1950s airliner fuselage",
+    "show": "a jagged fatigue crack running out from the sharp corner of a small square opening, riveted skin around it, an engineer's gloved hand and a torch light pointing at the crack, muted red glow on the crack",
+    "variant": "closeup"
+   },
+   "move": "push_in",
+   "claims": [
+    "c3"
+   ],
+   "motion": "the jagged crack grows outward from the sharp corner of the square opening in two or three short sudden jumps; the red glow on the crack pulses; the torch beam and the gloved hand stay steady"
+  },
+  {
+   "id": "S06",
+   "section": "discovery",
+   "say": "Not a passenger window, as the story often goes. A small square opening in the roof, for a radio antenna.",
+   "image": {
+    "subject": "the top of a 1950s de Havilland Comet jet airliner fuselage, seen from directly above, looking straight down onto the roof just behind the cockpit",
+    "show": "the long silver roof of the fuselage running up the frame, a small square opening with sharp corners cut into the centre line of the roof on top of the plane, outlined and glowing in red; the oval passenger windows are only a thin row along the far left and right edges, far from the red square; blue sky and clouds below",
+    "variant": "main"
+   },
+   "move": "pull_out",
+   "labels": [
+    "Radio antenna window"
+   ],
+   "claims": [
+    "c4"
+   ],
+   "motion": "the red square opening on the roof pulses softly with a red glow; white clouds slide slowly past far below the plane; the plane itself stays steady and rigid"
+  },
+  {
+   "id": "S07",
+   "section": "mechanism",
+   "say": "Every flight, the cabin swells like a balloon. Stress piles up at sharp corners. Round ones spread it out.",
+   "image": {
+    "subject": "two openings side by side in a sheet of aircraft metal, one square with sharp corners, one with rounded corners",
+    "show": "glowing amber stress flow lines bending around both openings, crowding into bright red hot spots at the square corners, flowing smoothly around the rounded one",
+    "variant": "diagram"
+   },
+   "move": "push_in",
+   "labels": [],
+   "claims": [
+    "c5"
+   ],
+   "motion": "the glowing amber flow lines stream steadily from top to bottom around both openings; at the sharp corners of the square opening the lines crowd together and the red hot spots glow brighter and brighter; around the rounded opening the lines flow smoothly and stay calm amber"
+  },
+  {
+   "id": "S08",
+   "section": "payoff",
+   "say": "That's why the window next to you has round corners. Nothing is ordinary when you understand how it works.",
+   "image": {
+    "subject": "a modern airliner cabin window with rounded corners at golden hour",
+    "show": "a traveller today resting a hand near the window, looking out at a sunset above the clouds, quiet and safe",
+    "variant": "main"
+   },
+   "move": "pull_out",
+   "claims": [
+    "c5"
+   ],
+   "motion": "the traveller rests a hand near the window and smiles softly while watching the sunset; the clouds outside drift slowly; warm light shimmers gently on the window frame"
+  }
+ ]
+}
