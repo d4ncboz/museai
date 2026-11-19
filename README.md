@@ -225,7 +225,9 @@ Heavy render steps (the 4K upscale in `deliver.sh`) can run on a Colab GPU throu
 server) and `MUSE_RENDER_DRIVE` (the shell scripts) to its folder on Google Drive; `/dashboard` → Queue then shows
 the worker (`GPU online` / `idle` / `offline`), the queue and each job's output files. Unset, the feature is off.
 `UHD=1 deliver.sh` sends the upscale there while the worker's heartbeat is fresh and says so (`upscale: remote`);
-otherwise, or when the remote job fails, it upscales locally and prints why.
+otherwise, or when the remote job fails, it upscales locally and prints why. On Colab Real-ESRGAN runs in PyTorch
+(`esrgan_cuda.py`; no Vulkan there). The healing-video `music` script sends its ACE-Step render the same way
+(`music: remote`, `MUSIC_REMOTE=0` keeps it local) through `muse-video/scripts/remote.py`.
 
 ## Browser control for Claude Code
 

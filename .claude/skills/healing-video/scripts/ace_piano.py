@@ -6,7 +6,9 @@ With --ref the output takes the reference's length, so loop or trim it to the le
 strength low (0.25-0.35): it borrows the feel (instrument, register, pace), not the tune; a higher one
 rebuilds the reference's own melody, which is someone else's music.
 """
+
 import argparse
+import os
 from pathlib import Path
 
 import soundfile
@@ -30,6 +32,27 @@ torchaudio.save = _save
 torchaudio.load = _load
 
 
+def _straight_to_gpu():
+    # Colab (muse-renderer) has 12.7 GB RAM: loading the checkpoints on the CPU first was OOM-killed at
+    # 11.6 GB RSS (2026-11-19). Every model loads its weights onto the GPU directly instead.
+    from diffusers import ModelMixin
+    from transformers import PreTrainedModel
+
+    for cls in (ModelMixin, PreTrainedModel):
+        orig = cls.from_pretrained.__func__
+
+        def from_pretrained(c, *args, _orig=orig, **kw):
+            kw.setdefault("low_cpu_mem_usage", True)
+            kw.setdefault("device_map", "cuda")
+            return _orig(c, *args, **kw)
+
+        cls.from_pretrained = classmethod(from_pretrained)
+
+
+if torch.cuda.is_available():
+    _straight_to_gpu()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tags", required=True)
@@ -43,15 +66,53 @@ def main():
     a = ap.parse_args()
 
     mps = torch.backends.mps.is_available()
-    pipe = ACEStepPipeline(checkpoint_dir=str(Path.home() / ".cache/ace-step/checkpoints"),
-                           dtype="float32" if mps else "bfloat16", torch_compile=False, cpu_offload=False)
-    ref = dict(audio2audio_enable=True, ref_audio_input=str(Path(a.ref).resolve()),
-               ref_audio_strength=a.ref_strength) if a.ref else {}
-    pipe(audio_duration=a.duration, prompt=a.tags, lyrics="[instrumental]", infer_step=a.steps,
-         guidance_scale=a.guidance, scheduler_type="euler", cfg_type="apg", omega_scale=10.0, manual_seeds=str(a.seed),
-         guidance_interval=0.5, guidance_interval_decay=0.0, min_guidance_scale=3.0, use_erg_tag=True,
-         use_erg_lyric=True, use_erg_diffusion=True, oss_steps="", guidance_scale_text=0.0,
-         guidance_scale_lyric=0.0, save_path=str(Path(a.out).resolve()), format="wav", **ref)
+    # a T4 (Colab, through muse-renderer) has no bfloat16 in hardware: float16 there
+    half = (
+        "bfloat16"
+        if not torch.cuda.is_available() or torch.cuda.is_bf16_supported(including_emulation=False)
+        else "float16"
+    )
+    if half == "float16":
+        # ACEStepPipeline reads any dtype but "bfloat16" as float32 (14.5 GB: CUDA OOM on the T4); its env override
+        os.environ.setdefault("ACE_PIPELINE_DTYPE", "float16")
+    pipe = ACEStepPipeline(
+        checkpoint_dir=str(Path.home() / ".cache/ace-step/checkpoints"),
+        dtype="float32" if mps else half,
+        torch_compile=False,
+        cpu_offload=False,
+    )
+    ref = (
+        dict(
+            audio2audio_enable=True,
+            ref_audio_input=str(Path(a.ref).resolve()),
+            ref_audio_strength=a.ref_strength,
+        )
+        if a.ref
+        else {}
+    )
+    pipe(
+        audio_duration=a.duration,
+        prompt=a.tags,
+        lyrics="[instrumental]",
+        infer_step=a.steps,
+        guidance_scale=a.guidance,
+        scheduler_type="euler",
+        cfg_type="apg",
+        omega_scale=10.0,
+        manual_seeds=str(a.seed),
+        guidance_interval=0.5,
+        guidance_interval_decay=0.0,
+        min_guidance_scale=3.0,
+        use_erg_tag=True,
+        use_erg_lyric=True,
+        use_erg_diffusion=True,
+        oss_steps="",
+        guidance_scale_text=0.0,
+        guidance_scale_lyric=0.0,
+        save_path=str(Path(a.out).resolve()),
+        format="wav",
+        **ref,
+    )
 
 
 if __name__ == "__main__":

@@ -29,14 +29,28 @@ fi
 # the soft pitch drop, low-pass and the calm gate still apply
 if [[ -n ${TAGS:-} ]]; then tags="$style, $TAGS"; fi
 raw="${out%.*}.raw.wav"
-if [[ -x $ACE_PY ]]; then
-  refargs=()
-  if [[ -n ${REF:-} ]]; then
-    # audio2audio output takes the reference's length: loop it with cross-fades to secs + 6
-    loop="${out%.*}.ref.wav"
-    python3 "$SKILL_DIR/scripts/loops.py" fit "$REF" "$loop" --secs $((secs + 6))
-    refargs=(--ref "$loop" --ref-strength "${REF_STRENGTH:-0.3}")
-  fi
+# only out stays: the raw render and the looped reference go when this script ends, pass or fail
+loop=
+trap 'rm -f "$raw" "$raw.m4a" ${loop:+"$loop"}' EXIT
+refargs=()
+if [[ -n ${REF:-} ]]; then
+  # audio2audio output takes the reference's length: loop it with cross-fades to secs + 6
+  loop="${out%.*}.ref.wav"
+  python3 "$SKILL_DIR/scripts/loops.py" fit "$REF" "$loop" --secs $((secs + 6))
+  refargs=(--ref "$loop" --ref-strength "${REF_STRENGTH:-0.3}")
+fi
+# The ACE render (minutes of full CPU/GPU on a Mac, loud fans) goes to the Colab render queue while its
+# server is up (muse-video/scripts/remote.py; MUSIC_REMOTE=0 keeps it here); a failed job renders here.
+remote=
+if [[ ${MUSIC_REMOTE:-1} != 0 ]] && host=$(python3 "$MV/remote.py" online 2>/dev/null); then
+  echo "music: remote (muse-renderer on $host)" >&2
+  python3 "$MV/remote.py" ace "$raw" .claude/skills/healing-video/scripts/ace_piano.py --tags "$tags" \
+    ${refargs[@]+"${refargs[@]}"} --duration "$((secs + 6))" --seed "$seed" >&2 && remote=1 \
+    || echo "music: local (remote job failed)" >&2
+fi
+if [[ -n $remote ]]; then
+  :
+elif [[ -x $ACE_PY ]]; then
   # one ACE render per machine: same lock file as music.py (macOS has no flock(1), so fcntl in python)
   python3 - "$(dirname "$(dirname "$(dirname "$ACE_PY")")")/render.lock" "$ACE_PY" "$SKILL_DIR/scripts/ace_piano.py" --tags "$tags" \
     ${refargs[@]+"${refargs[@]}"} --duration "$((secs + 6))" --seed "$seed" --out "$raw" <<'PY'

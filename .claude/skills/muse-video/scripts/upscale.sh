@@ -21,16 +21,26 @@ if [ "$w" -ge "$W" ] && [ "$h" -ge "$H" ]; then
 fi
 enc=(-c:v libx264 -preset slow -crf 16 -profile:v high -level 5.1 -pix_fmt yuv420p -movflags +faststart)
 esr=${ESRGAN_DIR:-$HOME/Work/tools/realesrgan}
-if [ "${ESRGAN:-1}" != 0 ] && [ -x "$esr/realesrgan-ncnn-vulkan" ]; then
+# On an NVIDIA GPU (Colab via muse-renderer) the same model runs in PyTorch (esrgan_cuda.py): Colab has
+# no Vulkan driver, so the ncnn build exited 255 there (2026-11-18). Needs $esr/RealESRGAN_x4plus.pth.
+cuda=0
+if [ "${ESRGAN:-1}" != 0 ] && [ -f "$esr/RealESRGAN_x4plus.pth" ] && command -v nvidia-smi >/dev/null \
+  && python3 -c 'import torch; assert torch.cuda.is_available()' 2>/dev/null; then cuda=1; fi
+if [ "${ESRGAN:-1}" != 0 ] && { [ "$cuda" = 1 ] || [ -x "$esr/realesrgan-ncnn-vulkan" ]; }; then
   tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
   mkdir "$tmp/q" "$tmp/x4"
   fps=$(ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate -of csv=p=0 "$in")
   ffmpeg -v error -i "$in" -vf "scale=$((W/4)):$((H/4)):flags=area" "$tmp/q/%05d.png"
-  echo "ESRGAN $(ls "$tmp/q" | wc -l | tr -d ' ') frames (~10 s each)..."
-  "$esr/realesrgan-ncnn-vulkan" -i "$tmp/q" -o "$tmp/x4" -n realesrgan-x4plus -s 4 -f png -m "$esr/models" -t "${ESRGAN_TILE:-1024}" >/dev/null 2>&1
+  if [ "$cuda" = 1 ]; then
+    echo "ESRGAN $(ls "$tmp/q" | wc -l | tr -d ' ') frames on CUDA..."
+    python3 "$(dirname "$0")/esrgan_cuda.py" "$tmp/q" "$tmp/x4" "$esr/RealESRGAN_x4plus.pth"
+  else
+    echo "ESRGAN $(ls "$tmp/q" | wc -l | tr -d ' ') frames (~10 s each)..."
+    "$esr/realesrgan-ncnn-vulkan" -i "$tmp/q" -o "$tmp/x4" -n realesrgan-x4plus -s 4 -f png -m "$esr/models" -t "${ESRGAN_TILE:-1024}" >/dev/null 2>&1
+  fi
   ffmpeg -v error -y -framerate "$fps" -i "$tmp/x4/%05d.png" -i "$in" -map 0:v -map 1:a? \
     -vf "atadenoise=0a=0.04:0b=0.08:s=9,setsar=1" "${enc[@]}" -c:a copy "$out"
-  how="Real-ESRGAN"
+  how="Real-ESRGAN$([ "$cuda" = 1 ] && echo ' CUDA' || true)"
 else
   echo "no Real-ESRGAN in $esr: lanczos only (no new detail)" >&2
   ffmpeg -v error -y -i "$in" \
