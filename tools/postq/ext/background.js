@@ -217,10 +217,9 @@ function page(tabId, platform, adapter) {
       size = Number((res.headers.get('Content-Range') || '').split('/')[1]) || size;
       const bytes = new Uint8Array(await res.arrayBuffer());
       const end = start + bytes.length - 1;
-      let bin = '';
-      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      // Native base64 (Chrome 140+): the old per-character loop kept a core busy for minutes per video.
       const got = await chrome.scripting.executeScript({
-        target: { tabId }, func: (s, b, f) => globalThis.postqLib.chunk(s, b, f), args: [slot, btoa(bin), start === 0],
+        target: { tabId }, func: (s, b, f) => globalThis.postqLib.chunk(s, b, f), args: [slot, bytes.toBase64(), start === 0],
       });
       if (got[0].result !== end + 1) throw new Error(`${slot} transfer broke at byte ${start}`);
       onPct?.(Math.round(((end + 1) / size) * 100));
