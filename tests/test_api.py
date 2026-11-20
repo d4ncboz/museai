@@ -172,6 +172,24 @@ def test_dashboard_cookie_upload(client, admin):
     assert "hatch_sess" in r.json()["error"]["message"]
 
 
+def test_dashboard_cookie_export_round_trips(client, admin):
+    acc = client.post("/admin/accounts", headers=admin, json={
+        "label": "me@example.com", "cookies": {"hatch_sess": "s", "hatch_native_auth_device": "d"},
+        "cookie_expires": {"hatch_sess": 1893456000},
+    }).json()["account"]
+    url = f"/dashboard/accounts/{acc['id']}/cookies"
+    assert client.get(url).status_code == 401
+    assert client.get("/dashboard/accounts/nope/cookies", headers=admin).status_code == 404
+    r = client.get(url, headers=admin)
+    assert r.status_code == 200
+    assert 'filename="me_example.com-cookies.json"' in r.headers["content-disposition"]
+    sess = next(c for c in r.json() if c["name"] == "hatch_sess")
+    assert sess["value"] == "s" and sess["expirationDate"] == 1893456000
+    # The download uploads back unchanged.
+    assert client.post(url, headers=admin, json=r.json()).status_code == 200
+    assert client.get(url, headers=admin).json() == r.json()
+
+
 def test_dashboard_add_account(client, admin):
     export = {"cookies": [
         {"name": "hatch_sess", "value": "s", "domain": ".muse.ai"},

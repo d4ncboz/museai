@@ -66,6 +66,33 @@ def parse_cookie_export(data: object) -> tuple[dict[str, str], dict[str, int]]:
     return cookies, expires
 
 
+def cookie_export(cookies: dict[str, str], expires: dict[str, int]) -> list[dict[str, object]]:
+    """Write an account's cookies as a Cookie-Editor JSON export, the inverse of
+    ``parse_cookie_export``, to import into a browser or back into the dashboard.
+
+    The store keeps only name, value and expiry; the other fields are muse.ai's usual ones.
+    """
+    out: list[dict[str, object]] = []
+    for name, value in cookies.items():
+        host_only = name.startswith("__Host-")
+        item: dict[str, object] = {
+            "domain": "muse.ai" if host_only else ".muse.ai",
+            "hostOnly": host_only,
+            "httpOnly": name.startswith("hatch_"),
+            "name": name,
+            "path": "/",
+            "sameSite": "lax",
+            "secure": True,
+            "session": name not in expires,
+            "storeId": "0",
+            "value": value,
+        }
+        if name in expires:
+            item["expirationDate"] = expires[name]
+        out.append(item)
+    return out
+
+
 async def renew_session(
     cookies: dict[str, str], *, wake_vm: bool = True, timeout: float = 15.0
 ) -> SessionInfo:

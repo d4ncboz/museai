@@ -69,7 +69,8 @@
   .rename:hover { color: var(--accent); }
   .acc-foot { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); }
   .acc-foot.soon { color: var(--bad); }
-  .acc-foot .relog:hover { color: var(--accent); text-decoration: underline; }
+  .relog:hover { color: var(--accent); text-decoration: underline; }
+  .acc-acts { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); }
   .acc-now { font-size: 12px; color: var(--run); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .acc-nums { display: flex; gap: 14px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .acc-nums b { color: var(--text); font-weight: 600; }
@@ -485,10 +486,12 @@ function renderCards() {
       <div class="acc-nums"><span><b>${today.length}</b> today</span><span><b>${ok}</b> done</span><span><b>${failed}</b> failed</span></div>
       ${left}
       ${bad ? `<div class="acc-fix">Log in to muse.ai as ${esc(acctName(acc.id))}, export the cookies, then upload them.</div>
-               <span class="upload" role="button" tabindex="0" data-upload="${esc(acc.id)}" title="Cookie-Editor JSON export of muse.ai">Upload cookies JSON</span>`
+               <div class="acc-acts"><span class="upload" role="button" tabindex="0" data-upload="${esc(acc.id)}" title="Cookie-Editor JSON export of muse.ai">Upload cookies JSON</span>
+               <span class="relog" role="button" tabindex="0" data-export="${esc(acc.id)}" title="Download this account's cookies as Cookie-Editor JSON">Export cookies</span></div>`
              : `<div class="acc-foot ${daysLeft != null && daysLeft < 7 ? "soon" : ""}">
                   <span>${exp ? `Login expires ${new Date(exp * 1000).toLocaleDateString(undefined, { day: "numeric", month: "short" })} (${daysLeft < 1 ? "today" : daysLeft + " d"})` : "Login expiry unknown"}</span>
-                  <span class="relog" role="button" tabindex="0" data-upload="${esc(acc.id)}" title="Cookie-Editor JSON export of muse.ai">Update cookies</span>
+                  <span class="acc-acts"><span class="relog" role="button" tabindex="0" data-export="${esc(acc.id)}" title="Download this account's cookies as Cookie-Editor JSON">Export</span>
+                  <span class="relog" role="button" tabindex="0" data-upload="${esc(acc.id)}" title="Cookie-Editor JSON export of muse.ai">Update cookies</span></span>
                 </div>`}
     </button>`;
   }).join("") || `<div class="empty">No accounts yet.</div>`;
@@ -1323,10 +1326,26 @@ async function rename(id) {
   load();
 }
 
+async function exportCookies(id) {
+  const name = acctName(id);
+  try {
+    const data = await api(`/dashboard/accounts/${encodeURIComponent(id)}/cookies`);
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+    const a = Object.assign(document.createElement("a"), {
+      href: url, download: `${name.replace(/[^\w.-]+/g, "_")}-cookies.json` });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (err) {
+    alert(`${name}: export failed: ${err.message}`);
+  }
+}
+
 let uploadFor = "";
 $("cards").addEventListener("click", (e) => {
   const u = e.target.closest("[data-upload]");
   if (u) { e.stopPropagation(); uploadFor = u.dataset.upload; $("cookieFile").click(); return; }
+  const ex = e.target.closest("[data-export]");
+  if (ex) { e.stopPropagation(); exportCookies(ex.dataset.export); return; }
   const rn = e.target.closest("[data-rename]");
   if (rn) { e.stopPropagation(); rename(rn.dataset.rename); return; }
   const c = e.target.closest(".acc"); if (!c) return;

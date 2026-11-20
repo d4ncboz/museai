@@ -8,11 +8,12 @@ from __future__ import annotations
 
 import asyncio
 import ipaddress
+import re
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from ...accounts.keepalive import renew_account
 from ...accounts.model import Account, AccountStatus
@@ -104,6 +105,21 @@ async def upload_cookies(account_id: str, request: Request,
     # Also drops the account's open tab, so the next job uses the new cookies.
     check = await renew_account(svc.pool, svc.driver, account_id)
     return {"account": svc.pool.get(account_id).public(), "check": check}
+
+
+@router.get("/dashboard/accounts/{account_id}/cookies", include_in_schema=False,
+            dependencies=[Depends(_local_or_admin)])
+async def export_cookies(account_id: str, svc: Services = Depends(get_services)) -> JSONResponse:
+    """Download an account's cookies as a Cookie-Editor JSON export."""
+    acc = svc.pool.get(account_id)
+    if acc is None:
+        raise NotFound(f"account '{account_id}' not found")
+    name = re.sub(r"[^A-Za-z0-9._-]+", "_", acc.label or acc.id).strip("_") or acc.id
+    return JSONResponse(
+        muse.cookie_export(acc.cookies, acc.cookie_expires),
+        headers={"Content-Disposition": f'attachment; filename="{name}-cookies.json"',
+                 "Cache-Control": "no-store"},
+    )
 
 
 @router.post("/dashboard/accounts/{account_id}/label", include_in_schema=False,
