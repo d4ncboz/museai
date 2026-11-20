@@ -17,6 +17,10 @@ from ...errors import UpstreamTimeout
 
 log = logging.getLogger(__name__)
 
+# A busy machine (load 70 on 15 cores, endpoint scanning) left Chrome answering after 30 s:
+# jobs failed and accounts cooled down though the browser was only slow, not hung.
+COMMAND_TIMEOUT = 60.0
+
 
 class CDPError(RuntimeError):
     pass
@@ -32,7 +36,7 @@ class CDPSession:
 
     @classmethod
     async def connect(cls, ws_url: str) -> CDPSession:
-        ws = await connect(ws_url, max_size=None, ping_interval=None, open_timeout=15)
+        ws = await connect(ws_url, max_size=None, ping_interval=None, open_timeout=COMMAND_TIMEOUT)
         return cls(ws)
 
     @property
@@ -67,7 +71,7 @@ class CDPSession:
     def on(self, method: str, callback: Callable[[dict], None]) -> None:
         self._listeners[method].append(callback)
 
-    async def send(self, method: str, params: dict | None = None, timeout: float = 30.0) -> dict:
+    async def send(self, method: str, params: dict | None = None, timeout: float = COMMAND_TIMEOUT) -> dict:
         if self.closed:
             raise CDPError("cdp connection closed")
         msg_id = next(self._ids)
@@ -83,7 +87,7 @@ class CDPSession:
             self._pending.pop(msg_id, None)
 
     async def evaluate(self, expression: str, *, await_promise: bool = False,
-                       timeout: float = 30.0) -> Any:
+                       timeout: float = COMMAND_TIMEOUT) -> Any:
         res = await self.send(
             "Runtime.evaluate",
             {"expression": expression, "returnByValue": True, "awaitPromise": await_promise},
